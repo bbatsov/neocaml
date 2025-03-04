@@ -96,6 +96,27 @@ As [combobulate](https://github.com/mickeynp/combobulate) doesn't support OCaml 
 > and it’s hard work. Trust me, I know. I recommend you learn how to use IELM if
 > you decide to go this route.
 
+### Font-locking
+
+   You can control the amount of fontification applied by Font Lock mode
+of major modes based on tree-sitter by customizing the variable
+‘treesit-font-lock-level’.  Its value is a number between 1 and 4:
+
+- Level 1: This level usually fontifies only comments and function names in
+     function definitions.
+- Level 2 This level adds fontification of keywords,
+     strings, and data types.
+- Level 3 This is the default level; it adds
+     fontification of assignments, numbers, etc.
+
+-Level 4 This level adds everything else that can be fontified: operators,
+     delimiters, brackets, other punctuation, function names in function calls,
+     property look ups, variables, etc.
+
+Note that the 4 levels are defined by each major-mode and the above are just
+recommendations.
+
+
 ### Source of inspiration
 
 Based on ideas and code from:
