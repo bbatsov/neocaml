@@ -4,7 +4,7 @@
 
 ## Why?
 
-Because `caml-mode` is ancient, and `tuareg-mode` is a beast.
+Because `caml-mode` is ancient, and `tuareg-mode` is a beast. (it's very powerful, but also very complex)
 The time seems ripe for a modern, leaner, TreeSitter-powered mode for
 OCaml.
 
@@ -29,8 +29,10 @@ One last thing - we really need more Emacs packages with fun names! :D
 
 ## Goal
 
-Build a modern Emacs major mode for OCaml powered by TreeSitter
+Build a modern Emacs major mode for OCaml, powered by TreeSitter
 for font-locking and indentation.
+
+Secondary goal - port this functionality to Tuareg, if feasible.
 
 ## Status
 
