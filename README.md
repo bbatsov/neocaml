@@ -102,4 +102,5 @@ Based on ideas and code from:
 
 - [clojure-ts-mode](https://github.com/clojure-emacs/clojure-ts-mode)
 - [ocaml-ts-mode](https://github.com/dmitrig/ocaml-ts-mode)
+- <https://www.gnu.org/software/emacs/manual/html_node/elisp/Parsing-Program-Source.html>
 - <https://www.masteringemacs.org/article/lets-write-a-treesitter-major-mode>
