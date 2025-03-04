@@ -87,6 +87,15 @@ You can you `neocaml--debug` to get more debug information from TreeSitter:
 `treesitter-inspect-mode` (this shows the current node in the modeline)
 - When you set this to `'font-lock` it will also output some font-lock debug info.
 
+As [combobulate](https://github.com/mickeynp/combobulate) doesn't support OCaml yet, it seems the best way to test TS queries is the following:
+
+> If you don’t want to use Combobulate to help you, the builtin method – the
+> only method – is to call treesit-query-capture with a starting node (often the
+> one from treesit-buffer-root-node or treesit-parser-root-node) and the query
+> and then manually inspect the output to see if it’s right. Ugh. It’s messy,
+> and it’s hard work. Trust me, I know. I recommend you learn how to use IELM if
+> you decide to go this route.
+
 ### Source of inspiration
 
 Based on ideas and code from:
