@@ -58,6 +58,21 @@
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
 
+(defconst neocaml-version "0.0.1")
+
+(defun neocaml-version ()
+  "Display the current package version in the minibuffer.
+Fallback to `neocaml-version' when the package version is missing.
+When called from other Elisp code returns the version instead of
+displaying it."
+  (interactive)
+  (let ((pkg-version (package-get-version)))
+    (if (called-interactively-p 'interactively)
+        (if pkg-version
+            (message "neocaml %s (package: %s)" neocaml-version pkg-version)
+          (message "neocaml %s" neocaml-version))
+      (or pkg-version neocaml-version))))
+
 (defconst neocaml-grammar-recipes
   '((ocaml "https://github.com/tree-sitter/tree-sitter-ocaml"
            "v0.24.0"
@@ -366,9 +381,32 @@ Return nil if there is no name or if NODE is not a defun node."
       (treesit-beginning-of-thing neocaml-mode--block-regex (- arg))
     (treesit-end-of-thing neocaml-mode--block-regex arg)))
 
+(defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
+  "The URL to report a `neocaml' issue.")
+
+(defun neocaml-report-bug ()
+  "Report a bug in your default browser."
+  (interactive)
+  (browse-url neocaml-report-bug-url))
+
+(defconst neocaml-ocaml-docs-base-url "https://ocaml.org/docs/"
+  "The base URL for official OCaml guides.")
+
+(defun neocaml-browse-ocaml-docs ()
+  "Report a bug in your default browser."
+  (interactive)
+  (browse-url neocaml-ocaml-docs-base-url))
+
 (defvar neocaml-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; todo
+    (set-keymap-parent map prog-mode-map)
+    (easy-menu-define neocaml-mode-menu map "Neocaml Mode Menu"
+      '("OCaml"
+        ("Documentation"
+         ["Browse OCaml Docs" neocaml-browse-ocaml-docs])
+        "--"
+        ["Report a neocaml bug" neocaml-report-bug]
+        ["neocaml version" neocaml-version]))
     map))
 
 (defun neocaml--setup-mode (language)
@@ -395,6 +433,7 @@ Return nil if there is no name or if NODE is not a defun node."
     (setq-local treesit-font-lock-settings
                 (neocaml-mode--font-lock-settings language))
 
+    ;; TODO: Level 4 font-locking is currently missing
     (setq-local treesit-font-lock-feature-list
                 '((comment definition)
                   (keyword string number)
