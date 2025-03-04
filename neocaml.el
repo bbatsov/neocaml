@@ -225,8 +225,8 @@ Infix operators are parsed and fontified separately.")
      ;; (method_invocation (method_name) @font-lock-constant-face)
      ;; TODO: highlight just alpha infix at lvl 3 to match tuareg?
      (method_invocation "#" @font-lock-operator-face)
-     (infix_operator) @font-lock-operator-face
-     (prefix_operator) @font-lock-operator-face)
+     (infix_expression operator: _  @font-lock-operator-face)
+     (prefix_expression operator: _ @font-lock-operator-face))
 
    ;; :language language
    ;; :feature 'type
