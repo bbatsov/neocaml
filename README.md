@@ -39,12 +39,23 @@ are encouraged to play with it.
 
 ## Installation
 
-Right now it's manual only, unless you're on Emacs 30 where you can do this:
+Right now it's manual only, unless you're on Emacs 29+ where you can do this:
+
+    M-x package-vc-install <RET> https://github.com/bbatsov/neocaml <RET>
+
+In Emacs 30 you can you `use-package` to both install the package from GitHub
+and configure it:
 
 ``` emacs-lisp
 (use-package neocaml
-    :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest))
+  :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest))
 ```
+
+## Usage
+
+The `neocaml` package bundled two major modes - one for OCaml code
+and one for OCaml interfaces (`.mli`). Both modes will be auto-enabled
+when you open the respective type of files.
 
 ## Progress
 
