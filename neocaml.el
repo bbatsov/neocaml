@@ -382,6 +382,7 @@ Return nil if there is no name or if NODE is not a defun node."
 
       (when (eq neocaml--debug 'font-lock)
         (setq-local treesit--font-lock-verbose t))
+
       ;; show the node at point in the minibuffer
       (treesit-inspect-mode))
 

@@ -66,6 +66,18 @@ Everything else. :-)
 
 ## Development notes
 
+The mode will install the `ocaml` and `ocaml-interface` grammars automatically when
+needed. (e.g. when you visit an `.ml` the `ocaml` grammar will be downloaded and
+installed)
+
+You can you `neocaml--debug` to get more debug information from TreeSitter:
+
+- When you set this to it will output indentation debug data and enable
+`treesitter-inspect-mode` (this shows the current node in the modeline)
+- When you set this to `'font-lock` it will also output some font-lock debug info.
+
+### Source of inspiration
+
 Based on ideas and code from:
 
 - [clojure-ts-mode](https://github.com/clojure-emacs/clojure-ts-mode)
