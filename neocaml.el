@@ -60,6 +60,14 @@
   :type 'boolean
   :package-version '(neocaml . "0.0.1"))
 
+(defcustom neocaml-other-file-alist
+  '(("\\.mli\\'" (".ml"))
+    ("\\.ml\\'" (".mli")))
+  "Associative list of alternate extensions to find.
+See `ff-other-file-alist' and `ff-find-other-file'."
+  :type '(repeat (list regexp (choice (repeat string) function)))
+  :package-version '(neocaml . "0.0.1"))
+
 (defvar neocaml--debug 'font-lock
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -515,14 +523,24 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
 (defvar neocaml-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map prog-mode-map)
+    (define-key map (kbd "C-c C-a") #'ff-find-other-file)
+    (define-key map (kbd "C-c 4 C-a") #'ff-find-other-file-other-window)
     (easy-menu-define neocaml-mode-menu map "Neocaml Mode Menu"
       '("OCaml"
+        ("Find..."
+         ["Find Interface/Implementation" ff-find-other-file]
+         ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
+        "--"
         ("Documentation"
          ["Browse OCaml Docs" neocaml-browse-ocaml-docs])
         "--"
         ["Report a neocaml bug" neocaml-report-bug]
         ["neocaml version" neocaml-version]))
     map))
+
+(defvar neocamli-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map neocaml-mode-map)))
 
 (defun neocaml--setup-mode (language)
   "Configure major mode for LANGUAGE."
@@ -561,6 +579,9 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
     (setq-local indent-line-function #'treesit-indent)
 
     ;; TODO: add indentation, which-func, etc
+
+    ;; ff-find-other-file setup
+    (setq-local ff-other-file-alist neocaml-other-file-alist)
 
     (treesit-major-mode-setup)))
 

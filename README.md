@@ -83,6 +83,7 @@ See the documention for `treesit-font-lock-level` and `treesit-font-lock-feature
 - Auto-installation of `ocaml` and `ocaml-interface` grammars
 - Font-locking
 - Basic indentation
+- Toggling between implementation and interface using `ff-find-other-file` (`C-c C-a` and `C-c 4 C-a`)
 
 ### Things that don't work
 
