@@ -82,6 +82,7 @@ See the documention for `treesit-font-lock-level` and `treesit-font-lock-feature
 
 - Auto-installation of `ocaml` and `ocaml-interface` grammars
 - Font-locking
+- Basic indentation
 
 ### Things that don't work
 
@@ -89,7 +90,6 @@ Everything else. :-)
 
 ### Planned features
 
-- Indentation
 - Smart expression navigation
 - Basic integration with dune
 - Basic integration with a top-level

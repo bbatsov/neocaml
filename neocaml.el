@@ -48,6 +48,12 @@
   :link '(url-link :tag "GitHub" "https://github.com/bbatsov/neocaml")
   :link '(emacs-commentary-link :tag "Commentary" "neocaml"))
 
+(defcustom neocaml-indent-offset 2
+  "Number of spaces for each indentation step in the major modes."
+  :type 'natnum
+  :safe 'natnump
+  :package-version '(neocaml . "0.0.1"))
+
 (defcustom neocaml-ensure-grammars t
   "When non-nil, ensure required tree-sitter grammars are installed."
   :safe #'booleanp
@@ -79,8 +85,8 @@ displaying it."
            "grammars/ocaml/src")
     ;; that's the grammar for mli code
     (ocaml-interface "https://github.com/tree-sitter/tree-sitter-ocaml"
-            "v0.24.0"
-            "grammars/interface/src"))
+                     "v0.24.0"
+                     "grammars/interface/src"))
   "Intended to be used as the value for `treesit-language-source-alist'.")
 
 (defun neocaml--ensure-grammars ()
@@ -272,6 +278,77 @@ Infix operators are parsed and fontified separately.")
 
    ))
 
+
+;;;; Indentation
+
+;; Tree-sitter indentation rules for OCaml
+;; Adapted from nvim indentation queries in nvim-treesitter
+
+;; TODO: This will likely have to be split for OCaml and OCaml Interface
+(defun neocaml--indent-rules (language)
+  "Create TreeSitter indentation rules for LANGUAGE."
+  `((,language
+     ;; Indent after these expressions begin
+     ((parent-is "let_binding") parent-bol neocaml-indent-offset)
+     ((parent-is "type_binding") parent-bol neocaml-indent-offset)
+     ((parent-is "external") parent-bol neocaml-indent-offset)
+     ((parent-is "record_declaration") parent-bol neocaml-indent-offset)
+     ((parent-is "structure") parent-bol neocaml-indent-offset)
+     ((parent-is "signature") parent-bol neocaml-indent-offset)
+     ((parent-is "value_specification") parent-bol neocaml-indent-offset)
+     ((parent-is "do_clause") parent-bol neocaml-indent-offset)
+     ((parent-is "match_case") parent-bol neocaml-indent-offset)
+     ((parent-is "field_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "application_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "parenthesized_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "record_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "list_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "try_expression") parent-bol neocaml-indent-offset)
+
+     ;; Special handling for if-then-else
+     ((parent-is "if_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "then_clause") parent-bol neocaml-indent-offset)
+     ((parent-is "else_clause") parent-bol neocaml-indent-offset)
+
+     ;; Handle parameters
+     ((parent-is "parameter") parent-bol neocaml-indent-offset)
+
+     ;; Handle errors - generic approach
+     ((parent-is "ERROR") parent-bol neocaml-indent-offset)
+
+     ;; Handle branches and closing delimiters
+     ((node-is "}") parent-bol 0)
+     ((node-is "]") parent-bol 0)
+     ((node-is ")") parent-bol 0)
+
+     ;; Handle specific nodes within a match expression
+     ;; Using the 'match parent to find the match case within a match expression
+     ((match "match_expression" "match_case") parent-bol neocaml-indent-offset)
+
+     ;; Handle with clauses - first find ancestor match/try expression, then the with token
+     ((parent-is "try_expression") parent-bol neocaml-indent-offset)
+     ((match "try_expression" "with") parent-bol 0)
+     ((match "match_expression" "with") parent-bol 0)
+
+     ;; Handle branches and closing delimiters
+     ((node-is "}") parent-bol 0)
+     ((node-is "]") parent-bol 0)
+     ((node-is ")") parent-bol 0)
+
+     ;; Pattern matching branches
+     ((node-is "|") parent-bol 0)
+
+     ;; End markers
+     ((node-is ";;") parent-bol 0)
+     ((node-is "done") parent-bol 0)
+     ((node-is "end") parent-bol 0)
+
+     ;; Handle errors (incomplete expressions)
+     ((parent-is "ERROR") parent-bol neocaml-indent-offset)
+
+     ;; Handle comments and strings (special case)
+     ((node-is "comment") prev-line 0)
+     ((node-is "string") prev-line 0))))
 
 ;;;; Find the definition at point (some Emacs commands use this internally)
 
@@ -478,6 +555,10 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
                   (keyword string number)
                   (attribute builtin constant type)
                   (operator bracket delimiter variable function)))
+
+    ;; indentation
+    (setq-local treesit-simple-indent-rules (neocaml--indent-rules language))
+    (setq-local indent-line-function #'treesit-indent)
 
     ;; TODO: add indentation, which-func, etc
 
