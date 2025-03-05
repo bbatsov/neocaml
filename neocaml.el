@@ -368,6 +368,8 @@ Infix operators are parsed and fontified separately.")
                 "value_specification"
                 "method_definition"
                 "method_specification"
+                "include_module"
+                "include_module_type"
                 "instance_variable_definition"
                 "instance_variable_specification"
                 "module_binding"
