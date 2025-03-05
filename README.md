@@ -55,6 +55,9 @@ and configure it:
   :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest))
 ```
 
+**Note:** `neocaml` will auto-install the required TreeSitter grammars the
+first time one of the provided major modes is activated.
+
 ## Usage
 
 The `neocaml` package bundled two major modes - one for OCaml code
