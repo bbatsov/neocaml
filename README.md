@@ -147,5 +147,6 @@ Based on ideas and code from:
 
 - <https://www.gnu.org/software/emacs/manual/html_node/elisp/Parsing-Program-Source.html>
 - <https://www.gnu.org/software/emacs/manual/html_node/elisp/Tree_002dsitter-Major-Modes.html>
+- <https://www.gnu.org/software/emacs/manual/html_node/elisp/Parser_002dbased-Indentation.html#index-treesit_002dsimple_002dindent_002dpresets> (indentation)
 - <https://www.gnu.org/software/emacs/manual/html_node/elisp/Faces-for-Font-Lock.html>
 - <https://www.jonashietala.se/blog/2024/03/19/lets_create_a_tree-sitter_grammar/>
