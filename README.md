@@ -59,6 +59,18 @@ The `neocaml` package bundled two major modes - one for OCaml code
 and one for OCaml interfaces (`.mli`). Both modes will be auto-enabled
 when you open the respective type of files.
 
+## Configuration
+
+The modes provide 4 levels of font-locking, as is the standard for TreeSitter-powered
+modes. The default font-locking level is Emacs is 3, and you can change like this:
+
+```emacs-lisp
+;; this font-lock everything neocaml supports
+(setq treesit-font-lock-level 4)
+```
+
+See the documention for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
+
 ## Progress
 
 ### Things that work

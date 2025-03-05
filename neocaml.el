@@ -197,6 +197,7 @@ Infix operators are parsed and fontified separately.")
      (fun_expression "->" @font-lock-keyword-face)
      (match_case "->" @font-lock-keyword-face))
 
+   ;; See https://ocaml.org/manual/5.3/attributes.html
    :language language
    :feature 'attribute
    '((attribute) @font-lock-preprocessor-face
@@ -215,28 +216,16 @@ Infix operators are parsed and fontified separately.")
 
    :language language
    :feature 'builtin
-   `([";;"] @font-lock-preprocessor-face
-     ((value_path :anchor (value_name) @font-lock-builtin-face)
+   `(((value_path :anchor (value_name) @font-lock-builtin-face)
       (:match ,(regexp-opt neocaml-mode--builtin-ids 'symbols) @font-lock-builtin-face))
      ((constructor_path :anchor (constructor_name) @font-lock-builtin-face)
       (:match ,(regexp-opt neocaml-mode--builtin-ids 'symbols) @font-lock-builtin-face)))
 
+   ;; See https://ocaml.org/manual/5.3/const.html
    :language language
    :feature 'constant
    `(;; some literals TODO: any more?
-     [,@neocaml-mode--constants] @font-lock-constant-face
-     ;; doesn't look great
-     ;; (constructor_name) @font-lock-constant-face
-     ;; (method_invocation (method_name) @font-lock-constant-face)
-     ;; TODO: highlight just alpha infix at lvl 3 to match tuareg?
-     (method_invocation "#" @font-lock-operator-face)
-     (infix_expression operator: _  @font-lock-operator-face)
-     (prefix_expression operator: _ @font-lock-operator-face))
-
-   ;; :language language
-   ;; :feature 'type
-   ;; :override t
-   ;; '((_expression) @custom-invalid)
+     [,@neocaml-mode--constants] @font-lock-constant-face)
 
    :language language
    :feature 'type
@@ -251,7 +240,38 @@ Infix operators are parsed and fontified separately.")
       (parenthesized_type ["(" ")"] @font-lock-type-face)
       (polymorphic_type "." @font-lock-type-face)
       (module_name) @font-lock-type-face
-      (module_type_name) @font-lock-type-face)))
+      (module_type_name) @font-lock-type-face)
+
+   ;; Level 4 font-locking features
+
+   :language language
+   :feature 'operator
+   `(;; some literals TODO: any more?
+     (method_invocation "#" @font-lock-operator-face)
+     (infix_expression operator: _  @font-lock-operator-face)
+     (prefix_expression operator: _ @font-lock-operator-face))
+
+   :language language
+   :feature 'bracket
+   '((["(" ")" "[" "]" "{" "}"]) @font-lock-bracket-face)
+
+   :language language
+   :feature 'delimiter
+   '((["," "." ";" ":" ";;"]) @font-lock-delimiter-face)
+
+   :language language
+   :feature 'variable
+   '((value_name) @font-lock-variable-use-face
+     (field_name) @font-lock-variable-use-face)
+
+   :language language
+   :feature 'function
+   :override t
+   '((application_expression function: (value_path (value_name) @font-lock-function-call-face))
+     (application_expression function: (value_path (module_path (_) @font-lock-type-face) (value_name) @font-lock-function-call-face)))
+
+   ))
+
 
 ;;;; Find the definition at point (some Emacs commands use this internally)
 
@@ -452,11 +472,12 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
     (setq-local treesit-font-lock-settings
                 (neocaml-mode--font-lock-settings language))
 
-    ;; TODO: Level 4 font-locking is currently missing
+    ;; TODO: Make this configurable?
     (setq-local treesit-font-lock-feature-list
                 '((comment definition)
                   (keyword string number)
-                  (attribute builtin constant type)))
+                  (attribute builtin constant type)
+                  (operator bracket delimiter variable function)))
 
     ;; TODO: add indentation, which-func, etc
 
