@@ -2,6 +2,8 @@
 
 `neocaml` is **n**ew **E**macs mode for programming in OCaml.
 
+It's also as cool as Neo from "The Matrix". ;-)
+
 ## Why?
 
 Because `caml-mode` is ancient, and `tuareg-mode` is a beast. (it's very powerful, but also very complex)
