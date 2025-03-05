@@ -110,14 +110,12 @@ of major modes based on tree-sitter by customizing the variable
      strings, and data types.
 - Level 3 This is the default level; it adds
      fontification of assignments, numbers, etc.
-
--Level 4 This level adds everything else that can be fontified: operators,
+- Level 4 This level adds everything else that can be fontified: operators,
      delimiters, brackets, other punctuation, function names in function calls,
      property look ups, variables, etc.
 
 Note that the 4 levels are defined by each major-mode and the above are just
 recommendations.
-
 
 ### Source of inspiration
 
@@ -125,5 +123,12 @@ Based on ideas and code from:
 
 - [clojure-ts-mode](https://github.com/clojure-emacs/clojure-ts-mode)
 - [ocaml-ts-mode](https://github.com/dmitrig/ocaml-ts-mode)
-- <https://www.gnu.org/software/emacs/manual/html_node/elisp/Parsing-Program-Source.html>
+- [nvim-treesitter's OCaml TreeSitter queries](https://github.com/nvim-treesitter/nvim-treesitter/tree/master/queries/ocaml)
 - <https://www.masteringemacs.org/article/lets-write-a-treesitter-major-mode>
+
+### References
+
+- <https://www.gnu.org/software/emacs/manual/html_node/elisp/Parsing-Program-Source.html>
+- <https://www.gnu.org/software/emacs/manual/html_node/elisp/Tree_002dsitter-Major-Modes.html>
+- <https://www.gnu.org/software/emacs/manual/html_node/elisp/Faces-for-Font-Lock.html>
+- <https://www.jonashietala.se/blog/2024/03/19/lets_create_a_tree-sitter_grammar/>
