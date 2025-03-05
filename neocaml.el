@@ -118,6 +118,8 @@ displaying it."
     st)
   "Syntax table in use in neocaml mode buffers.")
 
+;;;; Font-locking
+
 (defvar neocaml-mode--keywords
   (let ((infix-operators '("asr" "land" "lor" "lsl" "lsr" "lxor" "or" "mod")))
     (seq-remove (lambda (k) (seq-position infix-operators k))
@@ -153,6 +155,9 @@ Infix operators are parsed and fontified separately.")
     "__FUNCTION__" "__LOC_OF__" "__LINE_OF__" "__POS_OF__")
   "OCaml builtin identifiers for tree-sitter font-locking.")
 
+;; TODO: Right now we apply the same fontification rules for
+;; both OCaml and OCaml Interface, but that's not correct,
+;; as the underlying grammars are different.
 (defun neocaml-mode--font-lock-settings (language)
   "Tree-sitter font-lock settings for LANGUAGE."
   (treesit-font-lock-rules
@@ -248,6 +253,8 @@ Infix operators are parsed and fontified separately.")
       (module_name) @font-lock-type-face
       (module_type_name) @font-lock-type-face)))
 
+;;;; Find the definition at point (some Emacs commands use this internally)
+
 (defvar neocaml-mode--defun-type-regexp
   (regexp-opt '("type_binding"
                 "exception_definition"
@@ -305,6 +312,9 @@ Return nil if there is no name or if NODE is not a defun node."
      (treesit-node-text
       (treesit-search-subtree node "instance_variable_name" nil nil 1) t))))
 
+
+;;;; imenu integration
+
 (defun neocaml-mode--imenu-name (node)
   "Return qualified defun name of NODE."
   (let ((name nil))
@@ -336,6 +346,8 @@ Return nil if there is no name or if NODE is not a defun node."
     ("Class" "\\`\\(class_binding\\|class_type_binding\\)\\'"
      neocaml-mode--defun-valid-p neocaml-mode--imenu-name))
   "Settings for `treesit-simple-imenu'.")
+
+;;;; Structured navigation
 
 (defvar neocaml-mode--block-regex
   (regexp-opt `(,@neocaml-mode--keywords
@@ -376,10 +388,13 @@ Return nil if there is no name or if NODE is not a defun node."
               'symbols))
 
 (defun neocaml-mode-forward-sexp (arg)
-  "Implement `forward-sexp-function'.ARG is passed to `treesit-end-of-thing'."
+  "Implement `forward-sexp-function'.
+The prefix ARG controls whether to go to the beginning or the end of an expression."
   (if (< arg 0)
       (treesit-beginning-of-thing neocaml-mode--block-regex (- arg))
     (treesit-end-of-thing neocaml-mode--block-regex arg)))
+
+;;;; Utility commands
 
 (defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
   "The URL to report a `neocaml' issue.")
@@ -397,6 +412,9 @@ Return nil if there is no name or if NODE is not a defun node."
   (interactive)
   (browse-url neocaml-ocaml-docs-base-url))
 
+
+;;;; Major mode definitions
+
 (defvar neocaml-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map prog-mode-map)
@@ -410,6 +428,7 @@ Return nil if there is no name or if NODE is not a defun node."
     map))
 
 (defun neocaml--setup-mode (language)
+  "Configure major mode for LANGUAGE."
   (neocaml--ensure-grammars)
 
   (when (treesit-ready-p language)
