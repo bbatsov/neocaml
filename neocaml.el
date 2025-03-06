@@ -68,6 +68,30 @@ See `ff-other-file-alist' and `ff-find-other-file'."
   :type '(repeat (list regexp (choice (repeat string) function)))
   :package-version '(neocaml . "0.0.1"))
 
+(defcustom neocaml-use-prettify-symbols nil
+  "If non-nil, the the major modes will use prettify-symbols-mode.
+
+See also `neocaml-prettify-symbols-alist'."
+  :type 'boolean
+  :group 'neocaml)
+
+(defcustom neocaml-prettify-symbols-alist
+  '(("->" . ?→)
+    ("=>" . ?⇒)
+    ("<-" . ?←)
+    ("<=" . ?≤)
+    (">=" . ?≥)
+    ("<>" . ?≠)
+    ("==" . ?≡)
+    ("!=" . ?≢)
+    ("||" . ?∨)
+    ("&&" . ?∧)
+    ("fun" . ?λ))
+  "Prettify symbols alist used by neocaml modes."
+  :type '(alist :key-type string :value-type character)
+  :group 'neocaml
+  :package-version '(neocaml . "0.0.1"))
+
 (defvar neocaml--debug 'font-lock
   "Enables debugging messages, shows current node in mode-line.
 Only intended for use at development time.")
@@ -584,6 +608,13 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
 
     ;; ff-find-other-file setup
     (setq-local ff-other-file-alist neocaml-other-file-alist)
+
+    ;; TODO: We can also always set the list, so the users can just
+    ;; toggle the mode on/off
+    ;; Setup prettify-symbols if enabled
+    (when neocaml-use-prettify-symbols
+      (setq-local prettify-symbols-alist neocaml-prettify-symbols-alist)
+      (prettify-symbols-mode 1))
 
     (treesit-major-mode-setup)))
 

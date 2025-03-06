@@ -76,6 +76,13 @@ modes. The default font-locking level is Emacs is 3, and you can change like thi
 
 See the documention for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
 
+You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by enabling:
+
+```emacs-lisp
+;; this font-lock everything neocaml supports
+(setq neocaml-use-prettify-symbols t)
+```
+
 ## Progress
 
 ### Things that work
@@ -118,9 +125,9 @@ As [combobulate](https://github.com/mickeynp/combobulate) doesn't support OCaml 
 
 ### Font-locking
 
-   You can control the amount of fontification applied by Font Lock mode
-of major modes based on tree-sitter by customizing the variable
-‘treesit-font-lock-level’.  Its value is a number between 1 and 4:
+   You can control the amount of fontification applied by Font Lock mode of
+major modes based on tree-sitter by customizing the variable
+`treesit-font-lock-level`.  Its value is a number between 1 and 4:
 
 - Level 1: This level usually fontifies only comments and function names in
      function definitions.
