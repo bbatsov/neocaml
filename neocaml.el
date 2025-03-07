@@ -345,14 +345,6 @@ Infix operators are parsed and fontified separately.")
      ;; Handle parameters
      ((parent-is "parameter") parent-bol neocaml-indent-offset)
 
-     ;; Handle errors - generic approach
-     ((parent-is "ERROR") parent-bol neocaml-indent-offset)
-
-     ;; Handle branches and closing delimiters
-     ((node-is "}") parent-bol 0)
-     ((node-is "]") parent-bol 0)
-     ((node-is ")") parent-bol 0)
-
      ;; Handle specific nodes within a match expression
      ;; Using the 'match parent to find the match case within a match expression
      ((match "match_expression" "match_case") parent-bol neocaml-indent-offset)
