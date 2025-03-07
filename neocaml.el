@@ -69,7 +69,7 @@ See `ff-other-file-alist' and `ff-find-other-file'."
   :package-version '(neocaml . "0.0.1"))
 
 (defcustom neocaml-use-prettify-symbols nil
-  "If non-nil, the the major modes will use prettify-symbols-mode.
+  "If non-nil, the the major modes will use `prettify-symbols-mode'.
 
 See also `neocaml-prettify-symbols-alist'."
   :type 'boolean
