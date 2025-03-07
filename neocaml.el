@@ -359,9 +359,6 @@ Infix operators are parsed and fontified separately.")
      ((node-is "]") parent-bol 0)
      ((node-is ")") parent-bol 0)
 
-     ;; Pattern matching branches
-     ((node-is "|") parent-bol 0)
-
      ;; End markers
      ((node-is ";;") parent-bol 0)
      ((node-is "done") parent-bol 0)
