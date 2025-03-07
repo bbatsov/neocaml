@@ -64,6 +64,58 @@ The `neocaml` package bundled two major modes - one for OCaml code
 and one for OCaml interfaces (`.mli`). Both modes will be auto-enabled
 when you open the respective type of files.
 
+You can use `C-c C-a` to toggle between implementation and interface files.
+
+## Toplevel (REPL) Integration
+
+`neocaml` provides integration with the OCaml toplevel (REPL). This allows you to evaluate OCaml code directly from your source buffer and see the results.
+
+You can also start a OCaml REPL (toplevel) and interact with it using
+`neocaml-repl-minor-mode`. You can enable the mode like this:
+
+``` emacs-lisp
+(add-hook 'neocaml-mode-hook 'neocaml-repl-minor-mode)
+```
+
+The following commands are available for interacting with the OCaml toplevel:
+
+| Keybinding | Command | Description |
+|------------|---------|-------------|
+| `C-c C-z` | `neocaml-repl-switch-to-repl` | Start OCaml REPL or switch to it if already running |
+| `C-c C-c` | `neocaml-repl-send-definition` | Send the current definition to the REPL |
+| `C-c C-r` | `neocaml-repl-send-region` | Send the selected region to the REPL |
+| `C-c C-b` | `neocaml-repl-send-buffer` | Send the entire buffer to the REPL |
+| `C-c C-p` | `neocaml-repl-send-phrase` | Send the current phrase (code up to next `;;`) to the REPL |
+| `C-c C-i` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
+| `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
+
+## Configuration
+
+You can customize the OCaml REPL integration with the following variables:
+
+```emacs-lisp
+;; Change the OCaml toplevel program
+(setq neocaml-repl-program-name "utop")  ; Use utop instead of ocaml
+
+;; Add command-line arguments
+(setq neocaml-repl-program-args '("-short-paths" "-color=never"))
+
+;; Change the REPL buffer name
+(setq neocaml-repl-buffer-name "*OCaml-REPL*")
+
+;; Disable pretty symbols in the REPL buffer
+(setq neocaml-repl-use-prettify-symbols nil)
+```
+
+### Using utop instead of the default OCaml toplevel
+
+[utop](https://github.com/ocaml-community/utop) is an improved toplevel for OCaml with many features like auto-completion, syntax highlighting, and a rich history. To use utop with neocaml-repl:
+
+```emacs-lisp
+(setq neocaml-repl-program-name "utop")
+(setq neocaml-repl-program-args '("-emacs"))
+```
+
 ## Configuration
 
 The modes provide 4 levels of font-locking, as is the standard for TreeSitter-powered
@@ -91,6 +143,7 @@ You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by ena
 - Font-locking
 - Basic indentation
 - Toggling between implementation and interface using `ff-find-other-file` (`C-c C-a` and `C-c 4 C-a`)
+- Basic integration with a top-level (`neocaml-repl`)
 
 ### Things that don't work
 
