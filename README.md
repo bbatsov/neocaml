@@ -66,6 +66,25 @@ when you open the respective type of files.
 
 You can use `C-c C-a` to toggle between implementation and interface files.
 
+## Configuration
+
+The modes provide 4 levels of font-locking, as is the standard for TreeSitter-powered
+modes. The default font-locking level is Emacs is 3, and you can change like this:
+
+```emacs-lisp
+;; this font-lock everything neocaml supports
+(setq treesit-font-lock-level 4)
+```
+
+See the documention for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
+
+You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by enabling:
+
+```emacs-lisp
+;; this font-lock everything neocaml supports
+(setq neocaml-use-prettify-symbols t)
+```
+
 ## Toplevel (REPL) Integration
 
 `neocaml` provides integration with the OCaml toplevel (REPL). This allows you to evaluate OCaml code directly from your source buffer and see the results.
@@ -89,7 +108,7 @@ The following commands are available for interacting with the OCaml toplevel:
 | `C-c C-i` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
 | `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
 
-## Configuration
+### Configuration
 
 You can customize the OCaml REPL integration with the following variables:
 
@@ -107,32 +126,13 @@ You can customize the OCaml REPL integration with the following variables:
 (setq neocaml-repl-use-prettify-symbols nil)
 ```
 
-### Using utop instead of the default OCaml toplevel
+#### Using utop instead of the default OCaml toplevel
 
 [utop](https://github.com/ocaml-community/utop) is an improved toplevel for OCaml with many features like auto-completion, syntax highlighting, and a rich history. To use utop with neocaml-repl:
 
 ```emacs-lisp
 (setq neocaml-repl-program-name "utop")
 (setq neocaml-repl-program-args '("-emacs"))
-```
-
-## Configuration
-
-The modes provide 4 levels of font-locking, as is the standard for TreeSitter-powered
-modes. The default font-locking level is Emacs is 3, and you can change like this:
-
-```emacs-lisp
-;; this font-lock everything neocaml supports
-(setq treesit-font-lock-level 4)
-```
-
-See the documention for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
-
-You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by enabling:
-
-```emacs-lisp
-;; this font-lock everything neocaml supports
-(setq neocaml-use-prettify-symbols t)
 ```
 
 ## Progress
