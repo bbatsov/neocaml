@@ -384,7 +384,7 @@ Infix operators are parsed and fontified separately.")
 
 ;;;; Find the definition at point (some Emacs commands use this internally)
 
-(defvar neocaml-mode--defun-type-regexp
+(defvar neocaml--defun-type-regexp
   (regexp-opt '("type_binding"
                 "exception_definition"
                 "external"
@@ -402,7 +402,7 @@ Infix operators are parsed and fontified separately.")
                 "class_type_binding"))
   "Regex used to find defun-like nodes.")
 
-(defun neocaml-mode--defun-valid-p (node)
+(defun neocaml--defun-valid-p (node)
   "Predicate to check if NODE is really defun-like."
   (and (treesit-node-check node 'named)
        (not (treesit-node-top-level
@@ -411,7 +411,7 @@ Infix operators are parsed and fontified separately.")
                                 "package_expression")
                               'symbols)))))
 
-(defun neocaml-mode--defun-name (node)
+(defun neocaml--defun-name (node)
   "Return the defun name of NODE.
 Return nil if there is no name or if NODE is not a defun node."
   (pcase (treesit-node-type node)
@@ -446,7 +446,7 @@ Return nil if there is no name or if NODE is not a defun node."
 
 ;;;; imenu integration
 
-(defun neocaml-mode--imenu-name (node)
+(defun neocaml--imenu-name (node)
   "Return qualified defun name of NODE."
   (let ((name nil))
     (while node
@@ -460,27 +460,27 @@ Return nil if there is no name or if NODE is not a defun node."
     name))
 
 ;; TODO: could add constructors / fields
-(defvar neocaml-mode--imenu-settings
+(defvar neocaml--imenu-settings
   `(("Type" "\\`type_binding\\'"
-     neocaml-mode--defun-valid-p neocaml-mode--imenu-name)
+     neocaml--defun-valid-p neocaml--imenu-name)
     ("Spec" "\\`\\(value_specification\\|method_specification\\)\\'"
-     neocaml-mode--defun-valid-p neocaml-mode--imenu-name)
+     neocaml--defun-valid-p neocaml--imenu-name)
     ("Exception" "\\`exception_definition\\'"
-     neocaml-mode--defun-valid-p neocaml-mode--imenu-name)
+     neocaml--defun-valid-p neocaml--imenu-name)
     ("Value" "\\`\\(let_binding\\|external\\)\\'"
-     neocaml-mode--defun-valid-p neocaml-mode--imenu-name)
+     neocaml--defun-valid-p neocaml--imenu-name)
     ("Method" "\\`\\(method_definition\\)\\'"
-     neocaml-mode--defun-valid-p neocaml-mode--imenu-name)
+     neocaml--defun-valid-p neocaml--imenu-name)
     ;; grouping module/class types under Type causes some weird nesting
     ("Module" "\\`\\(module_binding\\|module_type_definition\\)\\'"
-     neocaml-mode--defun-valid-p nil)
+     neocaml--defun-valid-p nil)
     ("Class" "\\`\\(class_binding\\|class_type_binding\\)\\'"
-     neocaml-mode--defun-valid-p neocaml-mode--imenu-name))
+     neocaml--defun-valid-p neocaml--imenu-name))
   "Settings for `treesit-simple-imenu'.")
 
 ;;;; Structured navigation
 
-(defvar neocaml-mode--block-regex
+(defvar neocaml--block-regex
   (regexp-opt `(,@neocaml-mode--keywords
                 "do_clause"
                 ;; "if_expression"
@@ -518,12 +518,12 @@ Return nil if there is no name or if NODE is not a defun node."
                 "string" "quoted_string" "character")
               'symbols))
 
-(defun neocaml-mode-forward-sexp (arg)
+(defun neocaml-forward-sexp (arg)
   "Implement `forward-sexp-function'.
 The prefix ARG controls whether to go to the beginning or the end of an expression."
   (if (< arg 0)
-      (treesit-beginning-of-thing neocaml-mode--block-regex (- arg))
-    (treesit-end-of-thing neocaml-mode--block-regex arg)))
+      (treesit-beginning-of-thing neocaml--block-regex (- arg))
+    (treesit-end-of-thing neocaml--block-regex arg)))
 
 ;;;; Utility commands
 
@@ -604,7 +604,15 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
     (setq-local treesit-simple-indent-rules (neocaml--indent-rules language))
     (setq-local indent-line-function #'treesit-indent)
 
-    ;; TODO: add indentation, which-func, etc
+    ;; Navigation
+    (setq-local forward-sexp-function #'neocaml-forward-sexp)
+    (setq-local treesit-defun-type-regexp
+                (cons neocaml--defun-type-regexp
+                      #'neocaml--defun-valid-p))
+    (setq-local treesit-defun-name-function #'neocaml--defun-name)
+
+    ;; Imenu
+    (setq-local treesit-simple-imenu-settings neocaml--imenu-settings)
 
     ;; ff-find-other-file setup
     (setq-local ff-other-file-alist neocaml-other-file-alist)
