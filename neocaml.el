@@ -281,8 +281,7 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 
    :language language
    :feature 'operator
-   `(;; some literals TODO: any more?
-     (method_invocation "#" @font-lock-operator-face)
+   '((method_invocation "#" @font-lock-operator-face)
      (infix_expression operator: _  @font-lock-operator-face)
      (prefix_expression operator: _ @font-lock-operator-face))
 
