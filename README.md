@@ -144,6 +144,7 @@ You can customize the OCaml REPL integration with the following variables:
 - Basic indentation
 - Toggling between implementation and interface using `ff-find-other-file` (`C-c C-a` and `C-c 4 C-a`)
 - Basic integration with a top-level (`neocaml-repl`)
+- Imenu
 
 ### Things that don't work
 
@@ -153,7 +154,6 @@ Everything else. :-)
 
 - Smart expression navigation
 - Basic integration with dune
-- Basic integration with a top-level
 
 ## Development notes
 
