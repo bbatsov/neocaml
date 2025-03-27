@@ -111,7 +111,18 @@ You can also start a OCaml REPL (toplevel) and interact with it using
 `neocaml-repl-minor-mode`. You can enable the mode like this:
 
 ``` emacs-lisp
-(add-hook 'neocaml-mode-hook 'neocaml-repl-minor-mode)
+(add-hook 'neocaml-mode-hook #'neocaml-repl-minor-mode)
+```
+
+If you're using `use-package` you'd probably do something like:
+
+``` emacs-lisp
+(use-package neocaml
+  :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest)
+  :config
+  (add-hook 'neocaml-mode-hook #'neocaml-repl-minor-mode)
+  ;; other config options...
+  )
 ```
 
 The following commands are available for interacting with the OCaml toplevel:
