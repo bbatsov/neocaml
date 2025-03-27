@@ -367,6 +367,15 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
      ((node-is "comment") prev-line 0)
      ((node-is "string") prev-line 0))))
 
+(defun neocaml-cycle-indent-function ()
+  "Cycles between simple indent and TreeSitter indent."
+  (interactive)
+  (if (eq indent-line-function 'treesit-indent)
+      (progn (setq indent-line-function #'indent-relative)
+             (message "[neocaml] Switched indentation to indent-relative"))
+    (setq indent-line-function #'treesit-indent)
+    (message "[neocaml] Switched indentation to treesit-indent")))
+
 ;;;; Find the definition at point (some Emacs commands use this internally)
 
 (defvar neocaml--defun-type-regexp
@@ -542,6 +551,7 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
          ["Find Interface/Implementation" ff-find-other-file]
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
         "--"
+        ["Cycle indent function" neocaml-cycle-indent-function]
         ("Documentation"
          ["Browse OCaml Docs" neocaml-browse-ocaml-docs])
         "--"
