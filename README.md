@@ -179,11 +179,16 @@ The mode will install the `ocaml` and `ocaml-interface` grammars automatically w
 needed. (e.g. when you visit an `.ml` the `ocaml` grammar will be downloaded and
 installed)
 
-You can you `neocaml--debug` to get more debug information from TreeSitter:
+You can you configure `neocaml--debug` to get more debug information from TreeSitter:
 
-- When you set this to it will output indentation debug data and enable
+- When you set this to `t` it will output indentation debug data and enable
 `treesitter-inspect-mode` (this shows the current node in the modeline)
-- When you set this to `'font-lock` it will also output some font-lock debug info.
+- When you set this to `'font-lock` it will also output some font-lock debug info. (note this can be get very noisy)
+
+``` emacs-lisp
+;; enable all TreeSitter debug information
+(setq neocaml--debug 'font-lock)
+```
 
 As [combobulate](https://github.com/mickeynp/combobulate) doesn't support OCaml yet, it seems the best way to test TS queries is the following:
 

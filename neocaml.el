@@ -92,8 +92,11 @@ See also `neocaml-prettify-symbols-alist'."
   :group 'neocaml
   :package-version '(neocaml . "0.0.1"))
 
-(defvar neocaml--debug 'font-lock
+(defvar neocaml--debug nil
   "Enables debugging messages, shows current node in mode-line.
+Set it to t to show indentation debug info and to 'font-lock
+to show fontification info as well.
+
 Only intended for use at development time.")
 
 (defconst neocaml-version "0.0.1")
