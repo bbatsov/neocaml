@@ -1,6 +1,8 @@
 # neocaml
 
-`neocaml` is **n**ew **E**macs mode for programming in OCaml.
+`neocaml` is a **n**ew **E**macs package for programming in OCaml.  It features
+both a couple of major modes (for OCaml and OCaml Interface), using TreeSitter,
+and integration with an OCaml toplevel (a.k.a. REPL).
 
 It's also as cool as Neo from "The Matrix". ;-)
 
