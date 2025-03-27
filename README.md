@@ -85,6 +85,24 @@ You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by ena
 (setq neocaml-use-prettify-symbols t)
 ```
 
+When it comes to indentation you've got several options:
+
+- Using the built-in TreeSitter indentation
+  - It still needs a lot of work, so it might not always behave the way you'd like it to
+- Use the built-in Emacs function `indent-relative` that simply indents the next line relative to the previous line and allows you manually indent/outdent further. Very simple, but kind of bullet-proof.
+- Use the indent function of `ocp-indent.el` (this requires for you to have `ocp-indent.el` and `ocp-indent` installed
+- Use the indent function of Tuareg.
+
+You can change the indention function used by Neocaml like this:
+
+``` emacs-lisp
+(defun my-neocaml-mode-setup ()
+  "Set up my custom indentation for neocaml-mode."
+  (setq-local indent-line-function 'indent-relative))
+
+(add-hook 'neocaml-mode-hook 'my-neocaml-mode-setup)
+```
+
 ## Toplevel (REPL) Integration
 
 `neocaml` provides integration with the OCaml toplevel (REPL). This allows you to evaluate OCaml code directly from your source buffer and see the results.
