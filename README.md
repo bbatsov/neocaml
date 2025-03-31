@@ -221,6 +221,16 @@ As [combobulate](https://github.com/mickeynp/combobulate) doesn't support OCaml 
 > and it’s hard work. Trust me, I know. I recommend you learn how to use IELM if
 > you decide to go this route.
 
+### General Notes
+
+Emacs doesn't support directly using `.scm` (TreeSitter queries) files, so we currently need
+to manually code both the font-locking and indentation queries.
+
+Emacs 31 will introduce `define-treesit-generic-mode` that will make it possible to
+use `.scm` for font-locking.
+
+- <https://github.com/emacs-mirror/emacs/blob/master/lisp/treesit-x.el#L47>
+
 ### Font-locking
 
    You can control the amount of fontification applied by Font Lock mode of
