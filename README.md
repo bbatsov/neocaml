@@ -49,7 +49,7 @@ Right now it's manual only, unless you're on Emacs 29+ where you can do this:
 
     M-x package-vc-install <RET> https://github.com/bbatsov/neocaml <RET>
 
-In Emacs 30 you can you `use-package` to both install the package from GitHub
+In Emacs 30 you can use `use-package` to both install the package from GitHub
 and configure it:
 
 ``` emacs-lisp
