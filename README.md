@@ -101,7 +101,8 @@ You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by ena
 When it comes to indentation you've got several options:
 
 - Using the built-in TreeSitter indentation
-  - It still needs a lot of work, so it might not always behave the way you'd like it to
+  - Supports `let` bindings, `let...in` chains, `match`/`try` expressions, `if`/`then`/`else`, variant and record types, modules, signatures, loops, `fun`/`function` expressions, lists, arrays, sequences, and more
+  - It still needs some work, so it might not always behave the way you'd like it to
 - Use the built-in Emacs function `indent-relative` that simply indents the next line relative to the previous line and allows you manually indent/outdent further. Very simple, but kind of bullet-proof.
 - Use the indent function of `ocp-indent.el` (this requires for you to have `ocp-indent.el` and `ocp-indent` installed
 - Use the indent function of Tuareg.
@@ -183,7 +184,7 @@ You can customize the OCaml REPL integration with the following variables:
 
 - Auto-installation of `ocaml` and `ocaml-interface` grammars
 - Font-locking
-- Basic indentation
+- Indentation (most common OCaml constructs are handled)
 - Toggling between implementation and interface using `ff-find-other-file` (`C-c C-a` and `C-c 4 C-a`)
 - Basic integration with a top-level (`neocaml-repl`)
 - Imenu
