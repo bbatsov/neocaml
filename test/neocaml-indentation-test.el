@@ -18,101 +18,131 @@
    (split-string code "\n")
    "\n"))
 
-(defun neocaml-test--reindent (code)
-  "Strip indentation from CODE, re-indent with `neocaml-mode', return result.
-CODE should be a properly-indented OCaml string.  This function
-strips all leading whitespace, inserts the result into a temp
-buffer with `neocaml-mode', re-indents the whole buffer, and
-returns the buffer contents."
-  (with-temp-buffer
-    (insert (neocaml-test--strip-indentation code))
-    (neocaml-mode)
-    (indent-region (point-min) (point-max))
-    (buffer-string)))
+(defmacro when-indenting-it (description &rest code-strings)
+  "Create a Buttercup test that asserts each CODE-STRING indents correctly.
+DESCRIPTION is the test name.  Each element of CODE-STRINGS is a
+properly-indented OCaml code string.  The macro strips indentation,
+re-indents via `neocaml-mode', and asserts the result matches the original."
+  (declare (indent 1))
+  `(it ,description
+     ,@(mapcar
+        (lambda (code)
+          `(let ((expected ,code))
+             (expect
+              (with-temp-buffer
+                (insert (neocaml-test--strip-indentation expected))
+                (neocaml-mode)
+                (indent-region (point-min) (point-max))
+                (buffer-string))
+              :to-equal expected)))
+        code-strings)))
 
 (describe "neocaml indentation"
   (before-all
     (unless (treesit-language-available-p 'ocaml)
       (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
-  (it "indents a simple let binding"
-    (let ((code "let x =\n  42"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a simple let binding"
+    "let x =
+  42")
 
-  (it "indents a let with function body"
-    (let ((code "let f x y =\n  x + y"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a let with function body"
+    "let f x y =
+  x + y")
 
-  (it "indents let...in chain without accumulation"
-    (let ((code "let x = 1 in\nlet y = 2 in\nx + y"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents let...in chain without accumulation"
+    "let x = 1 in
+let y = 2 in
+x + y")
 
-  (it "indents nested let...in"
-    (let ((code "let r =\n  let x = 1 in\n  let y = 2 in\n  x + y"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents nested let...in"
+    "let r =
+  let x = 1 in
+  let y = 2 in
+  x + y")
 
-  (it "indents a match expression"
-    (let ((code "match x with\n| A -> 1\n| B -> 2"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a match expression"
+    "match x with
+| A -> 1
+| B -> 2")
 
-  (it "indents a match with multiline case body"
-    (let ((code "match x with\n| A ->\n  long_expr\n| B -> 2"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a match with multiline case body"
+    "match x with
+| A ->
+  long_expr
+| B -> 2")
 
-  (it "indents if/then/else"
-    (let ((code "if cond then\n  expr1\nelse\n  expr2"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents if/then/else"
+    "if cond then
+  expr1
+else
+  expr2")
 
-  (it "indents a type definition with variants"
-    (let ((code "type t =\n  | Foo\n  | Bar of int"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a type definition with variants"
+    "type t =
+  | Foo
+  | Bar of int")
 
-  (it "indents a record type"
-    (let ((code "type t = {\n  x: int;\n  y: float;\n}"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a record type"
+    "type t = {
+  x: int;
+  y: float;
+}")
 
-  (it "indents a record expression"
-    (let ((code "let r = {\n  x = 1;\n  y = 2;\n}"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a record expression"
+    "let r = {
+  x = 1;
+  y = 2;
+}")
 
-  (it "indents a module with struct"
-    (let ((code "module M = struct\n  let x = 1\nend"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a module with struct"
+    "module M = struct
+  let x = 1
+end")
 
-  (it "indents a signature"
-    (let ((code "module type S = sig\n  val x : int\nend"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a signature"
+    "module type S = sig
+  val x : int
+end")
 
-  (it "indents try/with"
-    (let ((code "try\n  expr\nwith\n| E -> handler"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents try/with"
+    "try
+  expr
+with
+| E -> handler")
 
-  (it "indents a for loop"
-    (let ((code "for i = 0 to 10 do\n  body\ndone"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a for loop"
+    "for i = 0 to 10 do
+  body
+done")
 
-  (it "indents a while loop"
-    (let ((code "while cond do\n  body\ndone"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a while loop"
+    "while cond do
+  body
+done")
 
-  (it "indents a fun expression"
-    (let ((code "let f = fun x ->\n  x + 1"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a fun expression"
+    "let f = fun x ->
+  x + 1")
 
-  (it "indents a list expression"
-    (let ((code "let xs = [\n  1;\n  2;\n]"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a list expression"
+    "let xs = [
+  1;
+  2;
+]")
 
-  (it "indents a sequence expression"
-    (let ((code "let () =\n  print \"a\";\n  print \"b\""))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a sequence expression"
+    "let () =
+  print \"a\";
+  print \"b\"")
 
-  (it "indents a nested match"
-    (let ((code "match x with\n| A ->\n  match y with\n  | B -> 1"))
-      (expect (neocaml-test--reindent code) :to-equal code)))
+  (when-indenting-it "indents a nested match"
+    "match x with
+| A ->
+  match y with
+  | B -> 1")
 
-  (it "indents an external declaration"
-    (let ((code "external foo : int -> int = \"c_foo\""))
-      (expect (neocaml-test--reindent code) :to-equal code))))
+  (when-indenting-it "indents an external declaration"
+    "external foo : int -> int = \"c_foo\""))
 
 ;;; neocaml-indentation-test.el ends here
