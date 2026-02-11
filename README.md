@@ -1,5 +1,7 @@
 # neocaml
 
+[![CI](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml/badge.svg)](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml)
+
 `neocaml` is a **n**ew **E**macs package for programming in OCaml.  It features
 both a couple of major modes (for OCaml and OCaml Interface), using TreeSitter,
 and integration with an OCaml toplevel (a.k.a. REPL).
