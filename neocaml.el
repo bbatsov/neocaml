@@ -316,59 +316,109 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 ;; Adapted from nvim indentation queries in nvim-treesitter
 
 ;; TODO: This will likely have to be split for OCaml and OCaml Interface
+
+(defun neocaml--grand-parent-bol (_node parent _bol &rest _)
+  "Return the first non-whitespace position on the grandparent's line.
+This is like `parent-bol' but goes one level up in the tree.
+Useful when a parent node (like `variant_declaration') starts on the
+same line as its first child, causing `parent-bol' to shift after
+that child is indented."
+  (when-let* ((gp (treesit-node-parent parent)))
+    (save-excursion
+      (goto-char (treesit-node-start gp))
+      (back-to-indentation)
+      (point))))
+
 (defun neocaml--indent-rules (language)
   "Create TreeSitter indentation rules for LANGUAGE."
   `((,language
-     ;; Indent after these expressions begin
-     ((parent-is "let_binding") parent-bol neocaml-indent-offset)
-     ((parent-is "type_binding") parent-bol neocaml-indent-offset)
-     ((parent-is "external") parent-bol neocaml-indent-offset)
-     ((parent-is "record_declaration") parent-bol neocaml-indent-offset)
-     ((parent-is "structure") parent-bol neocaml-indent-offset)
-     ((parent-is "signature") parent-bol neocaml-indent-offset)
-     ((parent-is "value_specification") parent-bol neocaml-indent-offset)
-     ((parent-is "do_clause") parent-bol neocaml-indent-offset)
-     ((parent-is "match_case") parent-bol neocaml-indent-offset)
-     ((parent-is "field_expression") parent-bol neocaml-indent-offset)
-     ((parent-is "application_expression") parent-bol neocaml-indent-offset)
-     ((parent-is "parenthesized_expression") parent-bol neocaml-indent-offset)
-     ((parent-is "record_expression") parent-bol neocaml-indent-offset)
-     ((parent-is "list_expression") parent-bol neocaml-indent-offset)
-     ((parent-is "try_expression") parent-bol neocaml-indent-offset)
+     ;; Top-level definitions: column 0
+     ((parent-is "compilation_unit") column-0 0)
 
-     ;; Special handling for if-then-else
-     ((parent-is "if_expression") parent-bol neocaml-indent-offset)
+     ;; Closing delimiters align with the opening construct
+     ((node-is ")") parent-bol 0)
+     ((node-is "]") parent-bol 0)
+     ((node-is "}") parent-bol 0)
+     ((node-is "done") parent-bol 0)
+     ((node-is "end") parent-bol 0)
+     ((node-is ";;") parent-bol 0)
+
+     ;; "with" keyword aligns with match/try
+     ((node-is "with") parent-bol 0)
+
+     ;; then/else clauses align with their enclosing if
+     ((node-is "then_clause") parent-bol 0)
+     ((node-is "else_clause") parent-bol 0)
+
+     ;; | pipe in match/try aligns with the keyword
+     ((match "^|$" "match_expression") parent-bol 0)
+     ((match "^|$" "try_expression") parent-bol 0)
+
+     ;; Match cases: match_case node aligns with match/try keyword
+     ((node-is "match_case") parent-bol 0)
+
+     ;; Bodies inside then/else are indented
      ((parent-is "then_clause") parent-bol neocaml-indent-offset)
      ((parent-is "else_clause") parent-bol neocaml-indent-offset)
 
-     ;; Handle parameters
-     ((parent-is "parameter") parent-bol neocaml-indent-offset)
+     ;; Match case bodies (after ->) are indented from |
+     ((parent-is "match_case") parent-bol neocaml-indent-offset)
 
-     ;; Handle specific nodes within a match expression
-     ;; Using the 'match parent to find the match case within a match expression
-     ((match "match_expression" "match_case") parent-bol neocaml-indent-offset)
+     ;; let...in: body after "in" aligns with "let" (no accumulation)
+     ((parent-is "let_expression") parent-bol 0)
 
-     ;; Handle with clauses - first find ancestor match/try expression, then the with token
+     ;; Let/type/external bindings: body after = is indented
+     ((parent-is "let_binding") parent-bol neocaml-indent-offset)
+     ((parent-is "type_binding") parent-bol neocaml-indent-offset)
+     ((parent-is "external") parent-bol neocaml-indent-offset)
+     ((parent-is "value_specification") parent-bol neocaml-indent-offset)
+
+     ;; Type definition components — use grand-parent-bol to avoid
+     ;; shifting when the declaration starts on the same line as
+     ;; its first child
+     ((parent-is "record_declaration") parent-bol neocaml-indent-offset)
+     ((parent-is "variant_declaration") neocaml--grand-parent-bol neocaml-indent-offset)
+
+     ;; Module structures and signatures
+     ((parent-is "structure") parent-bol neocaml-indent-offset)
+     ((parent-is "signature") parent-bol neocaml-indent-offset)
+
+     ;; Loop bodies
+     ((parent-is "do_clause") parent-bol neocaml-indent-offset)
+
+     ;; fun/function expressions
+     ((parent-is "fun_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "function_expression") parent-bol neocaml-indent-offset)
+
+     ;; try/with
      ((parent-is "try_expression") parent-bol neocaml-indent-offset)
-     ((match "try_expression" "with") parent-bol 0)
-     ((match "match_expression" "with") parent-bol 0)
 
-     ;; Handle branches and closing delimiters
-     ((node-is "}") parent-bol 0)
-     ((node-is "]") parent-bol 0)
-     ((node-is ")") parent-bol 0)
+     ;; Compound expressions
+     ((parent-is "parenthesized_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "record_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "list_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "array_expression") parent-bol neocaml-indent-offset)
 
-     ;; End markers
-     ((node-is ";;") parent-bol 0)
-     ((node-is "done") parent-bol 0)
-     ((node-is "end") parent-bol 0)
+     ;; Application and field access
+     ((parent-is "application_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "field_expression") parent-bol neocaml-indent-offset)
 
-     ;; Handle errors (incomplete expressions)
+     ;; Sequences (expr1; expr2) — keep aligned
+     ((parent-is "sequence_expression") parent-bol 0)
+
+     ;; Object-oriented features
+     ((parent-is "object_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "class_body_type") parent-bol neocaml-indent-offset)
+
+     ;; Error recovery
      ((parent-is "ERROR") parent-bol neocaml-indent-offset)
 
-     ;; Handle comments and strings (special case)
+     ;; Comments and strings preserve previous indentation
      ((node-is "comment") prev-line 0)
-     ((node-is "string") prev-line 0))))
+     ((node-is "string") prev-line 0)
+
+     ;; Catch-all
+     (no-node parent-bol 0))))
 
 (defun neocaml-cycle-indent-function ()
   "Cycles between simple indent and TreeSitter indent."
