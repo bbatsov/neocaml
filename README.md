@@ -253,6 +253,55 @@ major modes based on tree-sitter by customizing the variable
 Note that the 4 levels are defined by each major-mode and the above are just
 recommendations.
 
+### Indentation
+
+Tree-sitter indentation in Emacs is driven by `treesit-simple-indent-rules` — a
+list of `(MATCHER ANCHOR OFFSET)` triples tried in order. The first matching rule
+wins. MATCHER decides *if* a rule applies, ANCHOR provides a reference position,
+and OFFSET is added to that position's column to produce the final indentation.
+
+The rules in `neocaml--indent-rules` are roughly ordered from most specific to
+least specific:
+
+1. **Top-level** — `(parent-is "compilation_unit")` pins everything at column 0.
+   `compilation_unit` is tree-sitter's root node representing the entire source file.
+2. **Closing delimiters** — `)`, `]`, `}`, `done`, `end` align with the opening construct via `parent-bol 0`.
+3. **Keyword alignment** — `with`, `then_clause`, `else_clause`, match `|` align with their enclosing keyword.
+4. **Body indentation** — children of `let_binding`, `match_case`, `structure`, `do_clause`, etc. are indented by `neocaml-indent-offset`.
+5. **Error recovery** — `(parent-is "ERROR")` indents by offset so that typing inside incomplete code gets reasonable indentation.
+6. **Empty-line handling** — the `no-node` catch-all (see below).
+
+#### The `no-node` problem
+
+When the cursor is on an empty line, tree-sitter has no node at point, so most
+rules can't match. The `no-node` matcher handles this case. A naive
+`(no-node parent-bol 0)` always indents to the parent's column, which gives
+column 0 for top-level constructs — wrong when you've just typed `let x =` and
+pressed RET.
+
+We solve this with two rules:
+
+- `(neocaml--empty-line-top-level-p column-0 0)` — a custom matcher that checks
+  both that the node is nil AND the parent is `compilation_unit`. This keeps
+  empty lines at the top level at column 0.
+- `(no-node parent-bol neocaml-indent-offset)` — for empty lines inside any
+  construct, indent from the parent. This gives the right result after e.g.
+  `let x =`, inside `struct ... end`, etc.
+
+#### Tips for adding new indentation rules
+
+- Use `treesit-explore-mode` and `treesit-inspect-mode` to see node types at
+  point. Set `neocaml--debug` to `t` to enable verbose indentation logging.
+- Order matters: more specific rules must come before general ones.
+- The `parent-bol` anchor resolves to the first non-whitespace column on the
+  parent node's starting line. This is almost always what you want.
+- When a parent node starts on the same line as its first child (common with
+  variant declarations), `parent-bol` shifts unexpectedly after the child is
+  indented. Use `neocaml--grand-parent-bol` to go one level up instead.
+- Test new rules with `eldev test` — the indentation test suite uses
+  `when-indenting-it` specs that assert exact indentation for multi-line OCaml
+  snippets.
+
 ### Source of inspiration
 
 Based on ideas and code from:

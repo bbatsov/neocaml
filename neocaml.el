@@ -329,6 +329,14 @@ that child is indented."
       (back-to-indentation)
       (point))))
 
+(defun neocaml--empty-line-top-level-p (node parent _bol)
+  "Return non-nil when NODE is nil and PARENT is the compilation unit.
+This matches empty lines at the top level, where indentation should
+be column 0 rather than indented from the parent."
+  (and (null node)
+       (or (null parent)
+           (string= (treesit-node-type parent) "compilation_unit"))))
+
 (defun neocaml--indent-rules (language)
   "Create TreeSitter indentation rules for LANGUAGE."
   `((,language
@@ -417,8 +425,9 @@ that child is indented."
      ((node-is "comment") prev-line 0)
      ((node-is "string") prev-line 0)
 
-     ;; Catch-all
-     (no-node parent-bol 0))))
+     ;; Empty lines: at top level stay at column 0, otherwise indent
+     (neocaml--empty-line-top-level-p column-0 0)
+     (no-node parent-bol neocaml-indent-offset))))
 
 (defun neocaml-cycle-indent-function ()
   "Cycles between simple indent and TreeSitter indent."
