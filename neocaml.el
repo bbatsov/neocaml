@@ -612,7 +612,7 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
         ["neocaml version" neocaml-version]))
     map))
 
-(defvar neocamli-mode-map
+(defvar neocaml-interface-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map neocaml-mode-map)))
 
@@ -683,7 +683,7 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
   (neocaml--setup-mode 'ocaml))
 
 ;;;###autoload
-(define-derived-mode neocamli-mode prog-mode "OCaml[Interface]"
+(define-derived-mode neocaml-interface-mode prog-mode "OCaml[Interface]"
   "Major mode for editing OCaml interface (mli) code.
 
 \\{neocaml-mode-map}"
@@ -693,7 +693,7 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
 ;;;###autoload
 (progn
   (add-to-list 'auto-mode-alist '("\\.ml\\'" . neocaml-mode))
-  (add-to-list 'auto-mode-alist '("\\.mli\\'" . neocamli-mode)))
+  (add-to-list 'auto-mode-alist '("\\.mli\\'" . neocaml-interface-mode)))
 
 (provide 'neocaml)
 
