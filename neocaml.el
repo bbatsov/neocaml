@@ -2,7 +2,7 @@
 
 ;; Copyright © 2025-2026 Bozhidar Batsov
 ;;
-;; Authors: Bozhidar Batsov <bozhidar@batsov.dev>
+;; Author: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/bbatsov/neocaml
 ;; Keywords: languages ocaml ml
