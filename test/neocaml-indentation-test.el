@@ -37,6 +37,50 @@ re-indents via `neocaml-mode', and asserts the result matches the original."
               :to-equal expected)))
         code-strings)))
 
+(defmacro when-indenting-with-point-it (description before after)
+  "Create a Buttercup test asserting single-line indentation with cursor tracking.
+DESCRIPTION is the test name.  BEFORE is the buffer content before
+indentation with `|' marking the cursor position.  AFTER is the
+expected buffer content after `indent-according-to-mode' with `|'
+marking the expected cursor position.
+
+Inspired by clojure-ts-mode's test macro of the same name."
+  (declare (indent 1))
+  `(it ,description
+     (let* ((after-str ,after)
+            (expected-cursor-pos (1+ (seq-position after-str ?|)))
+            (expected-state (concat (substring after-str 0 (1- expected-cursor-pos))
+                                    (substring after-str expected-cursor-pos))))
+       (with-temp-buffer
+         (insert ,before)
+         (neocaml-mode)
+         (goto-char (point-min))
+         (search-forward "|")
+         (delete-char -1)
+         (font-lock-ensure)
+         (indent-according-to-mode)
+         (expect (buffer-string) :to-equal expected-state)
+         (expect (point) :to-equal expected-cursor-pos)))))
+
+(defmacro when-newline-indenting-it (description &rest tests)
+  "Create a Buttercup test asserting empty-line indentation.
+DESCRIPTION is the test name.  Each element of TESTS is
+  (CODE EXPECTED-COLUMN)
+where CODE is an OCaml source string and EXPECTED-COLUMN is the
+column that `newline-and-indent' should produce after CODE."
+  (declare (indent 1))
+  `(it ,description
+     (dolist (test (quote ,tests))
+       (let ((code (nth 0 test))
+             (expected-col (nth 1 test)))
+         (with-temp-buffer
+           (insert code)
+           (let ((treesit-font-lock-level 4))
+             (neocaml-mode))
+           (goto-char (point-max))
+           (newline-and-indent)
+           (expect (current-column) :to-equal expected-col))))))
+
 (describe "neocaml indentation"
   (before-all
     (unless (treesit-language-available-p 'ocaml)
@@ -143,6 +187,92 @@ done")
   | B -> 1")
 
   (when-indenting-it "indents an external declaration"
-    "external foo : int -> int = \"c_foo\""))
+    "external foo : int -> int = \"c_foo\"")
+
+  ;; ---- Empty-line indentation (no-node) -----------------------------------
+
+  (describe "empty-line indentation"
+    (when-newline-indenting-it "indents after = in let binding"
+      ("let x =" 2)
+      ("let f x =" 2))
+
+    (when-newline-indenting-it "indents after = in type binding"
+      ("type t =" 2))
+
+    (when-newline-indenting-it "indents after -> in fun expression"
+      ("let f = fun x ->" 2))
+
+    (when-newline-indenting-it "indents after then/else"
+      ("let _ = if true then" 2)
+      ("if cond then\n  expr1\nelse" 2))
+
+    (when-newline-indenting-it "indents after match/try with"
+      ("let _ = match x with" 2)
+      ("try\n  expr\nwith" 2))
+
+    (when-newline-indenting-it "indents after do in loops"
+      ("for i = 0 to 10 do" 2)
+      ("while cond do" 2))
+
+    (when-newline-indenting-it "indents after struct/sig/begin/object"
+      ("module M = struct" 2)
+      ("module type S = sig" 2)
+      ("let _ = begin" 2)
+      ("let _ = object" 2))
+
+    (when-newline-indenting-it "indents after try/fun/function"
+      ("try" 2)
+      ("let _ = function" 2))
+
+    (when-newline-indenting-it "stays at column 0 after complete top-level expressions"
+      ("let x = 42" 0)
+      ("let f x = x + 1" 0)
+      ("type t = int" 0)
+      ("module M = struct\n  let x = 1\nend" 0))
+
+    (when-newline-indenting-it "preserves indentation level inside nested constructs"
+      ("module M = struct\n  let x =" 4)
+      ("module M = struct\n  let x = 42" 2)
+      ("module type S = sig\n  val x : int" 2))
+
+    (when-newline-indenting-it "does not indent after in"
+      ("let x = 1 in" 0)))
+
+  ;; ---- Single-line TAB indentation with cursor tracking -------------------
+  ;; Inspired by clojure-ts-mode's when-indenting-with-point-it.
+  ;; Uses | to mark cursor position in before/after strings.
+
+  (describe "single-line TAB indentation"
+    (when-indenting-with-point-it "corrects misindented let body"
+      "let x =\n|42"
+      "let x =\n  |42")
+
+    (when-indenting-with-point-it "corrects over-indented let body"
+      "let x =\n      |42"
+      "let x =\n  |42")
+
+    (when-indenting-with-point-it "corrects misindented end keyword"
+      "module M = struct\n  let x = 1\n  |end"
+      "module M = struct\n  let x = 1\n|end")
+
+    (when-indenting-with-point-it "corrects misindented done keyword"
+      "for i = 0 to 10 do\n  body\n  |done"
+      "for i = 0 to 10 do\n  body\n|done")
+
+    (when-indenting-with-point-it "indents then clause body"
+      "if cond then\n|expr"
+      "if cond then\n  |expr")
+
+    (when-indenting-with-point-it "corrects over-indented else clause body"
+      "if cond then\n  expr1\nelse\n      |expr2"
+      "if cond then\n  expr1\nelse\n  |expr2")
+
+    (when-indenting-with-point-it "indents struct body"
+      "module M = struct\n|let x = 1"
+      "module M = struct\n  |let x = 1")
+
+    (when-indenting-with-point-it "keeps top-level at column 0"
+      "let x = 42\n  |let y = 1"
+      "let x = 42\n|let y = 1")))
 
 ;;; neocaml-indentation-test.el ends here

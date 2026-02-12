@@ -331,7 +331,7 @@ that child is indented."
 
 (defvar neocaml--indent-body-tokens
   '("=" "->" "then" "else" "do" "struct" "sig"
-    "begin" "object" "in" "with" "fun" "function" "try")
+    "begin" "object" "with" "fun" "function" "try")
   "Tokens that expect a body on the next line.
 Used by `neocaml--empty-line-offset' to decide whether an empty line
 should be indented relative to the previous line.")
