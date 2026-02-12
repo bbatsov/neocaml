@@ -260,33 +260,48 @@ list of `(MATCHER ANCHOR OFFSET)` triples tried in order. The first matching rul
 wins. MATCHER decides *if* a rule applies, ANCHOR provides a reference position,
 and OFFSET is added to that position's column to produce the final indentation.
 
-The rules in `neocaml--indent-rules` are roughly ordered from most specific to
-least specific:
+The rules in `neocaml--indent-rules` are roughly ordered as follows:
 
-1. **Top-level** — `(parent-is "compilation_unit")` pins everything at column 0.
+1. **Empty-line handling** — `(no-node ...)` must come first (see below).
+2. **Top-level** — `(parent-is "compilation_unit")` pins everything at column 0.
    `compilation_unit` is tree-sitter's root node representing the entire source file.
-2. **Closing delimiters** — `)`, `]`, `}`, `done`, `end` align with the opening construct via `parent-bol 0`.
-3. **Keyword alignment** — `with`, `then_clause`, `else_clause`, match `|` align with their enclosing keyword.
-4. **Body indentation** — children of `let_binding`, `match_case`, `structure`, `do_clause`, etc. are indented by `neocaml-indent-offset`.
-5. **Error recovery** — `(parent-is "ERROR")` indents by offset so that typing inside incomplete code gets reasonable indentation.
-6. **Empty-line handling** — the `no-node` catch-all (see below).
+3. **Closing delimiters** — `)`, `]`, `}`, `done`, `end` align with the opening construct via `parent-bol 0`.
+4. **Keyword alignment** — `with`, `then_clause`, `else_clause`, match `|` align with their enclosing keyword.
+5. **Body indentation** — children of `let_binding`, `match_case`, `structure`, `do_clause`, etc. are indented by `neocaml-indent-offset`.
+6. **Error recovery** — `(parent-is "ERROR")` indents by offset so that typing inside incomplete code gets reasonable indentation.
 
 #### The `no-node` problem
 
-When the cursor is on an empty line, tree-sitter has no node at point, so most
-rules can't match. The `no-node` matcher handles this case. A naive
-`(no-node parent-bol 0)` always indents to the parent's column, which gives
-column 0 for top-level constructs — wrong when you've just typed `let x =` and
-pressed RET.
+When the cursor is on an empty line, tree-sitter has no node at point.  In
+Emacs 30 the indentation engine (`treesit--indent-1`) sets `node=nil` and
+resolves `parent` via `treesit-node-on`, which returns `compilation_unit` — the
+only node spanning the empty position.  This means the
+`(parent-is "compilation_unit")` rule would fire first, always giving column 0
+— even inside incomplete constructs like `let x =`.
 
-We solve this with two rules:
+We solve this with a single `no-node` rule placed **before** all other rules:
 
-- `(neocaml--empty-line-top-level-p column-0 0)` — a custom matcher that checks
-  both that the node is nil AND the parent is `compilation_unit`. This keeps
-  empty lines at the top level at column 0.
-- `(no-node parent-bol neocaml-indent-offset)` — for empty lines inside any
-  construct, indent from the parent. This gives the right result after e.g.
-  `let x =`, inside `struct ... end`, etc.
+```elisp
+(no-node prev-line neocaml--empty-line-offset)
+```
+
+- **`prev-line`** anchors to the previous line's indentation (first
+  non-whitespace column).
+- **`neocaml--empty-line-offset`** is a custom offset function that inspects the
+  last token on the previous line.  If it's a "body-expecting" token (listed in
+  `neocaml--indent-body-tokens`: `=`, `->`, `then`, `else`, `do`, `struct`,
+  `sig`, `begin`, `object`, `in`, `with`, `fun`, `function`, `try`), the offset
+  is `neocaml-indent-offset`; otherwise it's 0.
+
+This gives the right result in all common cases:
+
+| Previous line ends with | Anchor (prev-line) | Offset | Result |
+|---|---|---|---|
+| `let x =` | col 0 | +2 | col 2 |
+| `let x = 42` | col 0 | 0 | col 0 |
+| `module M = struct` | col 0 | +2 | col 2 |
+| `  let x =` (inside struct) | col 2 | +2 | col 4 |
+| `  let x = 42` (inside struct) | col 2 | 0 | col 2 |
 
 #### Tips for adding new indentation rules
 

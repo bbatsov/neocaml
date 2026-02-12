@@ -329,17 +329,41 @@ that child is indented."
       (back-to-indentation)
       (point))))
 
-(defun neocaml--empty-line-top-level-p (node parent _bol)
-  "Return non-nil when NODE is nil and PARENT is the compilation unit.
-This matches empty lines at the top level, where indentation should
-be column 0 rather than indented from the parent."
-  (and (null node)
-       (or (null parent)
-           (string= (treesit-node-type parent) "compilation_unit"))))
+(defvar neocaml--indent-body-tokens
+  '("=" "->" "then" "else" "do" "struct" "sig"
+    "begin" "object" "in" "with" "fun" "function" "try")
+  "Tokens that expect a body on the next line.
+Used by `neocaml--empty-line-offset' to decide whether an empty line
+should be indented relative to the previous line.")
+
+(defun neocaml--empty-line-offset (_node _parent bol)
+  "Compute extra indentation offset for an empty line.
+If the last token on the previous line expects a body (e.g., `=',
+`->', `then'), return `neocaml-indent-offset'.  Otherwise return 0,
+which preserves the previous line's indentation level."
+  (save-excursion
+    (goto-char bol)
+    (if (and (zerop (forward-line -1))
+             (progn
+               (end-of-line)
+               (skip-chars-backward " \t")
+               (> (point) (line-beginning-position)))
+             (let ((node (treesit-node-at (1- (point)))))
+               (and node
+                    (member (treesit-node-type node)
+                            neocaml--indent-body-tokens))))
+        neocaml-indent-offset
+      0)))
 
 (defun neocaml--indent-rules (language)
   "Create TreeSitter indentation rules for LANGUAGE."
   `((,language
+     ;; Empty lines: use previous line's indentation, adding offset
+     ;; when the previous line ends with a body-expecting token.
+     ;; Must come first because Emacs sets node=nil, parent=compilation_unit
+     ;; for empty lines, which would otherwise match the top-level rule.
+     (no-node prev-line neocaml--empty-line-offset)
+
      ;; Top-level definitions: column 0
      ((parent-is "compilation_unit") column-0 0)
 
@@ -423,11 +447,7 @@ be column 0 rather than indented from the parent."
 
      ;; Comments and strings preserve previous indentation
      ((node-is "comment") prev-line 0)
-     ((node-is "string") prev-line 0)
-
-     ;; Empty lines: at top level stay at column 0, otherwise indent
-     (neocaml--empty-line-top-level-p column-0 0)
-     (no-node parent-bol neocaml-indent-offset))))
+     ((node-is "string") prev-line 0))))
 
 (defun neocaml-cycle-indent-function ()
   "Cycles between simple indent and TreeSitter indent."
