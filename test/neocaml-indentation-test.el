@@ -1,6 +1,6 @@
 ;;; neocaml-indentation-test.el --- Indentation tests for neocaml -*- lexical-binding: t; -*-
 
-;; Copyright © 2025 Bozhidar Batsov
+;; Copyright © 2025-2026 Bozhidar Batsov
 
 ;;; Commentary:
 

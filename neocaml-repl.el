@@ -1,6 +1,6 @@
 ;;; neocaml-repl.el --- OCaml toplevel integration for neocaml -*- lexical-binding: t; -*-
 
-;; Copyright © 2025 Bozhidar Batsov
+;; Copyright © 2025-2026 Bozhidar Batsov
 ;;
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
