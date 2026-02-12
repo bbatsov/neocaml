@@ -105,7 +105,60 @@ triple asserts that positions START through END have FACE."
       ;; external foo : int -> int = "c_foo"
       ;; 123456789...
       ("external foo : int -> int = \"c_foo\""
-       (10 12 font-lock-variable-name-face))))
+       (10 12 font-lock-variable-name-face)))
+
+    (when-fontifying-it "fontifies type-annotated let binding"
+      ;; let x : int = 42
+      ;; 12345678901234567
+      ("let x : int = 42"
+       (5 5 font-lock-variable-name-face)))
+
+    (when-fontifying-it "fontifies method definition in object"
+      ;; object method foo = 42 end
+      ;; 123456789012345678901234567
+      ("object method foo = 42 end"
+       (15 17 font-lock-function-name-face)))
+
+    (when-fontifying-it "fontifies value_pattern in match"
+      ;; match x with\n| y -> y
+      ("match x with\n| y -> y"
+       (16 16 font-lock-variable-name-face)))
+
+    (when-fontifying-it "fontifies constructor_pattern binding"
+      ;; match x with\n| Some v -> v
+      ("match x with\n| Some v -> v"
+       (21 21 font-lock-variable-name-face)))
+
+    (when-fontifying-it "fontifies tuple_pattern binding"
+      ;; let (a, b) = (1, 2)
+      ;; 1234567890123456789
+      ("let (a, b) = (1, 2)"
+       (6 6 font-lock-variable-name-face)
+       (9 9 font-lock-variable-name-face)))
+
+    (when-fontifying-it "fontifies punned field pattern"
+      ;; let { x; y } = r
+      ;; 12345678901234567
+      ("let { x; y } = r"
+       (7 7 font-lock-variable-name-face)
+       (10 10 font-lock-variable-name-face)))
+
+    (when-fontifying-it "fontifies value_specification in sig"
+      ;; module type S = sig\n  val x : int\nend
+      ("module type S = sig\n  val x : int\nend"
+       (27 27 font-lock-variable-name-face)))
+
+    (when-fontifying-it "fontifies = in type binding as keyword"
+      ;; type t = int
+      ;; 123456789012
+      ("type t = int"
+       (8 8 font-lock-keyword-face)))
+
+    (when-fontifying-it "fontifies = in for expression as keyword"
+      ;; for i = 1 to 10 do () done
+      ;; 1234567890123456789012345678
+      ("for i = 1 to 10 do () done"
+       (7 7 font-lock-keyword-face))))
 
   ;; ---- Level 2 features ------------------------------------------------
 
@@ -139,7 +192,19 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies character literals"
       ("let c = 'a'"
-       (9 11 font-lock-string-face))))
+       (9 11 font-lock-string-face)))
+
+    (when-fontifying-it "fontifies quoted/raw strings"
+      ("{|raw string|}"
+       (1 14 font-lock-string-face)))
+
+    (when-fontifying-it "fontifies empty strings"
+      ("\"\""
+       (1 2 font-lock-string-face)))
+
+    (when-fontifying-it "fontifies strings with escape sequences"
+      ("\"line1\\nline2\""
+       (1 14 font-lock-string-face))))
 
   (describe "number feature"
     (when-fontifying-it "fontifies integers"
@@ -152,7 +217,19 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies hex literals"
       ("let x = 0xFF"
-       (9 12 font-lock-number-face))))
+       (9 12 font-lock-number-face)))
+
+    (when-fontifying-it "fontifies underscore-separated numbers"
+      ("let x = 1_000_000"
+       (9 17 font-lock-number-face)))
+
+    (when-fontifying-it "fontifies binary literals"
+      ("let x = 0b1010"
+       (9 14 font-lock-number-face)))
+
+    (when-fontifying-it "fontifies negative float exponents"
+      ("let x = 1.5e-3"
+       (9 14 font-lock-number-face))))
 
   ;; ---- Level 3 features ------------------------------------------------
 
@@ -161,7 +238,20 @@ triple asserts that positions START through END have FACE."
       ;; let[@inline] f x = x
       ;; 1234567890123456...
       ("let[@inline] f x = x"
-       (4 12 font-lock-preprocessor-face))))
+       (4 12 font-lock-preprocessor-face)))
+
+    (when-fontifying-it "fontifies item attributes (@@)"
+      ;; type t = int [@@deriving show]
+      ;; 123456789012345678901234567890
+      ("type t = int [@@deriving show]"
+       (14 29 font-lock-preprocessor-face)))
+
+    (when-fontifying-it "fontifies floating attributes (@@@)"
+      ;; [@@@warning "-32"]
+      ;; 123456789012345678
+      ("[@@@warning \"-32\"]"
+       (1 11 font-lock-preprocessor-face)
+       (18 18 font-lock-preprocessor-face))))
 
   (describe "builtin feature"
     (when-fontifying-it "fontifies builtin identifiers"
@@ -204,7 +294,37 @@ triple asserts that positions START through END have FACE."
       ;; 123456789012345
       ("module M = List"
        (8 8 font-lock-type-face)
-       (12 15 font-lock-type-face))))
+       (12 15 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies function type arrow"
+      ;; module type S = sig\n  val f : int -> int\nend
+      ("module type S = sig\n  val f : int -> int\nend"
+       (35 36 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies tuple type star"
+      ;; type t = int * string
+      ;; 123456789012345678901
+      ("type t = int * string"
+       (14 14 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies constructor declaration star"
+      ;; type t =\n  | A of int * string
+      ("type t =\n  | A of int * string"
+       (23 23 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies record declaration delimiters"
+      ;; type r = { x : int; y : string }
+      ;; 12345678901234567890123456789012
+      ("type r = { x : int; y : string }"
+       (10 10 font-lock-type-face)
+       (19 19 font-lock-type-face)
+       (32 32 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies module_type_name"
+      ;; module type S = sig end
+      ;; 12345678901234567890123
+      ("module type S = sig end"
+       (13 13 font-lock-type-face))))
 
   ;; ---- Level 4 features ------------------------------------------------
 
@@ -215,13 +335,45 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies prefix operators"
       ("let x = !r"
-       (9 9 font-lock-operator-face))))
+       (9 9 font-lock-operator-face)))
+
+    (when-fontifying-it "fontifies pipe operator"
+      ;; let x = 1 |> f
+      ;; 123456789012345
+      ("let x = 1 |> f"
+       (11 12 font-lock-operator-face)))
+
+    (when-fontifying-it "fontifies comparison operators"
+      ;; let b = x >= y
+      ;; 12345678901234
+      ("let b = x >= y"
+       (11 12 font-lock-operator-face)))
+
+    (when-fontifying-it "fontifies string concat operator"
+      ;; let s = "a" ^ "b"
+      ;; 12345678901234567
+      ("let s = \"a\" ^ \"b\""
+       (13 13 font-lock-operator-face))))
 
   (describe "bracket feature"
     (when-fontifying-it "fontifies parentheses"
       ("let x = (1 + 2)"
        (9 9 font-lock-bracket-face)
-       (15 15 font-lock-bracket-face))))
+       (15 15 font-lock-bracket-face)))
+
+    (when-fontifying-it "fontifies square brackets"
+      ;; [1; 2; 3]
+      ;; 123456789
+      ("[1; 2; 3]"
+       (1 1 font-lock-bracket-face)
+       (9 9 font-lock-bracket-face)))
+
+    (when-fontifying-it "fontifies curly braces"
+      ;; let r = { x = 1 }
+      ;; 12345678901234567
+      ("let r = { x = 1 }"
+       (9 9 font-lock-bracket-face)
+       (17 17 font-lock-bracket-face))))
 
   (describe "delimiter feature"
     (when-fontifying-it "fontifies semicolons"
@@ -230,14 +382,39 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies ;;"
       (";;"
-       (1 2 font-lock-delimiter-face))))
+       (1 2 font-lock-delimiter-face)))
+
+    (when-fontifying-it "fontifies commas in tuples"
+      ;; (1, 2, 3)
+      ;; 123456789
+      ("(1, 2, 3)"
+       (3 3 font-lock-delimiter-face)
+       (6 6 font-lock-delimiter-face)))
+
+    (when-fontifying-it "fontifies colon in type annotation"
+      ;; let (x : int) = 1
+      ;; 123456789012345678
+      ("let (x : int) = 1"
+       (8 8 font-lock-delimiter-face)))
+
+    (when-fontifying-it "fontifies dot in module path"
+      ;; List.length xs
+      ;; 12345678901234
+      ("List.length xs"
+       (5 5 font-lock-delimiter-face))))
 
   (describe "variable feature"
     (when-fontifying-it "fontifies variable uses"
       ;; In `x + y`, x and y are plain value_name uses
       ("let _ = x + y"
        (9 9 font-lock-variable-use-face)
-       (13 13 font-lock-variable-use-face))))
+       (13 13 font-lock-variable-use-face)))
+
+    (when-fontifying-it "fontifies field name use"
+      ;; r.name
+      ;; 123456
+      ("r.name"
+       (3 6 font-lock-variable-use-face))))
 
   (describe "function feature"
     (when-fontifying-it "fontifies function calls"
@@ -249,6 +426,19 @@ triple asserts that positions START through END have FACE."
       ;; 1234567890123
       ("List.map f xs"
        (1 4 font-lock-type-face)
-       (6 8 font-lock-function-call-face)))))
+       (6 8 font-lock-function-call-face)))
+
+    (when-fontifying-it "fontifies builtin used as function call"
+      ;; raise Not_found
+      ;; 123456789012345
+      ("raise Not_found"
+       (1 5 font-lock-function-call-face)))
+
+    (when-fontifying-it "fontifies nested function calls"
+      ;; f (g x)
+      ;; 1234567
+      ("f (g x)"
+       (1 1 font-lock-function-call-face)
+       (4 4 font-lock-function-call-face)))))
 
 ;;; neocaml-font-lock-test.el ends here
