@@ -305,9 +305,7 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
    :feature 'function
    :override t
    '((application_expression function: (value_path (value_name) @font-lock-function-call-face))
-     (application_expression function: (value_path (module_path (_) @font-lock-type-face) (value_name) @font-lock-function-call-face)))
-
-   ))
+     (application_expression function: (value_path (module_path (_) @font-lock-type-face) (value_name) @font-lock-function-call-face)))))
 
 
 ;;;; Indentation
@@ -318,11 +316,11 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 ;; TODO: This will likely have to be split for OCaml and OCaml Interface
 
 (defun neocaml--grand-parent-bol (_node parent _bol &rest _)
-  "Return the first non-whitespace position on the grandparent's line.
+  "Return the first non-whitespace position on PARENT's parent's line.
 This is like `parent-bol' but goes one level up in the tree.
-Useful when a parent node (like `variant_declaration') starts on the
-same line as its first child, causing `parent-bol' to shift after
-that child is indented."
+Useful when PARENT (like `variant_declaration') starts on the same
+line as its first child, causing `parent-bol' to shift after that
+child is indented."
   (when-let* ((gp (treesit-node-parent parent)))
     (save-excursion
       (goto-char (treesit-node-start gp))
@@ -337,7 +335,7 @@ Used by `neocaml--empty-line-offset' to decide whether an empty line
 should be indented relative to the previous line.")
 
 (defun neocaml--empty-line-offset (_node _parent bol)
-  "Compute extra indentation offset for an empty line.
+  "Compute extra indentation offset for an empty line at BOL.
 If the last token on the previous line expects a body (e.g., `=',
 `->', `then'), return `neocaml-indent-offset'.  Otherwise return 0,
 which preserves the previous line's indentation level."

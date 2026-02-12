@@ -7,7 +7,6 @@
 ;; URL: http://github.com/bbatsov/neocaml
 ;; Keywords: languages ocaml ml repl
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "29.1"))
 
 ;; This file is not part of GNU Emacs.
 
