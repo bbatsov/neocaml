@@ -69,7 +69,7 @@ See `ff-other-file-alist' and `ff-find-other-file'."
   :package-version '(neocaml . "0.0.1"))
 
 (defcustom neocaml-use-prettify-symbols nil
-  "If non-nil, the the major modes will use `prettify-symbols-mode'.
+  "If non-nil, the major modes will use `prettify-symbols-mode'.
 
 See also `neocaml-prettify-symbols-alist'."
   :type 'boolean
@@ -122,7 +122,9 @@ displaying it."
     (ocaml-interface "https://github.com/tree-sitter/tree-sitter-ocaml"
                      "v0.24.0"
                      "grammars/interface/src"))
-  "Intended to be used as the value for `treesit-language-source-alist'.")
+  "Tree-sitter grammar recipes for OCaml and OCaml Interface.
+Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
+Suitable for use as the value of `treesit-language-source-alist'.")
 
 (defun neocaml--ensure-grammars ()
   "Install required language grammars if not already available."
@@ -199,7 +201,8 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 ;; `let_binding') silently produce no matches in .mli files.  This
 ;; lets us use a single set of font-lock rules for both languages.
 (defun neocaml-mode--font-lock-settings (language)
-  "Tree-sitter font-lock settings for LANGUAGE."
+  "Return tree-sitter font-lock settings for LANGUAGE.
+The return value is suitable for `treesit-font-lock-settings'."
   (treesit-font-lock-rules
    :language language
    :feature 'comment
@@ -358,7 +361,8 @@ which preserves the previous line's indentation level."
       0)))
 
 (defun neocaml--indent-rules (language)
-  "Create TreeSitter indentation rules for LANGUAGE."
+  "Return tree-sitter indentation rules for LANGUAGE.
+The return value is suitable for `treesit-simple-indent-rules'."
   `((,language
      ;; Empty lines: use previous line's indentation, adding offset
      ;; when the previous line ends with a body-expecting token.
@@ -452,7 +456,7 @@ which preserves the previous line's indentation level."
      ((node-is "string") prev-line 0))))
 
 (defun neocaml-cycle-indent-function ()
-  "Cycles between simple indent and TreeSitter indent."
+  "Cycle between `treesit-indent' and `indent-relative' for indentation."
   (interactive)
   (if (eq indent-line-function 'treesit-indent)
       (progn (setq indent-line-function #'indent-relative)
@@ -478,10 +482,13 @@ which preserves the previous line's indentation level."
                 "module_type_definition"
                 "class_binding"
                 "class_type_binding"))
-  "Regex used to find defun-like nodes.")
+  "Regex matching tree-sitter node types treated as defun-like.
+Used as the value of `treesit-defun-type-regexp'.")
 
 (defun neocaml--defun-valid-p (node)
-  "Predicate to check if NODE is really defun-like."
+  "Return non-nil if NODE is a top-level definition.
+Filters out nodes nested inside `let_expression',
+`parenthesized_module_expression', or `package_expression'."
   (and (treesit-node-check node 'named)
        (not (treesit-node-top-level
              node (regexp-opt '("let_expression"
@@ -525,7 +532,8 @@ Return nil if there is no name or if NODE is not a defun node."
 ;;;; imenu integration
 
 (defun neocaml--imenu-name (node)
-  "Return qualified defun name of NODE."
+  "Return the fully-qualified name of NODE by walking up the tree.
+Joins ancestor defun names with `treesit-add-log-defun-delimiter'."
   (let ((name nil))
     (while node
       (when-let ((new-name (treesit-defun-name node)))
@@ -611,7 +619,9 @@ Return nil if there is no name or if NODE is not a defun node."
                 "signature"
                 "structure"
                 "string" "quoted_string" "character")
-              'symbols))
+              'symbols)
+  "Regex matching tree-sitter node types for sexp-based navigation.
+Used by `neocaml-forward-sexp' to identify balanced expressions.")
 
 (defun neocaml-forward-sexp (count)
   "Move forward across COUNT balanced OCaml expressions.
@@ -635,7 +645,7 @@ to be used as `forward-sexp-function'."
   "The base URL for official OCaml guides.")
 
 (defun neocaml-browse-ocaml-docs ()
-  "Report a bug in your default browser."
+  "Browse the official OCaml documentation in your default browser."
   (interactive)
   (browse-url neocaml-ocaml-docs-base-url))
 
@@ -666,7 +676,8 @@ to be used as `forward-sexp-function'."
     (set-keymap-parent map neocaml-mode-map)))
 
 (defun neocaml--setup-mode (language)
-  "Configure major mode for LANGUAGE."
+  "Set up tree-sitter font-lock, indentation, and navigation for LANGUAGE.
+Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
   (neocaml--ensure-grammars)
 
   (when (treesit-ready-p language)
