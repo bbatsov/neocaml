@@ -74,7 +74,9 @@
     ("\\(val\\) \\([^:]*\\)\\( *:\\)" (1 font-lock-keyword-face) (2 font-lock-variable-name-face))
     ("\\(type\\) \\([^ =]*\\)" (1 font-lock-keyword-face) (2 font-lock-type-face))
     ;; prompt
-    ("^# " . font-lock-comment-face)))
+    ("^# " . font-lock-comment-face))
+  "Font-lock keywords for the OCaml REPL buffer.
+Highlights prompts, errors, warnings, and toplevel response values.")
 
 (define-derived-mode neocaml-repl-mode comint-mode "OCaml-REPL"
   "Major mode for interacting with an OCaml toplevel.
@@ -101,7 +103,7 @@
     (prettify-symbols-mode 1)))
 
 (defun neocaml-repl--input-sender (proc input)
-  "Send INPUT to PROC with proper line ending."
+  "Send INPUT to PROC, appending `;;' terminator if missing."
   (let ((input-with-terminator (if (string-match-p ";;" (string-trim input))
                                    input
                                  (concat input "\n;;"))))
@@ -161,7 +163,8 @@ If a process is already running, switch to its buffer."
       (neocaml-repl-send-region start end))))
 
 (defun neocaml-repl--send-definition-fallback ()
-  "Fallback method to send the current definition without tree-sitter."
+  "Send the current definition to the REPL using `beginning-of-defun'.
+Used as a fallback when tree-sitter is not available."
   (save-excursion
     (end-of-defun)
     (let ((end (point)))
@@ -186,7 +189,7 @@ If a process is already running, switch to its buffer."
       (neocaml-repl-send-region start end))))
 
 (defun neocaml-repl--ensure-repl-running ()
-  "Ensure that OCaml REPL is running."
+  "Start an OCaml REPL if one is not already running."
   (unless (comint-check-proc neocaml-repl-buffer-name)
     (neocaml-repl-start)))
 
@@ -236,7 +239,7 @@ If a process is already running, switch to its buffer."
 (define-minor-mode neocaml-repl-minor-mode
   "Minor mode for interacting with the OCaml toplevel.
 
-\\{neocaml-repl-map}"
+\\{neocaml-repl-minor-mode-map}"
   :init-value nil
   :lighter " OCaml-REPL"
   :keymap neocaml-repl-minor-mode-map
