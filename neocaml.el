@@ -6,7 +6,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/bbatsov/neocaml
 ;; Keywords: languages ocaml ml
-;; Version: 0.0.1
+;; Version: 0.1.0
 ;; Package-Requires: ((emacs "29.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -52,13 +52,13 @@
   "Number of spaces for each indentation step in the major modes."
   :type 'natnum
   :safe 'natnump
-  :package-version '(neocaml . "0.0.1"))
+  :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-ensure-grammars t
   "When non-nil, ensure required tree-sitter grammars are installed."
   :safe #'booleanp
   :type 'boolean
-  :package-version '(neocaml . "0.0.1"))
+  :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-other-file-alist
   '(("\\.mli\\'" (".ml"))
@@ -66,14 +66,15 @@
   "Associative list of alternate extensions to find.
 See `ff-other-file-alist' and `ff-find-other-file'."
   :type '(repeat (list regexp (choice (repeat string) function)))
-  :package-version '(neocaml . "0.0.1"))
+  :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-use-prettify-symbols nil
   "If non-nil, the major modes will use `prettify-symbols-mode'.
 
 See also `neocaml-prettify-symbols-alist'."
   :type 'boolean
-  :group 'neocaml)
+  :group 'neocaml
+  :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-prettify-symbols-alist
   '(("->" . ?→)
@@ -90,7 +91,7 @@ See also `neocaml-prettify-symbols-alist'."
   "Prettify symbols alist used by neocaml modes."
   :type '(alist :key-type string :value-type character)
   :group 'neocaml
-  :package-version '(neocaml . "0.0.1"))
+  :package-version '(neocaml . "0.1.0"))
 
 (defvar neocaml--debug nil
   "Enable debugging messages and show the current node in the mode-line.
@@ -99,7 +100,7 @@ When set to `font-lock', show fontification info as well.
 
 Only intended for use at development time.")
 
-(defconst neocaml-version "0.0.1")
+(defconst neocaml-version "0.1.0")
 
 (defun neocaml-version ()
   "Display the current package version in the minibuffer.

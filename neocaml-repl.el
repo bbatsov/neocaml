@@ -41,22 +41,26 @@
 (defcustom neocaml-repl-program-name "ocaml"
   "Program name for invoking an OCaml toplevel."
   :type 'string
-  :group 'neocaml-repl)
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-repl-program-args '()
   "Command line arguments for `neocaml-repl-program-name'."
   :type '(repeat string)
-  :group 'neocaml-repl)
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-repl-buffer-name "*OCaml*"
   "Name of the OCaml toplevel buffer."
   :type 'string
-  :group 'neocaml-repl)
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-repl-use-prettify-symbols nil
   "If non-nil, the REPL buffer will use `prettify-symbols-mode'."
   :type 'boolean
-  :group 'neocaml-repl)
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.1.0"))
 
 (defvar neocaml-repl-mode-map
   (let ((map (make-sparse-keymap)))
