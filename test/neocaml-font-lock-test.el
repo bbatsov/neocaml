@@ -137,6 +137,18 @@ triple asserts that positions START through END have FACE."
       ("let f x = x + 1"
        (5 5 font-lock-function-name-face)))
 
+    (when-fontifying-it "fontifies let-bound functions with fun body"
+      ;; let f = fun x -> x
+      ;; 1234567890123456789
+      ("let f = fun x -> x"
+       (5 5 font-lock-function-name-face)))
+
+    (when-fontifying-it "fontifies let-bound functions with function body"
+      ;; let f = function\n| _ -> 0
+      ;; 12345
+      ("let f = function\n| _ -> 0"
+       (5 5 font-lock-function-name-face)))
+
     (when-fontifying-it "fontifies external declarations"
       ;; external foo : int -> int = "c_foo"
       ;; 123456789...

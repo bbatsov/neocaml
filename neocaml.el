@@ -212,9 +212,12 @@ The return value is suitable for `treesit-font-lock-settings'."
 
    :language language
    :feature 'definition
-   '(;; let-bound functions and variables, methods
-     (let_binding pattern: (value_name) @font-lock-variable-name-face (":" (_)) :? (":>" (_)) :? :anchor body: (_))
+   '(;; let-bound functions: with parameters, or with fun/function body
      (let_binding pattern: (value_name) @font-lock-function-name-face (parameter)+)
+     (let_binding pattern: (value_name) @font-lock-function-name-face body: (fun_expression))
+     (let_binding pattern: (value_name) @font-lock-function-name-face body: (function_expression))
+     ;; let-bound variables (must come after function patterns above)
+     (let_binding pattern: (value_name) @font-lock-variable-name-face (":" (_)) :? (":>" (_)) :? :anchor body: (_))
      (method_definition (method_name) @font-lock-function-name-face)
      (method_specification (method_name) @font-lock-function-name-face)
      ;; patterns containing bound variables

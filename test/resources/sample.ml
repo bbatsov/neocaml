@@ -71,6 +71,9 @@ let color_to_string = function
   | `Green -> "green"
   | `Blue -> "blue"
 
+(* Function defined with fun *)
+let double = fun x -> x * 2
+
 (* Constructor expressions *)
 let maybe_one = Some 1
 let nothing = None
