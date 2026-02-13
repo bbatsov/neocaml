@@ -317,7 +317,17 @@ The return value is suitable for `treesit-font-lock-settings'."
    :feature 'function
    :override t
    '((application_expression function: (value_path (value_name) @font-lock-function-call-face))
-     (application_expression function: (value_path (module_path (_) @font-lock-type-face) (value_name) @font-lock-function-call-face)))))
+     (application_expression function: (value_path (module_path (_) @font-lock-type-face) (value_name) @font-lock-function-call-face))
+     ;; x |> f — highlight f as function call
+     ((infix_expression
+       operator: (rel_operator) @_op
+       right: (value_path (value_name) @font-lock-function-call-face))
+      (:match "^|>$" @_op))
+     ;; f @@ x — highlight f as function call
+     ((infix_expression
+       left: (value_path (value_name) @font-lock-function-call-face)
+       operator: (concat_operator) @_op)
+      (:match "^@@$" @_op)))))
 
 
 ;;;; Indentation

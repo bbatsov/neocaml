@@ -513,7 +513,19 @@ triple asserts that positions START through END have FACE."
       ;; 1234567
       ("f (g x)"
        (1 1 font-lock-function-call-face)
-       (4 4 font-lock-function-call-face)))))
+       (4 4 font-lock-function-call-face)))
+
+    (when-fontifying-it "fontifies function in pipe operator"
+      ;; x |> f
+      ;; 1234567
+      ("x |> f"
+       (6 6 font-lock-function-call-face)))
+
+    (when-fontifying-it "fontifies function in apply operator"
+      ;; f @@ x
+      ;; 1234567
+      ("f @@ x"
+       (1 1 font-lock-function-call-face)))))
 
 (describe "neocaml-interface font-lock"
   (before-all

@@ -78,6 +78,10 @@ let double = fun x -> x * 2
 let maybe_one = Some 1
 let nothing = None
 
+(* Pipe and apply operators *)
+let result = [1; 2; 3] |> List.map double
+let applied = print_endline @@ "hello"
+
 (* Pattern matching with nested patterns *)
 let describe_pair = function
   | (0, 0) -> "origin"
