@@ -447,7 +447,19 @@ triple asserts that positions START through END have FACE."
       ;; let s = "a" ^ "b"
       ;; 12345678901234567
       ("let s = \"a\" ^ \"b\""
-       (13 13 font-lock-operator-face))))
+       (13 13 font-lock-operator-face)))
+
+    (when-fontifying-it "fontifies cons operator"
+      ;; let xs = 1 :: []
+      ;; 1234567890123456
+      ("let xs = 1 :: []"
+       (12 13 font-lock-operator-face)))
+
+    (when-fontifying-it "fontifies mutable assignment operator"
+      ;; r.x <- 42
+      ;; 1234567890
+      ("r.x <- 42"
+       (5 6 font-lock-operator-face))))
 
   (describe "bracket feature"
     (when-fontifying-it "fontifies parentheses"

@@ -305,7 +305,9 @@ The return value is suitable for `treesit-font-lock-settings'."
    :feature 'operator
    '((method_invocation "#" @font-lock-operator-face)
      (infix_expression operator: _  @font-lock-operator-face)
-     (prefix_expression operator: _ @font-lock-operator-face))
+     (prefix_expression operator: _ @font-lock-operator-face)
+     ;; Standalone operator tokens not inside infix/prefix expressions
+     ["::" "<-"] @font-lock-operator-face)
 
    :language language
    :feature 'bracket
