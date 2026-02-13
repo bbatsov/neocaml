@@ -271,9 +271,12 @@ The return value is suitable for `treesit-font-lock-settings'."
    `(;; some literals TODO: any more?
      [,@neocaml-mode--constants] @font-lock-constant-face)
 
+   ;; Variant constructors and polymorphic variant tags
    :language language
    :feature 'type
-   '([(type_constructor) (type_variable) (hash_type)
+   '((constructor_name) @font-lock-constant-face
+     (tag) @font-lock-constant-face
+     [(type_constructor) (type_variable) (hash_type)
       (class_name) (class_type_name)] @font-lock-type-face
       (function_type "->" @font-lock-type-face)
       (tuple_type "*" @font-lock-type-face)

@@ -37,6 +37,11 @@ module PrintableInt : PRINTABLE with type t = int
 
 val sum_to : int -> int
 
+(* Polymorphic variant type *)
+type color = [ `Red | `Green | `Blue ]
+
+val color_to_string : color -> string
+
 (* A module type with nested signatures *)
 module type COLLECTION = sig
   type 'a t

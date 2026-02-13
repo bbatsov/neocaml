@@ -65,6 +65,16 @@ let sum_to n =
   done;
   !total
 
+(* Polymorphic variants *)
+let color_to_string = function
+  | `Red -> "red"
+  | `Green -> "green"
+  | `Blue -> "blue"
+
+(* Constructor expressions *)
+let maybe_one = Some 1
+let nothing = None
+
 (* Pattern matching with nested patterns *)
 let describe_pair = function
   | (0, 0) -> "origin"

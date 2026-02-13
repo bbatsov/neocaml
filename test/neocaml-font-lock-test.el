@@ -360,7 +360,33 @@ triple asserts that positions START through END have FACE."
       ;; module type S = sig end
       ;; 12345678901234567890123
       ("module type S = sig end"
-       (13 13 font-lock-type-face))))
+       (13 13 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies constructor names in expressions"
+      ;; let x = Some 1
+      ;; 123456789012345
+      ("let x = Some 1"
+       (9 12 font-lock-constant-face)))
+
+    (when-fontifying-it "fontifies constructor names in patterns"
+      ;; match x with\n| Some v -> v\n| None -> 0
+      ;; S(16)o(17)m(18)e(19); N(30)o(31)n(32)e(33)
+      ("match x with\n| Some v -> v\n| None -> 0"
+       (16 19 font-lock-constant-face)
+       (30 33 font-lock-constant-face)))
+
+    (when-fontifying-it "fontifies constructor names in type declarations"
+      ;; type t =\n  | Foo\n  | Bar of int
+      ;; \n pos 14 = F, 16 = o; 22 = B, 24 = r
+      ("type t =\n  | Foo\n  | Bar of int"
+       (14 16 font-lock-constant-face)
+       (22 24 font-lock-constant-face)))
+
+    (when-fontifying-it "fontifies polymorphic variant tags"
+      ;; `Red
+      ;; 12345
+      ("let x = `Red"
+       (10 12 font-lock-constant-face))))
 
   ;; ---- Level 4 features ------------------------------------------------
 
@@ -569,7 +595,13 @@ triple asserts that positions START through END have FACE."
       ;; module type S = sig end
       ;; 12345678901234567890123
       ("module type S = sig end"
-       (13 13 font-lock-type-face))))
+       (13 13 font-lock-type-face)))
+
+    (when-fontifying-interface-it "fontifies constructor names in type declarations"
+      ;; type t =\n  | Foo\n  | Bar of int
+      ("type t =\n  | Foo\n  | Bar of int"
+       (14 16 font-lock-constant-face)
+       (22 24 font-lock-constant-face))))
 
   (describe "attribute feature"
     (when-fontifying-interface-it "fontifies item attributes"
