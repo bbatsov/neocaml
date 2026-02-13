@@ -234,6 +234,24 @@ use `.scm` for font-locking.
 
 - <https://github.com/emacs-mirror/emacs/blob/master/lisp/treesit-x.el#L47>
 
+### OCaml Interface (.mli) support
+
+The `ocaml-interface` tree-sitter grammar inherits **all** rules from the base
+`ocaml` grammar and only overrides `compilation_unit` (accepting `_signature_item`
+instead of `_structure_item`).  Both grammars expose the same set of named node
+types, which means:
+
+- Font-lock queries that reference `.ml`-only constructs (e.g. `application_expression`,
+  `let_binding`) simply produce no matches in `.mli` files — they are harmless no-ops.
+- Indentation rules work identically because the node types used for anchoring
+  (`structure`, `signature`, `value_specification`, `type_binding`, etc.) exist
+  in both grammars.
+
+This lets `neocaml` use a **single set of font-lock and indentation rules** for both
+`neocaml-mode` and `neocaml-interface-mode`, keeping the code simple and maintainable.
+The only place where the two modes diverge is imenu, which uses tailored categories
+for each grammar (e.g. "Val" and "External" for `.mli` vs "Value" for `.ml`).
+
 ### Font-locking
 
    You can control the amount of fontification applied by Font Lock mode of

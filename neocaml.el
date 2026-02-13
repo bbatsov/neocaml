@@ -193,9 +193,11 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
     "__FUNCTION__" "__LOC_OF__" "__LINE_OF__" "__POS_OF__")
   "OCaml builtin identifiers for tree-sitter font-locking.")
 
-;; TODO: Right now we apply the same fontification rules for
-;; both OCaml and OCaml Interface, but that's not correct,
-;; as the underlying grammars are different.
+;; The `ocaml-interface' grammar inherits all node types from the base
+;; `ocaml' grammar (overriding only `compilation_unit'), so queries
+;; referencing .ml-only constructs (e.g. `application_expression',
+;; `let_binding') silently produce no matches in .mli files.  This
+;; lets us use a single set of font-lock rules for both languages.
 (defun neocaml-mode--font-lock-settings (language)
   "Tree-sitter font-lock settings for LANGUAGE."
   (treesit-font-lock-rules
@@ -222,6 +224,7 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
      ;; signatures and misc
      (instance_variable_name) @font-lock-variable-name-face
      (value_specification (value_name) @font-lock-variable-name-face)
+     (value_specification ":" @font-lock-keyword-face)
      (external (value_name) @font-lock-variable-name-face)
      ;; assignment of bindings in various circumstances
      (type_binding ["="] @font-lock-keyword-face)
@@ -313,7 +316,8 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 ;; Tree-sitter indentation rules for OCaml
 ;; Adapted from nvim indentation queries in nvim-treesitter
 
-;; TODO: This will likely have to be split for OCaml and OCaml Interface
+;; The `ocaml-interface' grammar shares all node types with `ocaml',
+;; so a single set of indentation rules works for both languages.
 
 (defun neocaml--grand-parent-bol (_node parent _bol &rest _)
   "Return the first non-whitespace position on PARENT's parent's line.
@@ -550,7 +554,24 @@ Return nil if there is no name or if NODE is not a defun node."
      neocaml--defun-valid-p nil)
     ("Class" "\\`\\(class_binding\\|class_type_binding\\)\\'"
      neocaml--defun-valid-p neocaml--imenu-name))
-  "Settings for `treesit-simple-imenu'.")
+  "Settings for `treesit-simple-imenu' in `neocaml-mode'.")
+
+(defvar neocaml--interface-imenu-settings
+  `(("Type" "\\`type_binding\\'"
+     neocaml--defun-valid-p neocaml--imenu-name)
+    ("Val" "\\`value_specification\\'"
+     neocaml--defun-valid-p neocaml--imenu-name)
+    ("External" "\\`external\\'"
+     neocaml--defun-valid-p neocaml--imenu-name)
+    ("Exception" "\\`exception_definition\\'"
+     neocaml--defun-valid-p neocaml--imenu-name)
+    ("Method" "\\`method_specification\\'"
+     neocaml--defun-valid-p neocaml--imenu-name)
+    ("Module" "\\`\\(module_binding\\|module_type_definition\\)\\'"
+     neocaml--defun-valid-p nil)
+    ("Class" "\\`\\(class_binding\\|class_type_binding\\)\\'"
+     neocaml--defun-valid-p neocaml--imenu-name))
+  "Settings for `treesit-simple-imenu' in `neocaml-interface-mode'.")
 
 ;;;; Structured navigation
 
@@ -687,7 +708,10 @@ The prefix ARG controls whether to go to the beginning or the end of an expressi
     (setq-local treesit-defun-name-function #'neocaml--defun-name)
 
     ;; Imenu
-    (setq-local treesit-simple-imenu-settings neocaml--imenu-settings)
+    (setq-local treesit-simple-imenu-settings
+                (if (eq language 'ocaml-interface)
+                    neocaml--interface-imenu-settings
+                  neocaml--imenu-settings))
 
     ;; ff-find-other-file setup
     (setq-local ff-other-file-alist neocaml-other-file-alist)

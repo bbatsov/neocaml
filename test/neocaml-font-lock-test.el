@@ -66,6 +66,42 @@ triple asserts that positions START through END have FACE."
      (dolist (test (quote ,tests))
        (apply #'neocaml-test-expect-faces-at test))))
 
+(defmacro with-fontified-neocaml-interface-buffer (content &rest body)
+  "Set up a temporary buffer with CONTENT, apply neocaml-interface-mode font-lock, run BODY.
+All four font-lock levels are activated so every feature is testable."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (insert ,content)
+     (let ((treesit-font-lock-level 4))
+       (neocaml-interface-mode))
+     (font-lock-ensure)
+     (goto-char (point-min))
+     ,@body))
+
+(defun neocaml-test-expect-interface-faces-at (content &rest face-specs)
+  "Fontify CONTENT with `neocaml-interface-mode' and assert FACE-SPECS.
+Each element of FACE-SPECS is a list (START END EXPECTED-FACE)
+where START and END are buffer positions (1-indexed, inclusive)."
+  (with-fontified-neocaml-interface-buffer content
+    (dolist (spec face-specs)
+      (let* ((start (nth 0 spec))
+             (end (nth 1 spec))
+             (expected (nth 2 spec))
+             (actual (neocaml-test-face-at start end))
+             (snippet (buffer-substring-no-properties start (min (1+ end) (point-max)))))
+        (expect actual :to-equal expected)))))
+
+(defmacro when-fontifying-interface-it (description &rest tests)
+  "Create a Buttercup test asserting font-lock faces in OCaml interface code.
+DESCRIPTION is the test name.  Each element of TESTS is
+  (CODE (START END FACE) ...)
+where CODE is an OCaml interface source string and each (START END FACE)
+triple asserts that positions START through END have FACE."
+  (declare (indent 1))
+  `(it ,description
+     (dolist (test (quote ,tests))
+       (apply #'neocaml-test-expect-interface-faces-at test))))
+
 ;;;; Tests
 
 (describe "neocaml font-lock"
@@ -440,5 +476,113 @@ triple asserts that positions START through END have FACE."
       ("f (g x)"
        (1 1 font-lock-function-call-face)
        (4 4 font-lock-function-call-face)))))
+
+(describe "neocaml-interface font-lock"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml-interface)
+      (signal 'buttercup-pending "tree-sitter OCaml interface grammar not available")))
+
+  (describe "comment feature"
+    (when-fontifying-interface-it "fontifies regular comments"
+      ("(* a comment *)"
+       (1 15 font-lock-comment-face)))
+
+    (when-fontifying-interface-it "fontifies doc comments"
+      ("(** a doc comment *)"
+       (1 20 font-lock-doc-face))))
+
+  (describe "definition feature"
+    (when-fontifying-interface-it "fontifies value_name in val specification"
+      ;; val x : int
+      ;; 12345678901
+      ("val x : int"
+       (5 5 font-lock-variable-name-face)))
+
+    (when-fontifying-interface-it "fontifies : in val specification as keyword"
+      ;; val x : int
+      ;; 12345678901
+      ("val x : int"
+       (7 7 font-lock-keyword-face)))
+
+    (when-fontifying-interface-it "fontifies external value_name"
+      ;; external foo : int -> int = "c_foo"
+      ;; 123456789...
+      ("external foo : int -> int = \"c_foo\""
+       (10 12 font-lock-variable-name-face)))
+
+    (when-fontifying-interface-it "fontifies method_specification"
+      ;; class type c = object method m : int end
+      ;; 1234567890123456789012345678901234567890
+      ("class type c = object method m : int end"
+       (30 30 font-lock-function-name-face))))
+
+  (describe "keyword feature"
+    (when-fontifying-interface-it "fontifies val keyword"
+      ("val x : int"
+       (1 3 font-lock-keyword-face)))
+
+    (when-fontifying-interface-it "fontifies type keyword"
+      ("type t = int"
+       (1 4 font-lock-keyword-face)))
+
+    (when-fontifying-interface-it "fontifies module keyword"
+      ("module M : sig end"
+       (1 6 font-lock-keyword-face)))
+
+    (when-fontifying-interface-it "fontifies sig and end keywords"
+      ;; module type S = sig\n  val x : int\nend
+      ("module type S = sig\n  val x : int\nend"
+       (17 19 font-lock-keyword-face)
+       (35 37 font-lock-keyword-face)))
+
+    (when-fontifying-interface-it "fontifies external keyword"
+      ("external foo : int -> int = \"c_foo\""
+       (1 8 font-lock-keyword-face))))
+
+  (describe "type feature"
+    (when-fontifying-interface-it "fontifies type constructors"
+      ;; val x : int
+      ;; 12345678901
+      ("val x : int"
+       (9 11 font-lock-type-face)))
+
+    (when-fontifying-interface-it "fontifies type variables"
+      ;; type 'a t = 'a list
+      ;; 1234567890123456789
+      ("type 'a t = 'a list"
+       (6 7 font-lock-type-face)
+       (13 14 font-lock-type-face)))
+
+    (when-fontifying-interface-it "fontifies -> in function types"
+      ;; val f : int -> int
+      ;; 123456789012345678
+      ("val f : int -> int"
+       (13 14 font-lock-type-face)))
+
+    (when-fontifying-interface-it "fontifies module names"
+      ;; module M : sig end
+      ;; 123456789012345678
+      ("module M : sig end"
+       (8 8 font-lock-type-face)))
+
+    (when-fontifying-interface-it "fontifies module_type_name"
+      ;; module type S = sig end
+      ;; 12345678901234567890123
+      ("module type S = sig end"
+       (13 13 font-lock-type-face))))
+
+  (describe "attribute feature"
+    (when-fontifying-interface-it "fontifies item attributes"
+      ;; type t = int [@@deriving show]
+      ;; 123456789012345678901234567890
+      ("type t = int [@@deriving show]"
+       (14 28 font-lock-preprocessor-face))))
+
+  (describe "string feature"
+    (when-fontifying-interface-it "fontifies strings in external declarations"
+      ;; external foo : int -> int = "c_foo"
+      ;; positions:                  29-35
+      ("external foo : int -> int = \"c_foo\""
+       (29 35 font-lock-string-face)))))
 
 ;;; neocaml-font-lock-test.el ends here
