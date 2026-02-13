@@ -78,6 +78,9 @@ let double = fun x -> x * 2
 let maybe_one = Some 1
 let nothing = None
 
+(* PPX extension *)
+let () = [%test "basic test"]
+
 (* Pipe and apply operators *)
 let result = [1; 2; 3] |> List.map double
 let applied = print_endline @@ "hello"

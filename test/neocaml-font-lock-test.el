@@ -299,7 +299,21 @@ triple asserts that positions START through END have FACE."
       ;; 123456789012345678
       ("[@@@warning \"-32\"]"
        (1 11 font-lock-preprocessor-face)
-       (18 18 font-lock-preprocessor-face))))
+       (18 18 font-lock-preprocessor-face)))
+
+    (when-fontifying-it "fontifies extension nodes ([%...])"
+      ;; [%test "name"]
+      ;; 12345678901234
+      ("[%test \"name\"]"
+       (1 7 font-lock-preprocessor-face)
+       (14 14 font-lock-preprocessor-face)))
+
+    (when-fontifying-it "fontifies item extension nodes ([%%...])"
+      ;; [%%test "name"]
+      ;; 123456789012345
+      ("[%%test \"name\"]"
+       (1 8 font-lock-preprocessor-face)
+       (15 15 font-lock-preprocessor-face))))
 
   (describe "builtin feature"
     (when-fontifying-it "fontifies builtin identifiers"

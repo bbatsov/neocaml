@@ -245,11 +245,18 @@ The return value is suitable for `treesit-font-lock-settings'."
      (match_case "->" @font-lock-keyword-face))
 
    ;; See https://ocaml.org/manual/5.3/attributes.html
+   ;; and https://ocaml.org/manual/5.3/extensionnodes.html
    :language language
    :feature 'attribute
    '((attribute) @font-lock-preprocessor-face
      (item_attribute) @font-lock-preprocessor-face
-     (floating_attribute) @font-lock-preprocessor-face)
+     (floating_attribute) @font-lock-preprocessor-face
+     ;; PPX extension nodes: [%foo ...], [%%foo ...], {%foo| ... |},
+     ;; {%%foo| ... |}
+     (extension) @font-lock-preprocessor-face
+     (item_extension) @font-lock-preprocessor-face
+     (quoted_extension) @font-lock-preprocessor-face
+     (quoted_item_extension) @font-lock-preprocessor-face)
 
    :language language
    :feature 'string
