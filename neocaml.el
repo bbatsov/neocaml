@@ -320,7 +320,9 @@ The return value is suitable for `treesit-font-lock-settings'."
    :language language
    :feature 'variable
    '((value_name) @font-lock-variable-use-face
-     (field_name) @font-lock-variable-use-face)
+     (field_name) @font-lock-variable-use-face
+     ;; Labeled arguments: ~label, ?label
+     (label_name) @font-lock-property-use-face)
 
    :language language
    :feature 'function

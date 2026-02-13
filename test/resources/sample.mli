@@ -37,6 +37,10 @@ module PrintableInt : PRINTABLE with type t = int
 
 val sum_to : int -> int
 
+(* Labeled and optional arguments *)
+val labeled : x:int -> y:int -> int
+val optional : ?verbose:bool -> unit -> bool
+
 (* Polymorphic variant type *)
 type color = [ `Red | `Green | `Blue ]
 

@@ -78,6 +78,11 @@ let double = fun x -> x * 2
 let maybe_one = Some 1
 let nothing = None
 
+(* Labeled and optional arguments *)
+let labeled ~x ~y = x + y
+let optional ?verbose () = match verbose with Some true -> true | _ -> false
+let _ = labeled ~x:1 ~y:2
+
 (* Cons and mutable assignment operators *)
 let xs = 1 :: 2 :: 3 :: []
 let () = total := !total + 1
