@@ -461,7 +461,14 @@ triple asserts that positions START through END have FACE."
       ;; 12345678901234567
       ("let r = { x = 1 }"
        (9 9 font-lock-bracket-face)
-       (17 17 font-lock-bracket-face))))
+       (17 17 font-lock-bracket-face)))
+
+    (when-fontifying-it "fontifies array brackets"
+      ;; [| 1; 2 |]
+      ;; 12345678901
+      ("[| 1; 2 |]"
+       (1 2 font-lock-bracket-face)
+       (9 10 font-lock-bracket-face))))
 
   (describe "delimiter feature"
     (when-fontifying-it "fontifies semicolons"

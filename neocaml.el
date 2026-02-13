@@ -309,7 +309,7 @@ The return value is suitable for `treesit-font-lock-settings'."
 
    :language language
    :feature 'bracket
-   '((["(" ")" "[" "]" "{" "}"]) @font-lock-bracket-face)
+   '((["(" ")" "[" "]" "{" "}" "[|" "|]" "[<" "[>"]) @font-lock-bracket-face)
 
    :language language
    :feature 'delimiter

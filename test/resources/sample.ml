@@ -78,6 +78,9 @@ let double = fun x -> x * 2
 let maybe_one = Some 1
 let nothing = None
 
+(* Array literal *)
+let arr = [| 1; 2; 3 |]
+
 (* PPX extension *)
 let () = [%test "basic test"]
 
