@@ -613,12 +613,13 @@ Return nil if there is no name or if NODE is not a defun node."
                 "string" "quoted_string" "character")
               'symbols))
 
-(defun neocaml-forward-sexp (arg)
-  "Implement `forward-sexp-function'.
-ARG controls whether to go to the beginning or end of an expression."
-  (if (< arg 0)
-      (treesit-beginning-of-thing neocaml--block-regex (- arg))
-    (treesit-end-of-thing neocaml--block-regex arg)))
+(defun neocaml-forward-sexp (count)
+  "Move forward across COUNT balanced OCaml expressions.
+If COUNT is negative, move backward.  This function is intended
+to be used as `forward-sexp-function'."
+  (if (< count 0)
+      (treesit-beginning-of-thing neocaml--block-regex (- count))
+    (treesit-end-of-thing neocaml--block-regex count)))
 
 ;;;; Utility commands
 
