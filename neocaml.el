@@ -195,6 +195,12 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
     "__FUNCTION__" "__LOC_OF__" "__LINE_OF__" "__POS_OF__")
   "OCaml builtin identifiers for tree-sitter font-locking.")
 
+(defvar neocaml-mode--builtin-types
+  '("int" "char" "bytes" "string" "float" "bool" "unit" "exn"
+    "array" "list" "option" "int32" "int64" "nativeint" "format6" "lazy_t")
+  "OCaml builtin type names for tree-sitter font-locking.
+List taken from the upstream highlights.scm.")
+
 ;; The `ocaml-interface' grammar inherits all node types from the base
 ;; `ocaml' grammar (overriding only `compilation_unit'), so queries
 ;; referencing .ml-only constructs (e.g. `application_expression',
@@ -277,7 +283,10 @@ The return value is suitable for `treesit-font-lock-settings'."
    `(((value_path :anchor (value_name) @font-lock-builtin-face)
       (:match ,(regexp-opt neocaml-mode--builtin-ids 'symbols) @font-lock-builtin-face))
      ((constructor_path :anchor (constructor_name) @font-lock-builtin-face)
-      (:match ,(regexp-opt neocaml-mode--builtin-ids 'symbols) @font-lock-builtin-face)))
+      (:match ,(regexp-opt neocaml-mode--builtin-ids 'symbols) @font-lock-builtin-face))
+     ;; Builtin types (int, string, bool, etc.)
+     ((type_constructor) @font-lock-builtin-face
+      (:match ,(regexp-opt neocaml-mode--builtin-types 'symbols) @font-lock-builtin-face)))
 
    ;; See https://ocaml.org/manual/5.3/const.html
    :language language

@@ -341,7 +341,27 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies builtin exceptions"
       ("let _ = Not_found"
-       (9 17 font-lock-builtin-face))))
+       (9 17 font-lock-builtin-face)))
+
+    (when-fontifying-it "fontifies builtin types"
+      ;; type t = int
+      ;; 123456789012
+      ("type t = int"
+       (10 12 font-lock-builtin-face))
+      ;; type t = string
+      ;; 123456789012345
+      ("type t = string"
+       (10 15 font-lock-builtin-face))
+      ;; type t = bool
+      ;; 1234567890123
+      ("type t = bool"
+       (10 13 font-lock-builtin-face)))
+
+    (when-fontifying-it "does not fontify user types as builtin"
+      ;; type t = my_type
+      ;; 12345678901234567
+      ("type t = my_type"
+       (10 16 font-lock-type-face))))
 
   (describe "constant feature"
     (when-fontifying-it "fontifies boolean constants"
@@ -356,18 +376,19 @@ triple asserts that positions START through END have FACE."
 
   (describe "type feature"
     (when-fontifying-it "fontifies type constructors"
-      ("type t = int"
+      ;; user-defined types get type-face (builtin types get builtin-face)
+      ("type t = my_type"
        (6 6 font-lock-type-face)
-       (10 12 font-lock-type-face)))
+       (10 16 font-lock-type-face)))
 
     (when-fontifying-it "fontifies type variables"
-      ;; type 'a t = 'a list
-      ;; 1234567890123456789
-      ("type 'a t = 'a list"
+      ;; type 'a t = 'a my_list
+      ;; 12345678901234567890123
+      ("type 'a t = 'a my_list"
        (6 7 font-lock-type-face)
        (9 9 font-lock-type-face)
        (13 14 font-lock-type-face)
-       (16 19 font-lock-type-face)))
+       (16 22 font-lock-type-face)))
 
     (when-fontifying-it "fontifies module names"
       ;; module M = List
@@ -655,10 +676,10 @@ triple asserts that positions START through END have FACE."
 
   (describe "type feature"
     (when-fontifying-interface-it "fontifies type constructors"
-      ;; val x : int
-      ;; 12345678901
-      ("val x : int"
-       (9 11 font-lock-type-face)))
+      ;; val x : my_type
+      ;; 123456789012345
+      ("val x : my_type"
+       (9 15 font-lock-type-face)))
 
     (when-fontifying-interface-it "fontifies type variables"
       ;; type 'a t = 'a list
