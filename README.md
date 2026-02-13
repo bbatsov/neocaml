@@ -57,9 +57,10 @@ and configure it:
 ``` emacs-lisp
 (use-package neocaml
   :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest)
+  :config
   ;; teach Eglot about neocaml
   (add-to-list 'eglot-server-programs '((neocaml-mode :language-id "ocaml") . ("ocamllsp")))
-  )
+  (add-to-list 'eglot-server-programs '((neocaml-interface-mode :language-id "ocaml") . ("ocamllsp"))))
 ```
 
 **Note:** `neocaml` will auto-install the required TreeSitter grammars the
@@ -77,6 +78,7 @@ To use `neocaml` with Eglot you'll need to have the following in your configurat
 
 ``` emacs-lisp
 (add-to-list 'eglot-server-programs '((neocaml-mode :language-id "ocaml") . ("ocamllsp")))
+(add-to-list 'eglot-server-programs '((neocaml-interface-mode :language-id "ocaml") . ("ocamllsp")))
 ```
 
 ## Configuration

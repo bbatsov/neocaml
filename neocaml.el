@@ -615,7 +615,7 @@ Return nil if there is no name or if NODE is not a defun node."
 
 (defun neocaml-forward-sexp (arg)
   "Implement `forward-sexp-function'.
-The prefix ARG controls whether to go to the beginning or the end of an expression."
+ARG controls whether to go to the beginning or end of an expression."
   (if (< arg 0)
       (treesit-beginning-of-thing neocaml--block-regex (- arg))
     (treesit-end-of-thing neocaml--block-regex arg)))
