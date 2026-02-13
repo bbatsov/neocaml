@@ -88,6 +88,12 @@ let () = [%test "basic test"]
 let result = [1; 2; 3] |> List.map double
 let applied = print_endline @@ "hello"
 
+(* Pattern matching with signed numbers *)
+let sign = function
+  | n when n < 0 -> -1
+  | 0 -> 0
+  | _ -> 1
+
 (* Pattern matching with nested patterns *)
 let describe_pair = function
   | (0, 0) -> "origin"

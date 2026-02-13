@@ -277,7 +277,13 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies negative float exponents"
       ("let x = 1.5e-3"
-       (9 14 font-lock-number-face))))
+       (9 14 font-lock-number-face)))
+
+    (when-fontifying-it "fontifies signed numbers in patterns"
+      ;; match x with\n| -1 -> true\n| _ -> false
+      ;; pos: -(16) 1(17)
+      ("match x with\n| -1 -> true\n| _ -> false"
+       (16 17 font-lock-number-face))))
 
   ;; ---- Level 3 features ------------------------------------------------
 

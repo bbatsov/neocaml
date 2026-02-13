@@ -266,7 +266,7 @@ The return value is suitable for `treesit-font-lock-settings'."
    :language language
    :feature 'number
    :override t
-   '((number) @font-lock-number-face)
+   '([(number) (signed_number)] @font-lock-number-face)
 
    :language language
    :feature 'builtin
