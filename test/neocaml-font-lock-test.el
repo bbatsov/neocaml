@@ -122,7 +122,19 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies nested comments"
       ("(* outer (* inner *) end *)"
-       (1 27 font-lock-comment-face))))
+       (1 27 font-lock-comment-face)))
+
+    (when-fontifying-it "fontifies line number directives"
+      ;; # 1 "file.ml"
+      ;; 1234567890123
+      ("# 1 \"file.ml\""
+       (1 13 font-lock-comment-face)))
+
+    (when-fontifying-it "fontifies shebang lines"
+      ;; #!/usr/bin/env ocaml
+      ;; 12345678901234567890
+      ("#!/usr/bin/env ocaml\nlet x = 1"
+       (1 20 font-lock-comment-face))))
 
   (describe "definition feature"
     (when-fontifying-it "fontifies let-bound variables"

@@ -109,3 +109,6 @@ let describe_pair = function
   | (x, 0) -> Printf.sprintf "x-axis at %d" x
   | (0, y) -> Printf.sprintf "y-axis at %d" y
   | (x, y) -> Printf.sprintf "(%d, %d)" x y
+
+(* Line number directive *)
+# 1 "generated.ml"

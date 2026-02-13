@@ -203,12 +203,16 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 (defun neocaml-mode--font-lock-settings (language)
   "Return tree-sitter font-lock settings for LANGUAGE.
 The return value is suitable for `treesit-font-lock-settings'."
-  (treesit-font-lock-rules
-   :language language
-   :feature 'comment
-   '((((comment) @font-lock-doc-face)
-      (:match "^(\\*\\*[^*]" @font-lock-doc-face))
-     (comment) @font-lock-comment-face)
+  (append
+   (treesit-font-lock-rules
+    :language language
+    :feature 'comment
+    '((((comment) @font-lock-doc-face)
+       (:match "^(\\*\\*[^*]" @font-lock-doc-face))
+      (comment) @font-lock-comment-face
+      ;; Preprocessor directives
+      (line_number_directive) @font-lock-comment-face
+      (directive) @font-lock-comment-face)
 
    :language language
    :feature 'definition
@@ -338,7 +342,13 @@ The return value is suitable for `treesit-font-lock-settings'."
      ((infix_expression
        left: (value_path (value_name) @font-lock-function-call-face)
        operator: (concat_operator) @_op)
-      (:match "^@@$" @_op)))))
+      (:match "^@@$" @_op))))
+   ;; shebang is only valid in the ocaml grammar, not ocaml-interface
+   (when (eq language 'ocaml)
+     (treesit-font-lock-rules
+      :language 'ocaml
+      :feature 'comment
+      '((shebang) @font-lock-comment-face)))))
 
 
 ;;;; Indentation
