@@ -4,4 +4,5 @@
   (fill-column . 80)
   (checkdoc-arguments-in-order-flag))
  (emacs-lisp-mode
-  (bug-reference-bug-regexp . "#\\(?2:[[:digit:]]+\\)")))
+  (bug-reference-bug-regexp . "#\\(?2:[[:digit:]]+\\)")
+  (package-lint-main-file . "neocaml.el")))
