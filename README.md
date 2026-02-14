@@ -29,8 +29,7 @@ For me it's the other way around, and that's what makes this a fun and interesti
 - I want to do more work TreeSitter, how that it's getting more traction
 - I really like OCaml and it's one of my favorite "hobby" languages
 
-They say that third time's the charm, and I hope that `neocaml` will get farther than
-them. Time will tell!
+They say that third time's the charm, right?
 
 One last thing - we really need more Emacs packages with fun names! :D
 
@@ -38,6 +37,11 @@ One last thing - we really need more Emacs packages with fun names! :D
 
 Build a modern Emacs major mode for OCaml, powered by TreeSitter
 for font-locking and indentation.
+
+> [!NOTE]
+>
+> This primary goal has been fully fulfilled, as of `neocaml` 0.1 - the
+> mode's first "official" release.
 
 Secondary goal - port this functionality to Tuareg, if feasible.
 
@@ -378,7 +382,7 @@ This gives the right result in all common cases:
   `when-indenting-it` specs that assert exact indentation for multi-line OCaml
   snippets.
 
-### Source of inspiration
+### Sources of inspiration
 
 Based on ideas and code from:
 
