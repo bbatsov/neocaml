@@ -91,8 +91,8 @@ Or with `use-package` on Emacs 30+:
 ```
 
 > [!NOTE]
-> `neocaml` will auto-install the required TreeSitter grammars the
-> first time one of the provided major modes is activated.
+> If the required tree-sitter grammars are not installed, run
+> `M-x neocaml-install-grammars` to install them.
 
 ## Usage
 
@@ -234,7 +234,7 @@ You can customize the OCaml REPL integration with the following variables:
 - Imenu with language-specific categories for `.ml` and `.mli`
 - Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
 - OCaml toplevel (REPL) integration (`neocaml-repl`)
-- Auto-installation of `ocaml` and `ocaml-interface` tree-sitter grammars
+- Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
 - Prettify-symbols for common OCaml operators
 
@@ -244,9 +244,8 @@ You can customize the OCaml REPL integration with the following variables:
 
 ## Development notes
 
-The mode will install the `ocaml` and `ocaml-interface` grammars automatically when
-needed. (e.g. when you visit an `.ml` the `ocaml` grammar will be downloaded and
-installed)
+You can install the required `ocaml` and `ocaml-interface` grammars by running
+`M-x neocaml-install-grammars`.
 
 You can you configure `neocaml--debug` to get more debug information from TreeSitter:
 

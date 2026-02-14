@@ -54,12 +54,6 @@
   :safe 'natnump
   :package-version '(neocaml . "0.1.0"))
 
-(defcustom neocaml-ensure-grammars t
-  "When non-nil, ensure required tree-sitter grammars are installed."
-  :safe #'booleanp
-  :type 'boolean
-  :package-version '(neocaml . "0.1.0"))
-
 (defcustom neocaml-other-file-alist
   '(("\\.mli\\'" (".ml"))
     ("\\.ml\\'" (".mli")))
@@ -119,19 +113,19 @@ displaying it."
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
 Suitable for use as the value of `treesit-language-source-alist'.")
 
-(defun neocaml--ensure-grammars ()
+(defun neocaml-install-grammars ()
   "Install required language grammars if not already available."
-  (when neocaml-ensure-grammars
-    (dolist (recipe neocaml-grammar-recipes)
-      (let ((grammar (car recipe)))
-        (unless (treesit-language-available-p grammar nil)
-          (message "Installing %s tree-sitter grammar" grammar)
-          ;; `treesit-language-source-alist' is dynamically scoped.
-          ;; Binding it in this let expression allows
-          ;; `treesit-install-language-gramamr' to pick up the grammar recipes
-          ;; without modifying what the user has configured themselves.
-          (let ((treesit-language-source-alist neocaml-grammar-recipes))
-            (treesit-install-language-grammar grammar)))))))
+  (interactive)
+  (dolist (recipe neocaml-grammar-recipes)
+    (let ((grammar (car recipe)))
+      (unless (treesit-language-available-p grammar nil)
+        (message "Installing %s tree-sitter grammar..." grammar)
+        ;; `treesit-language-source-alist' is dynamically scoped.
+        ;; Binding it in this let expression allows
+        ;; `treesit-install-language-grammar' to pick up the grammar recipes
+        ;; without modifying what the user has configured themselves.
+        (let ((treesit-language-source-alist neocaml-grammar-recipes))
+          (treesit-install-language-grammar grammar))))))
 
 ;; adapted from tuareg-mode
 (defvar neocaml-mode-syntax-table
@@ -703,6 +697,7 @@ to be used as `forward-sexp-function'."
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
         "--"
         ["Cycle indent function" neocaml-cycle-indent-function]
+        ["Install tree-sitter grammars" neocaml-install-grammars]
         ("Documentation"
          ["Browse OCaml Docs" neocaml-browse-ocaml-docs])
         "--"
@@ -717,7 +712,11 @@ to be used as `forward-sexp-function'."
 (defun neocaml--setup-mode (language)
   "Set up tree-sitter font-lock, indentation, and navigation for LANGUAGE.
 Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
-  (neocaml--ensure-grammars)
+  ;; Check for missing grammars and guide the user
+  (dolist (recipe neocaml-grammar-recipes)
+    (let ((grammar (car recipe)))
+      (unless (treesit-language-available-p grammar)
+        (message "OCaml tree-sitter grammar `%s' not found. Run M-x neocaml-install-grammars to install." grammar))))
 
   (when (treesit-ready-p language)
     (treesit-parser-create language)
