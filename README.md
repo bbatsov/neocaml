@@ -58,13 +58,15 @@ and configure it:
 (use-package neocaml
   :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest)
   :config
-  ;; teach Eglot about neocaml
-  (add-to-list 'eglot-server-programs '((neocaml-mode :language-id "ocaml") . ("ocamllsp")))
-  (add-to-list 'eglot-server-programs '((neocaml-interface-mode :language-id "ocaml") . ("ocamllsp"))))
+  ;; Register neocaml modes with Eglot
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs
+                 '((neocaml-mode neocaml-interface-mode) . ("ocamllsp")))))
 ```
 
-**Note:** `neocaml` will auto-install the required TreeSitter grammars the
-first time one of the provided major modes is activated.
+> [!NOTE]
+> `neocaml` will auto-install the required TreeSitter grammars the
+> first time one of the provided major modes is activated.
 
 ## Usage
 
@@ -74,11 +76,32 @@ when you open the respective type of files.
 
 You can use `C-c C-a` to toggle between implementation and interface files.
 
-To use `neocaml` with Eglot you'll need to have the following in your configuration:
+To use `neocaml` with Eglot you'll need to register the modes with `ocamllsp`:
 
 ``` emacs-lisp
-(add-to-list 'eglot-server-programs '((neocaml-mode :language-id "ocaml") . ("ocamllsp")))
-(add-to-list 'eglot-server-programs '((neocaml-interface-mode :language-id "ocaml") . ("ocamllsp")))
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+               '((neocaml-mode neocaml-interface-mode) . ("ocamllsp"))))
+```
+
+> [!NOTE]
+> neocaml sets the `eglot-language-id` symbol property on both modes
+> (`"ocaml"` for `.ml` and `"ocaml.interface"` for `.mli`), so the correct
+> language IDs are sent to the server automatically.
+
+### ocaml-eglot
+
+[ocaml-eglot](https://github.com/tarides/ocaml-eglot) is a lightweight minor
+mode that enhances the Eglot experience for OCaml by exposing custom LSP
+requests from `ocamllsp` — type enclosing, case analysis, hole navigation, and
+more. It works with neocaml out of the box:
+
+``` emacs-lisp
+(use-package ocaml-eglot
+  :ensure t
+  :hook
+  ((neocaml-mode neocaml-interface-mode) . ocaml-eglot)
+  (ocaml-eglot . eglot-ensure))
 ```
 
 ## Configuration

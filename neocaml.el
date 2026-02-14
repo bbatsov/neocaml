@@ -805,6 +805,12 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
   (add-to-list 'auto-mode-alist '("\\.ml\\'" . neocaml-mode))
   (add-to-list 'auto-mode-alist '("\\.mli\\'" . neocaml-interface-mode)))
 
+;; Eglot integration: set the language IDs that ocamllsp expects.
+;; These symbol properties are consulted by eglot when it cannot
+;; derive the correct language-id from the major-mode name.
+(put 'neocaml-mode 'eglot-language-id "ocaml")
+(put 'neocaml-interface-mode 'eglot-language-id "ocaml.interface")
+
 (provide 'neocaml)
 
 ;;; neocaml.el ends here
