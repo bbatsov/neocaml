@@ -43,8 +43,9 @@ Secondary goal - port this functionality to Tuareg, if feasible.
 
 ## Status
 
-The project is just an experiment at this point and only adventurous people
-are encouraged to play with it.
+The project is still young, but already usable for day-to-day OCaml editing.
+Font-locking, indentation, navigation, imenu, and REPL integration all work
+well. Bug reports and contributions are welcome!
 
 ## Installation
 
@@ -224,25 +225,21 @@ You can customize the OCaml REPL integration with the following variables:
 (setq neocaml-repl-program-args '("-emacs"))
 ```
 
-## Progress
+## Features
 
-### Things that work
+- Tree-sitter based font-locking (4 levels) for `.ml` and `.mli` files
+- Tree-sitter based indentation with cycle-indent support
+- Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`)
+- Imenu with language-specific categories for `.ml` and `.mli`
+- Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
+- OCaml toplevel (REPL) integration (`neocaml-repl`)
+- Auto-installation of `ocaml` and `ocaml-interface` tree-sitter grammars
+- Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
+- Prettify-symbols for common OCaml operators
 
-- Auto-installation of `ocaml` and `ocaml-interface` grammars
-- Font-locking
-- Indentation (most common OCaml constructs are handled)
-- Toggling between implementation and interface using `ff-find-other-file` (`C-c C-a` and `C-c 4 C-a`)
-- Basic integration with a top-level (`neocaml-repl`)
-- Imenu
+### Planned
 
-### Things that don't work
-
-Everything else. :-)
-
-### Planned features
-
-- Smart expression navigation
-- Basic integration with dune
+- Integration with dune
 
 ## Development notes
 
