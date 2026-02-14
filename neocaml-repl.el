@@ -56,12 +56,6 @@
   :group 'neocaml-repl
   :package-version '(neocaml . "0.1.0"))
 
-(defcustom neocaml-repl-use-prettify-symbols nil
-  "If non-nil, the REPL buffer will use `prettify-symbols-mode'."
-  :type 'boolean
-  :group 'neocaml-repl
-  :package-version '(neocaml . "0.1.0"))
-
 (defvar neocaml-repl-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map comint-mode-map)
@@ -101,10 +95,8 @@ Highlights prompts, errors, warnings, and toplevel response values.")
                 ("^\\(Warning\\|Alert\\): \\(.+\\), line \\([0-9]+\\), characters \\([0-9]+\\)-\\([0-9]+\\)" 2 3 4 1)))
   (compilation-shell-minor-mode)
 
-  ;; Setup prettify-symbols if enabled
-  (when neocaml-repl-use-prettify-symbols
-    (setq-local prettify-symbols-alist neocaml-prettify-symbols-alist)
-    (prettify-symbols-mode 1)))
+  ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
+  (setq-local prettify-symbols-alist neocaml-prettify-symbols-alist))
 
 (defun neocaml-repl--input-sender (proc input)
   "Send INPUT to PROC, appending `;;' terminator if missing."

@@ -142,11 +142,11 @@ modes. The default font-locking level is Emacs is 3, and you can change like thi
 
 See the documention for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
 
-You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by enabling:
+You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by
+enabling `prettify-symbols-mode` via a hook:
 
 ```emacs-lisp
-;; this font-lock everything neocaml supports
-(setq neocaml-use-prettify-symbols t)
+(add-hook 'neocaml-mode-hook #'prettify-symbols-mode)
 ```
 
 When it comes to indentation you've got several options:
@@ -215,9 +215,6 @@ You can customize the OCaml REPL integration with the following variables:
 
 ;; Change the REPL buffer name
 (setq neocaml-repl-buffer-name "*OCaml-REPL*")
-
-;; Disable pretty symbols in the REPL buffer
-(setq neocaml-repl-use-prettify-symbols nil)
 ```
 
 #### Using utop instead of the default OCaml toplevel

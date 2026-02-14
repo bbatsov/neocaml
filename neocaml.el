@@ -68,14 +68,6 @@ See `ff-other-file-alist' and `ff-find-other-file'."
   :type '(repeat (list regexp (choice (repeat string) function)))
   :package-version '(neocaml . "0.1.0"))
 
-(defcustom neocaml-use-prettify-symbols nil
-  "If non-nil, the major modes will use `prettify-symbols-mode'.
-
-See also `neocaml-prettify-symbols-alist'."
-  :type 'boolean
-  :group 'neocaml
-  :package-version '(neocaml . "0.1.0"))
-
 (defcustom neocaml-prettify-symbols-alist
   '(("->" . ?→)
     ("=>" . ?⇒)
@@ -775,12 +767,8 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
     ;; ff-find-other-file setup
     (setq-local ff-other-file-alist neocaml-other-file-alist)
 
-    ;; TODO: We can also always set the list, so the users can just
-    ;; toggle the mode on/off
-    ;; Setup prettify-symbols if enabled
-    (when neocaml-use-prettify-symbols
-      (setq-local prettify-symbols-alist neocaml-prettify-symbols-alist)
-      (prettify-symbols-mode 1))
+    ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
+    (setq-local prettify-symbols-alist neocaml-prettify-symbols-alist)
 
     (treesit-major-mode-setup)))
 
