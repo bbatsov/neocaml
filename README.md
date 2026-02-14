@@ -1,5 +1,6 @@
 # neocaml
 
+[![MELPA](https://melpa.org/packages/neocaml-badge.svg)](https://melpa.org/#/neocaml)
 [![CI](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml/badge.svg)](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml)
 
 `neocaml` is a **n**ew **E**macs package for programming in OCaml.  It features
@@ -47,12 +48,32 @@ are encouraged to play with it.
 
 ## Installation
 
-Right now it's manual only, unless you're on Emacs 29+ where you can do this:
+### MELPA
+
+`neocaml` is available on [MELPA](https://melpa.org/#/neocaml). If you have
+MELPA in your `package-archives`, install it with:
+
+    M-x package-install <RET> neocaml <RET>
+
+Or with `use-package`:
+
+``` emacs-lisp
+(use-package neocaml
+  :ensure t
+  :config
+  ;; Register neocaml modes with Eglot
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs
+                 '((neocaml-mode neocaml-interface-mode) . ("ocamllsp")))))
+```
+
+### From GitHub
+
+On Emacs 29+ you can install directly from the repository:
 
     M-x package-vc-install <RET> https://github.com/bbatsov/neocaml <RET>
 
-In Emacs 30 you can use `use-package` to both install the package from GitHub
-and configure it:
+Or with `use-package` on Emacs 30+:
 
 ``` emacs-lisp
 (use-package neocaml
