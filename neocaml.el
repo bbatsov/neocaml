@@ -778,7 +778,7 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
 (define-derived-mode neocaml-interface-mode prog-mode "OCaml[Interface]"
   "Major mode for editing OCaml interface (mli) code.
 
-\\{neocaml-mode-map}"
+\\{neocaml-interface-mode-map}"
   :syntax-table neocaml-mode-syntax-table
   (setq-local treesit-simple-imenu-settings neocaml--interface-imenu-settings)
   (neocaml--setup-mode 'ocaml-interface))
