@@ -757,12 +757,6 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
                       #'neocaml--defun-valid-p))
     (setq-local treesit-defun-name-function #'neocaml--defun-name)
 
-    ;; Imenu
-    (setq-local treesit-simple-imenu-settings
-                (if (eq language 'ocaml-interface)
-                    neocaml--interface-imenu-settings
-                  neocaml--imenu-settings))
-
     ;; ff-find-other-file setup
     (setq-local ff-other-file-alist neocaml-other-file-alist)
 
@@ -777,6 +771,7 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
 
 \\{neocaml-mode-map}"
   :syntax-table neocaml-mode-syntax-table
+  (setq-local treesit-simple-imenu-settings neocaml--imenu-settings)
   (neocaml--setup-mode 'ocaml))
 
 ;;;###autoload
@@ -785,6 +780,7 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
 
 \\{neocaml-mode-map}"
   :syntax-table neocaml-mode-syntax-table
+  (setq-local treesit-simple-imenu-settings neocaml--interface-imenu-settings)
   (neocaml--setup-mode 'ocaml-interface))
 
 ;;;###autoload
