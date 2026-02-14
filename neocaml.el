@@ -712,11 +712,11 @@ to be used as `forward-sexp-function'."
 (defun neocaml--setup-mode (language)
   "Set up tree-sitter font-lock, indentation, and navigation for LANGUAGE.
 Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
-  ;; Check for missing grammars and guide the user
-  (dolist (recipe neocaml-grammar-recipes)
-    (let ((grammar (car recipe)))
-      (unless (treesit-language-available-p grammar)
-        (message "OCaml tree-sitter grammar `%s' not found. Run M-x neocaml-install-grammars to install." grammar))))
+  ;; Offer to install missing grammars
+  (when-let* ((missing (seq-filter (lambda (r) (not (treesit-language-available-p (car r))))
+                                   neocaml-grammar-recipes)))
+    (when (y-or-n-p "OCaml tree-sitter grammars are not installed.  Install them now?")
+      (neocaml-install-grammars)))
 
   (when (treesit-ready-p language)
     (treesit-parser-create language)

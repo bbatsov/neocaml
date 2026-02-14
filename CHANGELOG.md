@@ -2,6 +2,12 @@
 
 ## main (unreleased)
 
+### Changes
+
+- Replace automatic grammar installation with the interactive command `M-x neocaml-install-grammars`.
+- Remove `neocaml-ensure-grammars` defcustom.
+- Remove `neocaml-use-prettify-symbols` and `neocaml-repl-use-prettify-symbols` defcustoms.  `prettify-symbols-alist` is now always set; users enable `prettify-symbols-mode` via hooks.
+
 ## 0.1.0 (2026-02-13)
 
 Initial release.
