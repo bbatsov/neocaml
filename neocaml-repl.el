@@ -146,26 +146,11 @@ If a process is already running, switch to its buffer."
 (defun neocaml-repl-send-definition ()
   "Send the current definition to the OCaml REPL."
   (interactive)
-  (if (treesit-available-p)
-      (neocaml-repl--send-definition-treesit)
-    (neocaml-repl--send-definition-fallback)))
-
-(defun neocaml-repl--send-definition-treesit ()
-  "Send the current definition to the OCaml REPL using tree-sitter."
   (let* ((node (treesit-defun-at-point))
          (start (treesit-node-start node))
          (end (treesit-node-end node)))
     (when (and start end)
       (neocaml-repl-send-region start end))))
-
-(defun neocaml-repl--send-definition-fallback ()
-  "Send the current definition to the REPL using `beginning-of-defun'.
-Used as a fallback when tree-sitter is not available."
-  (save-excursion
-    (end-of-defun)
-    (let ((end (point)))
-      (beginning-of-defun)
-      (neocaml-repl-send-region (point) end))))
 
 ;;;###autoload
 (defun neocaml-repl-send-phrase ()
