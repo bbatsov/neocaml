@@ -98,13 +98,11 @@
       (forward-sexp)
       (expect (looking-back "bar" (line-beginning-position)) :to-be-truthy)))
 
-  (it "moves backward over a definition"
-    (with-neocaml-buffer "let x = 1\n\nlet y = 2\n"
-      (search-forward "\n\nlet y")
-      (beginning-of-line)
-      (backward-sexp)
-      ;; Should be at start of "let x = 1"
-      (expect (looking-at "let x") :to-be-truthy))))
+  (it "moves over a string"
+    (with-neocaml-buffer "let x = \"hello\"\n"
+      (search-forward "= ")
+      (forward-sexp)
+      (expect (looking-back "\"hello\"" (line-beginning-position)) :to-be-truthy))))
 
 
 ;;;; defun-name
