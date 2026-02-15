@@ -569,7 +569,7 @@ Return nil if there is no name or if NODE is not a defun node."
 Joins ancestor defun names with `treesit-add-log-defun-delimiter'."
   (let ((name nil))
     (while node
-      (when-let ((new-name (treesit-defun-name node)))
+      (when-let* ((new-name (treesit-defun-name node)))
         (if name
             (setq name (concat new-name
                                treesit-add-log-defun-delimiter
