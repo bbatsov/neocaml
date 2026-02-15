@@ -4,6 +4,9 @@
 
 ### Changes
 
+- Add `treesit-thing-settings` for sexp, sentence, text, and comment navigation (Emacs 30+).
+- Add sentence navigation (`M-a`/`M-e`) for moving between top-level definitions.
+- `transpose-sexps` now works with tree-sitter awareness (Emacs 30+).
 - Replace automatic grammar installation with the interactive command `M-x neocaml-install-grammars`.
 - Remove `neocaml-ensure-grammars` defcustom.
 - Remove `neocaml-use-prettify-symbols` and `neocaml-repl-use-prettify-symbols` defcustoms.  `prettify-symbols-alist` is now always set; users enable `prettify-symbols-mode` via hooks.

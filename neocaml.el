@@ -664,6 +664,32 @@ to be used as `forward-sexp-function'."
       (treesit-beginning-of-thing neocaml--block-regex (- count))
     (treesit-end-of-thing neocaml--block-regex count)))
 
+(defun neocaml--thing-settings (language)
+  "Return `treesit-thing-settings' definitions for LANGUAGE.
+Configures sexp, sentence, text, and comment navigation."
+  `((,language
+     (sexp (not ,(rx (or "{" "}" "(" ")" "[" "]" "[|" "|]"
+                         "," "." ";" ";;" ":" "::" ":>" "->"
+                         "<-" "=" "|" ".."))))
+     (sentence ,(regexp-opt '("value_definition"
+                              "type_definition"
+                              "exception_definition"
+                              "module_definition"
+                              "module_type_definition"
+                              "class_definition"
+                              "class_type_definition"
+                              "open_module"
+                              "include_module"
+                              "include_module_type"
+                              "external"
+                              "expression_item"
+                              "value_specification"
+                              "method_specification"
+                              "inheritance_specification"
+                              "instance_variable_specification")))
+     (text ,(regexp-opt '("comment" "string" "quoted_string" "character")))
+     (comment "comment"))))
+
 ;;;; Utility commands
 
 (defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
@@ -751,7 +777,12 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
     (setq-local indent-line-function #'treesit-indent)
 
     ;; Navigation
-    (setq-local forward-sexp-function #'neocaml-forward-sexp)
+    (when (boundp 'treesit-thing-settings)
+      (setq-local treesit-thing-settings
+                  (neocaml--thing-settings language)))
+    ;; Fallback for Emacs 29 (no treesit-thing-settings)
+    (unless (boundp 'treesit-thing-settings)
+      (setq-local forward-sexp-function #'neocaml-forward-sexp))
     (setq-local treesit-defun-type-regexp
                 (cons neocaml--defun-type-regexp
                       #'neocaml--defun-valid-p))
