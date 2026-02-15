@@ -4,6 +4,7 @@
 
 ### Changes
 
+- Register OCaml compilation error regexp for `M-x compile` support (errors, warnings, alerts, backtraces).
 - Add `treesit-thing-settings` for sexp, sentence, text, and comment navigation (Emacs 30+).
 - Add sentence navigation (`M-a`/`M-e`) for moving between top-level definitions.
 - `transpose-sexps` now works with tree-sitter awareness (Emacs 30+).
