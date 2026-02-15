@@ -51,7 +51,7 @@ alternatives.
 | .ml/.mli toggle            | Yes                        | Yes           | Yes          |
 | LSP (Eglot) integration    | Yes                        | Manual setup  | Manual setup |
 | Debugger (ocamldebug)      | No                         | Yes           | Yes          |
-| Compilation commands       | No                         | Yes           | Yes          |
+| Compilation commands       | Error regexp only          | Yes           | Yes          |
 | Menhir / opam support      | No                         | No            | Yes          |
 | Code templates / skeletons | No                         | Yes           | Yes          |
 
@@ -282,6 +282,7 @@ You can customize the OCaml REPL integration with the following variables:
 - Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
 - OCaml toplevel (REPL) integration (`neocaml-repl`)
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
+- Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
 - Prettify-symbols for common OCaml operators
 

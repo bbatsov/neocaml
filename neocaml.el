@@ -690,6 +690,71 @@ Configures sexp, sentence, text, and comment navigation."
      (text ,(regexp-opt '("comment" "string" "quoted_string" "character")))
      (comment "comment"))))
 
+;;;; Compilation support
+
+;;;###autoload
+(defconst neocaml--compilation-error-regexp
+  (eval-when-compile
+    (rx bol
+        ;; 0 or 7 leading spaces. 7 spaces = ancillary location (info level).
+        ;; Requiring exactly 7 avoids false matches on Python tracebacks.
+        (? (group-n 9 "       "))
+        (group-n 1
+                 (or "File "
+                     ;; Exception backtraces (OCaml >= 4.11 includes function names)
+                     (seq (or "Raised at" "Re-raised at"
+                              "Raised by primitive operation at"
+                              "Called from")
+                          (* nonl)
+                          " file "))
+                 (group-n 2 (? "\""))
+                 (group-n 3 (+ (not (in "\t\n \",<>"))))
+                 (backref 2)
+                 (? " (inlined)")
+                 ", line" (? "s") " "
+                 (group-n 4 (+ (in "0-9")))
+                 (? "-" (group-n 5 (+ (in "0-9"))))
+                 (? ", character" (? "s") " "
+                    (group-n 6 (+ (in "0-9")))
+                    (? "-" (group-n 7 (+ (in "0-9")))))
+                 (? ":"))
+        ;; Skip source-code snippets and match Warning/Alert on next line
+        (? "\n"
+           (* (in "\t "))
+           (* (or (seq (+ (in "0-9"))
+                       " | "
+                       (* nonl))
+                  (+ "^"))
+              "\n"
+              (* (in "\t ")))
+           (group-n 8 (or "Warning" "Alert")
+                    (* (not (in ":\n")))
+                    ":"))))
+  "Regexp matching OCaml compiler error, warning, and backtrace messages.")
+
+;;;###autoload
+(defun neocaml--compilation-end-column ()
+  "Return the end-column from an OCaml compilation message.
+OCaml uses exclusive end-columns but Emacs expects inclusive ones."
+  (when (match-beginning 7)
+    (+ (string-to-number (match-string 7))
+       (if (>= emacs-major-version 28) -1 0))))
+
+;;;###autoload
+(with-eval-after-load 'compile
+  (defvar compilation-error-regexp-alist)
+  (defvar compilation-error-regexp-alist-alist)
+  (setq compilation-error-regexp-alist-alist
+        (assq-delete-all 'ocaml compilation-error-regexp-alist-alist))
+  (push `(ocaml
+          ,neocaml--compilation-error-regexp
+          3 (4 . 5) (6 . neocaml--compilation-end-column) (8 . 9) 1
+          (8 font-lock-function-name-face))
+        compilation-error-regexp-alist-alist)
+  (setq compilation-error-regexp-alist
+        (delq 'ocaml compilation-error-regexp-alist))
+  (push 'ocaml compilation-error-regexp-alist))
+
 ;;;; Utility commands
 
 (defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
