@@ -33,6 +33,53 @@ They say that third time's the charm, right?
 
 One last thing - we really need more Emacs packages with fun names! :D
 
+## Comparison with Other Modes
+
+People love comparisons, so here's a comparison of neocaml with its main historical
+alternatives.
+
+### Feature Overview
+
+| Feature                    | neocaml                    | caml-mode     | tuareg-mode  |
+|----------------------------|----------------------------|---------------|--------------|
+| Required Emacs version     | 30+                        | 24+           | 26+          |
+| Font-lock                  | Tree-sitter (4 levels)     | Regex         | Regex        |
+| Indentation                | Tree-sitter + cycle-indent | Custom engine | SMIE         |
+| REPL integration           | Yes                        | Yes           | Yes          |
+| Navigation (defun, sexp)   | Yes                        | Yes           | Yes          |
+| Imenu                      | Yes (.ml and .mli)         | Yes           | Yes          |
+| .ml/.mli toggle            | Yes                        | Yes           | Yes          |
+| LSP (Eglot) integration    | Yes                        | Manual setup  | Manual setup |
+| Debugger (ocamldebug)      | No                         | Yes           | Yes          |
+| Compilation commands       | No                         | Yes           | Yes          |
+| Menhir / opam support      | No                         | No            | Yes          |
+| Code templates / skeletons | No                         | Yes           | Yes          |
+
+Keep in mind also that `tuareg-mode` used `caml-mode` internally for some functionality.
+I think both modes will probably be folded into one down the road.
+
+### The impact of LSP on major modes
+
+Historically, caml-mode and tuareg bundled features like type display,
+completion, jump-to-definition, error checking, and refactoring support
+-- all driven by Merlin.  Today, `ocamllsp` provides all of these through
+the standard LSP protocol, and Eglot (built into Emacs 29+) acts as the
+client.  There is no reason for a major mode to reimplement any of this.
+
+For OCaml-specific LSP extensions that go beyond the standard protocol
+-- type enclosing, case analysis (destruct), hole navigation --
+[ocaml-eglot](https://github.com/tarides/ocaml-eglot) is the recommended
+companion package.
+
+### Why TreeSitter?
+
+Tree-sitter provides incremental, error-tolerant parsing that is
+significantly faster and more accurate than regex-based font-lock and
+SMIE-based indentation.  It parses the full syntax tree, so fontification
+and indentation rules can reference actual language constructs rather
+than fragile regular expressions.  This results in fewer edge-case bugs
+and simpler, more maintainable code.
+
 ## Goal
 
 Build a modern Emacs major mode for OCaml, powered by TreeSitter
