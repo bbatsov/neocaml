@@ -67,8 +67,7 @@ See `ff-other-file-alist' and `ff-find-other-file'."
   :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-prettify-symbols-alist
-  '(("->" . ?→)
-    ("=>" . ?⇒)
+  '(("=>" . ?⇒)
     ("<-" . ?←)
     ("<=" . ?≤)
     (">=" . ?≥)
@@ -76,12 +75,29 @@ See `ff-other-file-alist' and `ff-find-other-file'."
     ("==" . ?≡)
     ("!=" . ?≢)
     ("||" . ?∨)
-    ("&&" . ?∧)
-    ("fun" . ?λ))
-  "Prettify symbols alist used by neocaml modes."
+    ("&&" . ?∧))
+  "Prettify symbols alist used by neocaml modes.
+All replacements preserve column width."
   :type '(alist :key-type string :value-type character)
   :group 'neocaml
   :package-version '(neocaml . "0.1.0"))
+
+(defcustom neocaml-prettify-symbols-extra-alist
+  '(("fun" . ?λ)
+    ("->" . ?→)
+    ("not" . ?¬))
+  "Extra prettify symbols that may affect column alignment.
+Used when `neocaml-prettify-symbols-full' is non-nil."
+  :type '(alist :key-type string :value-type character)
+  :group 'neocaml
+  :package-version '(neocaml . "0.2.0"))
+
+(defcustom neocaml-prettify-symbols-full nil
+  "When non-nil, include `neocaml-prettify-symbols-extra-alist'.
+The extra symbols may affect column alignment."
+  :type 'boolean
+  :group 'neocaml
+  :package-version '(neocaml . "0.2.0"))
 
 (defvar neocaml--debug nil
   "Enable debugging messages and show the current node in the mode-line.
@@ -863,7 +879,11 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
     (setq-local ff-other-file-alist neocaml-other-file-alist)
 
     ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-    (setq-local prettify-symbols-alist neocaml-prettify-symbols-alist)
+    (setq-local prettify-symbols-alist
+                (if neocaml-prettify-symbols-full
+                    (append neocaml-prettify-symbols-alist
+                            neocaml-prettify-symbols-extra-alist)
+                  neocaml-prettify-symbols-alist))
 
     (treesit-major-mode-setup)))
 

@@ -96,7 +96,11 @@ Highlights prompts, errors, warnings, and toplevel response values.")
   (compilation-shell-minor-mode)
 
   ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-  (setq-local prettify-symbols-alist neocaml-prettify-symbols-alist))
+  (setq-local prettify-symbols-alist
+              (if neocaml-prettify-symbols-full
+                  (append neocaml-prettify-symbols-alist
+                          neocaml-prettify-symbols-extra-alist)
+                neocaml-prettify-symbols-alist)))
 
 (defun neocaml-repl--input-sender (proc input)
   "Send INPUT to PROC, appending `;;' terminator if missing."
