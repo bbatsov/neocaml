@@ -4,6 +4,7 @@
 
 ### Changes
 
+- Split `neocaml-prettify-symbols-alist` into a column-width-safe base list and `neocaml-prettify-symbols-extra-alist` (`fun`->λ, `->`->→, `not`->¬).  Control extra symbols with the `neocaml-prettify-symbols-full` toggle.
 - Register OCaml build artifact extensions (`.cmo`, `.cmx`, `.cmi`, etc.) in `completion-ignored-extensions` to declutter `find-file` completion.
 - Bind `C-c C-c` to `compile` in `neocaml-mode` (shadowed by `neocaml-repl-send-definition` when the REPL minor mode is active).
 - Extend `neocaml-other-file-alist` to support `.mll`, `.mly`, and `.eliom`/`.eliomi` file pairs for `ff-find-other-file`.
