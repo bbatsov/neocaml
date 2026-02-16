@@ -51,7 +51,8 @@ alternatives.
 | .ml/.mli toggle            | Yes                        | Yes           | Yes          |
 | LSP (Eglot) integration    | Yes                        | Manual setup  | Manual setup |
 | Debugger (ocamldebug)      | No                         | Yes           | Yes          |
-| Compilation commands       | Error regexp only          | Yes           | Yes          |
+| Compilation commands       | Error regexp + C-c C-c     | Yes           | Yes          |
+| `_build` directory aware   | Yes                        | No            | Yes          |
 | Menhir / opam support      | No                         | No            | Yes          |
 | Code templates / skeletons | No                         | Yes           | Yes          |
 

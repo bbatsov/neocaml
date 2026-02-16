@@ -775,6 +775,39 @@ OCaml uses exclusive end-columns but Emacs expects inclusive ones."
         (delq 'ocaml compilation-error-regexp-alist))
   (push 'ocaml compilation-error-regexp-alist))
 
+;;;; _build directory awareness
+
+(defun neocaml--resolve-build-path (file)
+  "Resolve FILE out of a `_build' directory, if applicable.
+For dune-style paths like `_build/default/lib/foo.ml', strip
+`_build/<context>/' and return `<project-root>/lib/foo.ml'.
+For ocamlbuild-style `_build/lib/foo.ml', strip `_build/' only.
+Return nil if FILE is not under `_build' or the resolved file
+does not exist."
+  (when-let* ((pos (string-search "/_build/" file))
+              (root (substring file 0 pos))
+              (rest (substring file (+ pos 8))) ;; skip "/_build/"
+              (components (split-string rest "/" t)))
+    (let* (;; Dune: skip first component (context dir like "default")
+           (dune-path (when (cdr components)
+                        (concat root "/" (string-join (cdr components) "/"))))
+           ;; Ocamlbuild: keep everything after _build/
+           (ocamlbuild-path (concat root "/" rest)))
+      (cond
+       ((and dune-path (file-readable-p dune-path)) dune-path)
+       ((file-readable-p ocamlbuild-path) ocamlbuild-path)))))
+
+(defun neocaml--check-build-dir ()
+  "If the current file is under `_build/', offer to switch to the source.
+Intended for use in `find-file-hook'."
+  (when-let* ((file (buffer-file-name)))
+    (when (and (string-match-p "/_build/" file)
+               (derived-mode-p 'neocaml-mode 'neocaml-interface-mode))
+      (if-let* ((source (neocaml--resolve-build-path file)))
+          (when (y-or-n-p (format "This file is under _build.  Switch to %s? " source))
+            (find-alternate-file source))
+        (message "Note: this file is under _build/ (no source found)")))))
+
 ;;;; Utility commands
 
 (defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
@@ -915,6 +948,9 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
 ;; Hide OCaml build artifacts from find-file completion
 (dolist (ext '(".cmo" ".cmx" ".cma" ".cmxa" ".cmi" ".annot" ".cmt" ".cmti"))
   (add-to-list 'completion-ignored-extensions ext))
+
+;; Offer to switch away from _build/ copies
+(add-hook 'find-file-hook #'neocaml--check-build-dir)
 
 ;; Eglot integration: set the language IDs that ocamllsp expects.
 ;; These symbol properties are consulted by eglot when it cannot
