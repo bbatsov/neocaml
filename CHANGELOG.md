@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### Bug fixes
+
+- Fix `compile-goto-error` landing one column before the actual error position.  OCaml uses 0-indexed columns; `compilation-first-column` is now set to 0 accordingly.
+
 ### Changes
 
 - Introduce `neocaml-base-mode` as the shared parent for `neocaml-mode` and `neocaml-interface-mode`.  Users can hook into `neocaml-base-mode-hook` to configure both modes at once.
