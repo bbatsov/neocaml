@@ -157,8 +157,8 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   (interactive "r")
   (let ((region (buffer-substring-no-properties start end)))
     (neocaml-repl--ensure-repl-running)
-    (comint-send-string (get-buffer-process neocaml-repl-buffer-name) region)
-    (comint-send-string (get-buffer-process neocaml-repl-buffer-name) "\n;;\n")))
+    (comint-send-string (neocaml-repl--process) region)
+    (comint-send-string (neocaml-repl--process) "\n;;\n")))
 
 ;;;###autoload
 (defun neocaml-repl-send-buffer ()
@@ -193,6 +193,10 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
                      (point)))))
       (neocaml-repl-send-region start end))))
 
+(defun neocaml-repl--process ()
+  "Return the REPL process, or nil if not running."
+  (get-buffer-process neocaml-repl-buffer-name))
+
 (defun neocaml-repl--ensure-repl-running ()
   "Start an OCaml REPL if one is not already running."
   (unless (comint-check-proc neocaml-repl-buffer-name)
@@ -210,7 +214,7 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   "Interrupt the OCaml REPL process."
   (interactive)
   (when (comint-check-proc neocaml-repl-buffer-name)
-    (interrupt-process (get-buffer-process neocaml-repl-buffer-name))))
+    (interrupt-process (neocaml-repl--process))))
 
 ;; Installation of the toplevel integration
 (defvar neocaml-repl-mode-hook nil
