@@ -31,6 +31,7 @@
 ;;; Code:
 
 (require 'comint)
+(require 'pulse)
 (require 'neocaml)
 
 (defgroup neocaml-repl nil
@@ -183,7 +184,8 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   (interactive "r")
   (let ((text (buffer-substring-no-properties start end)))
     (neocaml-repl--ensure-repl-running)
-    (neocaml-repl--input-sender (neocaml-repl--process) text)))
+    (neocaml-repl--input-sender (neocaml-repl--process) text)
+    (pulse-momentary-highlight-region start end)))
 
 ;;;###autoload
 (defun neocaml-repl-send-buffer ()
