@@ -55,8 +55,12 @@
   :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-other-file-alist
-  '(("\\.mli\\'" (".ml"))
-    ("\\.ml\\'" (".mli")))
+  '(("\\.mli\\'" (".ml" ".mll" ".mly"))
+    ("\\.ml\\'" (".mli"))
+    ("\\.mll\\'" (".mli"))
+    ("\\.mly\\'" (".mli"))
+    ("\\.eliomi\\'" (".eliom"))
+    ("\\.eliom\\'" (".eliomi")))
   "Associative list of alternate extensions to find.
 See `ff-other-file-alist' and `ff-find-other-file'."
   :type '(repeat (list regexp (choice (repeat string) function)))
