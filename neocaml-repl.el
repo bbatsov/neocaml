@@ -203,22 +203,28 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
       (neocaml-repl-send-region start end)
     (user-error "No definition at point")))
 
+(defun neocaml-repl--search-phrase-delimiter (direction)
+  "Search for a `;;' phrase delimiter in DIRECTION (1 or -1).
+Skips matches inside strings and comments.  Returns the position
+after the delimiter (forward) or before it (backward), or nil."
+  (let ((search-fn (if (> direction 0) #'search-forward #'search-backward))
+        (found nil))
+    (save-excursion
+      (while (and (not found)
+                  (funcall search-fn ";;" nil t))
+        (let ((state (syntax-ppss)))
+          (unless (or (nth 3 state) (nth 4 state))
+            (setq found (if (> direction 0) (point) (match-beginning 0)))))))
+    found))
+
 ;;;###autoload
 (defun neocaml-repl-send-phrase ()
-  "Send the current phrase (code up to next ;;) to the OCaml REPL."
+  "Send the current phrase (code between `;;' delimiters) to the OCaml REPL.
+Skips `;;' that appear inside strings or comments."
   (interactive)
-  (save-excursion
-    (let ((end (save-excursion
-                 (if (search-forward ";;" nil t)
-                     (point)
-                   (goto-char (point-max))
-                   (point))))
-          (start (save-excursion
-                   (if (search-backward ";;" nil t)
-                       (match-end 0)
-                     (goto-char (point-min))
-                     (point)))))
-      (neocaml-repl-send-region start end))))
+  (let ((end (or (neocaml-repl--search-phrase-delimiter 1) (point-max)))
+        (start (or (neocaml-repl--search-phrase-delimiter -1) (point-min))))
+    (neocaml-repl-send-region start end)))
 
 (defun neocaml-repl--process ()
   "Return the REPL process, or nil if not running."
