@@ -4,6 +4,7 @@
 
 ### Changes
 
+- Introduce `neocaml-base-mode` as the shared parent for `neocaml-mode` and `neocaml-interface-mode`.  Users can hook into `neocaml-base-mode-hook` to configure both modes at once.
 - Improve `utop` support: strip ANSI escape sequences and recognize utop's prompt format so point is correctly placed after the prompt.
 - Make `C-c C-z` reversible: from a source buffer it switches to the REPL, from the REPL it switches back.
 - Add `_build` directory awareness: when opening a file under `_build/`, offer to switch to the source copy (supports dune and ocamlbuild layouts).
