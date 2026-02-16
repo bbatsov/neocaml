@@ -110,5 +110,26 @@ let describe_pair = function
   | (0, y) -> Printf.sprintf "y-axis at %d" y
   | (x, y) -> Printf.sprintf "(%d, %d)" x y
 
+(* Binding operators — monadic let* *)
+let ( let* ) o f = match o with None -> None | Some x -> f x
+
+let find_and_sum tbl k1 k2 =
+  let* x1 = Hashtbl.find_opt tbl k1 in
+  let* x2 = Hashtbl.find_opt tbl k2 in
+  Some (x1 + x2)
+
+(* Binding operators — applicative let+ and+ *)
+let ( let+ ) o f = Option.map f o
+let ( and+ ) a b = match a, b with Some x, Some y -> Some (x, y) | _ -> None
+
+let add_opts a b =
+  let+ x = a and+ y = b in
+  x + y
+
+(* Binding operators — chained and+ *)
+let sum3 a b c =
+  let+ x = a and+ y = b and+ z = c in
+  x + y + z
+
 (* Line number directive *)
 # 1 "generated.ml"

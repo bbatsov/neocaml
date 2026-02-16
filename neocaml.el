@@ -458,6 +458,9 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; let...in: body after "in" aligns with "let" (no accumulation)
      ((parent-is "let_expression") parent-bol 0)
 
+     ;; Binding operators: and* / and+ align with let* / let+
+     ((node-is "let_and_operator") parent-bol 0)
+
      ;; Let/type/external bindings: body after = is indented
      ((parent-is "let_binding") parent-bol neocaml-indent-offset)
      ((parent-is "type_binding") parent-bol neocaml-indent-offset)
