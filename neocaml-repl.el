@@ -158,10 +158,9 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
 (defun neocaml-repl-send-region (start end)
   "Send the region between START and END to the OCaml REPL."
   (interactive "r")
-  (let ((region (buffer-substring-no-properties start end)))
+  (let ((text (buffer-substring-no-properties start end)))
     (neocaml-repl--ensure-repl-running)
-    (comint-send-string (neocaml-repl--process) region)
-    (comint-send-string (neocaml-repl--process) "\n;;\n")))
+    (neocaml-repl--input-sender (neocaml-repl--process) text)))
 
 ;;;###autoload
 (defun neocaml-repl-send-buffer ()
