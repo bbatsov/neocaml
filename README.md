@@ -33,53 +33,22 @@ They say that third time's the charm, right?
 
 One last thing - we really need more Emacs packages with fun names! :D
 
-## Comparison with Other Modes
+## Features
 
-People love comparisons, so here's a comparison of neocaml with its main historical
-alternatives.
+- Tree-sitter based font-locking (4 levels) for `.ml` and `.mli` files
+- Tree-sitter based indentation with cycle-indent support
+- Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`)
+- Imenu with language-specific categories for `.ml` and `.mli`
+- Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
+- OCaml toplevel (REPL) integration (`neocaml-repl`)
+- Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
+- Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
+- Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
+- Prettify-symbols for common OCaml operators
 
-### Feature Overview
+### Planned
 
-| Feature                    | neocaml                    | caml-mode     | tuareg-mode  |
-|----------------------------|----------------------------|---------------|--------------|
-| Required Emacs version     | 30+                        | 24+           | 26+          |
-| Font-lock                  | Tree-sitter (4 levels)     | Regex         | Regex        |
-| Indentation                | Tree-sitter + cycle-indent | Custom engine | SMIE         |
-| REPL integration           | Yes                        | Yes           | Yes          |
-| Navigation (defun, sexp)   | Yes                        | Yes           | Yes          |
-| Imenu                      | Yes (.ml and .mli)         | Yes           | Yes          |
-| .ml/.mli toggle            | Yes                        | Yes           | Yes          |
-| LSP (Eglot) integration    | Yes                        | Manual setup  | Manual setup |
-| Debugger (ocamldebug)      | No                         | Yes           | Yes          |
-| Compilation commands       | Error regexp + C-c C-c     | Yes           | Yes          |
-| `_build` directory aware   | Yes                        | No            | Yes          |
-| Menhir / opam support      | No                         | No            | Yes          |
-| Code templates / skeletons | No                         | Yes           | Yes          |
-
-Keep in mind also that `tuareg-mode` used `caml-mode` internally for some functionality.
-I think both modes will probably be folded into one down the road.
-
-### The impact of LSP on major modes
-
-Historically, caml-mode and tuareg bundled features like type display,
-completion, jump-to-definition, error checking, and refactoring support
--- all driven by Merlin.  Today, `ocamllsp` provides all of these through
-the standard LSP protocol, and Eglot (built into Emacs 29+) acts as the
-client.  There is no reason for a major mode to reimplement any of this.
-
-For OCaml-specific LSP extensions that go beyond the standard protocol
--- type enclosing, case analysis (destruct), hole navigation --
-[ocaml-eglot](https://github.com/tarides/ocaml-eglot) is the recommended
-companion package.
-
-### Why TreeSitter?
-
-Tree-sitter provides incremental, error-tolerant parsing that is
-significantly faster and more accurate than regex-based font-lock and
-SMIE-based indentation.  It parses the full syntax tree, so fontification
-and indentation rules can reference actual language constructs rather
-than fragile regular expressions.  This results in fewer edge-case bugs
-and simpler, more maintainable code.
+- Integration with dune
 
 ## Installation
 
@@ -104,7 +73,7 @@ Or with `use-package`:
 
 ### From GitHub
 
-On Emacs 29+ you can install directly from the repository:
+You can install directly from the repository:
 
     M-x package-vc-install <RET> https://github.com/bbatsov/neocaml <RET>
 
@@ -259,22 +228,53 @@ You can customize the OCaml REPL integration with the following variables:
 (setq neocaml-repl-program-args '("-emacs"))
 ```
 
-## Features
+## Comparison with Other Modes
 
-- Tree-sitter based font-locking (4 levels) for `.ml` and `.mli` files
-- Tree-sitter based indentation with cycle-indent support
-- Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`)
-- Imenu with language-specific categories for `.ml` and `.mli`
-- Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
-- OCaml toplevel (REPL) integration (`neocaml-repl`)
-- Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
-- Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
-- Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
-- Prettify-symbols for common OCaml operators
+People love comparisons, so here's a comparison of neocaml with its main historical
+alternatives.
 
-### Planned
+### Feature Overview
 
-- Integration with dune
+| Feature                    | neocaml                    | caml-mode     | tuareg-mode  |
+|----------------------------|----------------------------|---------------|--------------|
+| Required Emacs version     | 30+                        | 24+           | 26+          |
+| Font-lock                  | Tree-sitter (4 levels)     | Regex         | Regex        |
+| Indentation                | Tree-sitter + cycle-indent | Custom engine | SMIE         |
+| REPL integration           | Yes                        | Yes           | Yes          |
+| Navigation (defun, sexp)   | Yes                        | Yes           | Yes          |
+| Imenu                      | Yes (.ml and .mli)         | Yes           | Yes          |
+| .ml/.mli toggle            | Yes                        | Yes           | Yes          |
+| LSP (Eglot) integration    | Yes                        | Manual setup  | Manual setup |
+| Debugger (ocamldebug)      | No                         | Yes           | Yes          |
+| Compilation commands       | Error regexp + C-c C-c     | Yes           | Yes          |
+| `_build` directory aware   | Yes                        | No            | Yes          |
+| Menhir / opam support      | No                         | No            | Yes          |
+| Code templates / skeletons | No                         | Yes           | Yes          |
+
+Keep in mind also that `tuareg-mode` used `caml-mode` internally for some functionality.
+I think both modes will probably be folded into one down the road.
+
+### The impact of LSP on major modes
+
+Historically, caml-mode and tuareg bundled features like type display,
+completion, jump-to-definition, error checking, and refactoring support
+-- all driven by Merlin.  Today, `ocamllsp` provides all of these through
+the standard LSP protocol, and Eglot (built into Emacs 29+) acts as the
+client.  There is no reason for a major mode to reimplement any of this.
+
+For OCaml-specific LSP extensions that go beyond the standard protocol
+-- type enclosing, case analysis (destruct), hole navigation --
+[ocaml-eglot](https://github.com/tarides/ocaml-eglot) is the recommended
+companion package.
+
+### Why TreeSitter?
+
+Tree-sitter provides incremental, error-tolerant parsing that is
+significantly faster and more accurate than regex-based font-lock and
+SMIE-based indentation.  It parses the full syntax tree, so fontification
+and indentation rules can reference actual language constructs rather
+than fragile regular expressions.  This results in fewer edge-case bugs
+and simpler, more maintainable code.
 
 ## Development notes
 
