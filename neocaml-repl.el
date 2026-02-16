@@ -170,11 +170,11 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
 (defun neocaml-repl-send-definition ()
   "Send the current definition to the OCaml REPL."
   (interactive)
-  (let* ((node (treesit-defun-at-point))
-         (start (treesit-node-start node))
-         (end (treesit-node-end node)))
-    (when (and start end)
-      (neocaml-repl-send-region start end))))
+  (if-let* ((node (treesit-defun-at-point))
+            (start (treesit-node-start node))
+            (end (treesit-node-end node)))
+      (neocaml-repl-send-region start end)
+    (user-error "No definition at point")))
 
 ;;;###autoload
 (defun neocaml-repl-send-phrase ()
