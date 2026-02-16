@@ -56,6 +56,21 @@
   :group 'neocaml-repl
   :package-version '(neocaml . "0.1.0"))
 
+(defcustom neocaml-repl-history-file
+  (expand-file-name "neocaml-repl-history" user-emacs-directory)
+  "File to persist OCaml REPL input history across sessions.
+Set to nil to disable history persistence."
+  :type '(choice (file :tag "History file")
+                 (const :tag "Disable" nil))
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.2.0"))
+
+(defcustom neocaml-repl-history-size 1000
+  "Maximum number of input history entries to persist."
+  :type 'integer
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.2.0"))
+
 (defvar-local neocaml-repl--source-buffer nil
   "Source buffer from which the REPL was last invoked.
 Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
@@ -102,6 +117,14 @@ Highlights prompts, errors, warnings, and toplevel response values.")
               '(("^\\(Error\\): \\(.+\\), line \\([0-9]+\\), characters \\([0-9]+\\)-\\([0-9]+\\)" 2 3 4)
                 ("^\\(Warning\\|Alert\\): \\(.+\\), line \\([0-9]+\\), characters \\([0-9]+\\)-\\([0-9]+\\)" 2 3 4 1)))
   (compilation-shell-minor-mode)
+
+  ;; Input history persistence
+  (when neocaml-repl-history-file
+    (setq comint-input-ring-file-name neocaml-repl-history-file)
+    (setq comint-input-ring-size neocaml-repl-history-size)
+    (setq comint-input-ignoredups t)
+    (comint-read-input-ring t)
+    (add-hook 'kill-buffer-hook #'comint-write-input-ring nil t))
 
   ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
   (setq-local prettify-symbols-alist
