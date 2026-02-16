@@ -76,8 +76,8 @@ Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
     ;; values and types from result
     ("\\(val\\) \\([^:]*\\)\\( *:\\)" (1 font-lock-keyword-face) (2 font-lock-variable-name-face))
     ("\\(type\\) \\([^ =]*\\)" (1 font-lock-keyword-face) (2 font-lock-type-face))
-    ;; prompt
-    ("^# " . font-lock-comment-face))
+    ;; prompt (standard "# " and utop's "utop # " / "utop[0] # ")
+    ("^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# " . font-lock-comment-face))
   "Font-lock keywords for the OCaml REPL buffer.
 Highlights prompts, errors, warnings, and toplevel response values.")
 
@@ -85,10 +85,13 @@ Highlights prompts, errors, warnings, and toplevel response values.")
   "Major mode for interacting with an OCaml toplevel.
 
 \\{neocaml-repl-mode-map}"
-  (setq comint-prompt-regexp "^# ")
+  ;; Match both the standard "# " prompt and utop's "utop # " / "utop[0] # "
+  (setq comint-prompt-regexp "^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# ")
   (setq comint-prompt-read-only t)
   (setq comint-input-sender 'neocaml-repl--input-sender)
   (setq comint-process-echoes nil)
+  ;; Strip ANSI escape sequences emitted by utop and other enhanced toplevels
+  (ansi-color-for-comint-mode-on)
   (setq-local comment-start "(* ")
   (setq-local comment-end " *)")
   (setq-local comment-start-skip "(\\*+[ \t]*")
