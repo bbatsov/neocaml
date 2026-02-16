@@ -61,7 +61,7 @@ MELPA in your `package-archives`, install it with:
 
 Or with `use-package`:
 
-``` emacs-lisp
+```emacs-lisp
 (use-package neocaml
   :ensure t
   :config
@@ -79,7 +79,7 @@ You can install directly from the repository:
 
 Or with `use-package` on Emacs 30+:
 
-``` emacs-lisp
+```emacs-lisp
 (use-package neocaml
   :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest)
   :config
@@ -103,7 +103,7 @@ You can use `C-c C-a` to toggle between implementation and interface files.
 
 To use `neocaml` with Eglot you'll need to register the modes with `ocamllsp`:
 
-``` emacs-lisp
+```emacs-lisp
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
                '((neocaml-mode neocaml-interface-mode) . ("ocamllsp"))))
@@ -121,7 +121,7 @@ mode that enhances the Eglot experience for OCaml by exposing custom LSP
 requests from `ocamllsp` — type enclosing, case analysis, hole navigation, and
 more. It works with neocaml out of the box:
 
-``` emacs-lisp
+```emacs-lisp
 (use-package ocaml-eglot
   :ensure t
   :hook
@@ -160,7 +160,7 @@ When it comes to indentation you've got several options:
 
 You can change the indention function used by Neocaml like this:
 
-``` emacs-lisp
+```emacs-lisp
 (defun my-neocaml-mode-setup ()
   "Set up my custom indentation for neocaml-mode."
   (setq-local indent-line-function 'indent-relative))
@@ -176,14 +176,14 @@ You can change the indention function used by Neocaml like this:
 You can also start a OCaml REPL (toplevel) and interact with it using
 `neocaml-repl-minor-mode`. You can enable the mode like this:
 
-``` emacs-lisp
+```emacs-lisp
 ;; Enable for both .ml and .mli files at once
 (add-hook 'neocaml-base-mode-hook #'neocaml-repl-minor-mode)
 ```
 
 If you're using `use-package` you'd probably do something like:
 
-``` emacs-lisp
+```emacs-lisp
 (use-package neocaml
   :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest)
   :config
@@ -287,7 +287,7 @@ You can you configure `neocaml--debug` to get more debug information from TreeSi
 `treesitter-inspect-mode` (this shows the current node in the modeline)
 - When you set this to `'font-lock` it will also output some font-lock debug info. (note this can be get very noisy)
 
-``` emacs-lisp
+```emacs-lisp
 ;; enable all TreeSitter debug information
 (setq neocaml--debug 'font-lock)
 ```
