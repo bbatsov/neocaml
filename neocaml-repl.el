@@ -111,11 +111,14 @@ Highlights prompts, errors, warnings, and toplevel response values.")
                 neocaml-prettify-symbols-alist)))
 
 (defun neocaml-repl--input-sender (proc input)
-  "Send INPUT to PROC, appending `;;' terminator if missing."
-  (let ((input-with-terminator (if (string-match-p ";;" (string-trim input))
-                                   input
-                                 (concat input "\n;;"))))
-    (comint-send-string proc (concat input-with-terminator "\n"))))
+  "Send INPUT to PROC, appending `;;' terminator if missing.
+Only checks whether the input ends with `;;' (ignoring trailing whitespace),
+to avoid false positives from `;;' inside strings or comments."
+  (let* ((trimmed (string-trim-right input))
+         (terminated (string-suffix-p ";;" trimmed)))
+    (comint-send-string proc (if terminated
+                                 (concat input "\n")
+                               (concat input "\n;;\n")))))
 
 ;;;###autoload
 (defun neocaml-repl-start ()
