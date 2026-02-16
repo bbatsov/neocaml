@@ -892,6 +892,10 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
   (add-to-list 'auto-mode-alist '("\\.ml\\'" . neocaml-mode))
   (add-to-list 'auto-mode-alist '("\\.mli\\'" . neocaml-interface-mode)))
 
+;; Hide OCaml build artifacts from find-file completion
+(dolist (ext '(".cmo" ".cmx" ".cma" ".cmxa" ".cmi" ".annot" ".cmt" ".cmti"))
+  (add-to-list 'completion-ignored-extensions ext))
+
 ;; Eglot integration: set the language IDs that ocamllsp expects.
 ;; These symbol properties are consulted by eglot when it cannot
 ;; derive the correct language-id from the major-mode name.
