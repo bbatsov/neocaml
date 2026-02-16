@@ -767,6 +767,8 @@ OCaml uses exclusive end-columns but Emacs expects inclusive ones."
 (defun neocaml--setup-compilation ()
   "Register OCaml compilation error regexp with compile.el."
   (require 'compile)
+  ;; OCaml uses 0-indexed character positions in error messages.
+  (setq-local compilation-first-column 0)
   (setq compilation-error-regexp-alist-alist
         (assq-delete-all 'ocaml compilation-error-regexp-alist-alist))
   (push `(ocaml
