@@ -229,6 +229,16 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   (unless (comint-check-proc neocaml-repl-buffer-name)
     (neocaml-repl-start)))
 
+;;;###autoload
+(defun neocaml-repl-load-file (file)
+  "Load FILE into the OCaml REPL via the `#use' directive."
+  (interactive (list (buffer-file-name)))
+  (unless file
+    (user-error "Buffer is not visiting a file"))
+  (neocaml-repl--ensure-repl-running)
+  (neocaml-repl--input-sender (neocaml-repl--process)
+                               (format "#use %S" file)))
+
 (defun neocaml-repl-clear-buffer ()
   "Clear the OCaml REPL buffer."
   (interactive)
@@ -254,6 +264,7 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
     (define-key map (kbd "C-c C-r") #'neocaml-repl-send-region)
     (define-key map (kbd "C-c C-b") #'neocaml-repl-send-buffer)
     (define-key map (kbd "C-c C-p") #'neocaml-repl-send-phrase)
+    (define-key map (kbd "C-c C-l") #'neocaml-repl-load-file)
     (define-key map (kbd "C-c C-i") #'neocaml-repl-interrupt)
     (define-key map (kbd "C-c C-k") #'neocaml-repl-clear-buffer)
 
@@ -265,6 +276,7 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
         ["Send Region" neocaml-repl-send-region]
         ["Send Buffer" neocaml-repl-send-buffer]
         ["Send Phrase" neocaml-repl-send-phrase]
+        ["Load File" neocaml-repl-load-file]
         "--"
         ["Interrupt REPL" neocaml-repl-interrupt]
         ["Clear REPL Buffer" neocaml-repl-clear-buffer]))
