@@ -4,6 +4,7 @@
 
 ### Changes
 
+- Register OCaml build artifact extensions (`.cmo`, `.cmx`, `.cmi`, etc.) in `completion-ignored-extensions` to declutter `find-file` completion.
 - Bind `C-c C-c` to `compile` in `neocaml-mode` (shadowed by `neocaml-repl-send-definition` when the REPL minor mode is active).
 - Extend `neocaml-other-file-alist` to support `.mll`, `.mly`, and `.eliom`/`.eliomi` file pairs for `ff-find-other-file`.
 - Register OCaml compilation error regexp for `M-x compile` support (errors, warnings, alerts, backtraces).
