@@ -785,12 +785,14 @@ OCaml uses exclusive end-columns but Emacs expects inclusive ones."
     (set-keymap-parent map prog-mode-map)
     (define-key map (kbd "C-c C-a") #'ff-find-other-file)
     (define-key map (kbd "C-c 4 C-a") #'ff-find-other-file-other-window)
+    (define-key map (kbd "C-c C-c") #'compile)
     (easy-menu-define neocaml-mode-menu map "Neocaml Mode Menu"
       '("OCaml"
         ("Find..."
          ["Find Interface/Implementation" ff-find-other-file]
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
         "--"
+        ["Compile..." compile]
         ["Cycle indent function" neocaml-cycle-indent-function]
         ["Install tree-sitter grammars" neocaml-install-grammars]
         ("Documentation"

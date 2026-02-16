@@ -4,6 +4,7 @@
 
 ### Changes
 
+- Bind `C-c C-c` to `compile` in `neocaml-mode` (shadowed by `neocaml-repl-send-definition` when the REPL minor mode is active).
 - Extend `neocaml-other-file-alist` to support `.mll`, `.mly`, and `.eliom`/`.eliomi` file pairs for `ff-find-other-file`.
 - Register OCaml compilation error regexp for `M-x compile` support (errors, warnings, alerts, backtraces).
 - Add `treesit-thing-settings` for sexp, sentence, text, and comment navigation (Emacs 30+).
