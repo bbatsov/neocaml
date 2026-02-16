@@ -148,7 +148,7 @@ Suitable for use as the value of `treesit-language-source-alist'.")
           (treesit-install-language-grammar grammar))))))
 
 ;; adapted from tuareg-mode
-(defvar neocaml-mode-syntax-table
+(defvar neocaml-base-mode-syntax-table
   (let ((st (make-syntax-table)))
     (modify-syntax-entry ?_ "_" st)
     (modify-syntax-entry ?. "'" st)     ;Make qualified names a single symbol.
@@ -805,7 +805,7 @@ does not exist."
 Intended for use in `find-file-hook'."
   (when-let* ((file (buffer-file-name)))
     (when (and (string-match-p "/_build/" file)
-               (derived-mode-p 'neocaml-mode 'neocaml-interface-mode))
+               (derived-mode-p 'neocaml-base-mode))
       (if-let* ((source (neocaml--resolve-build-path file)))
           (when (y-or-n-p (format "This file is under _build.  Switch to %s? " source))
             (find-alternate-file source))
@@ -832,9 +832,21 @@ Intended for use in `find-file-hook'."
 
 ;;;; Major mode definitions
 
-(defvar neocaml-mode-map
+;; Mode hierarchy (following the pattern used by c-ts-mode / c++-ts-mode):
+;;
+;;   prog-mode
+;;     └─ neocaml-base-mode     — shared setup: syntax table, comments,
+;;          │                      compilation, navigation, keybindings,
+;;          │                      prettify-symbols
+;;          ├─ neocaml-mode      — .ml: ocaml grammar, ml-specific imenu
+;;          └─ neocaml-interface-mode — .mli: ocaml-interface grammar,
+;;                                       mli-specific imenu
+;;
+;; Users hook into neocaml-base-mode-hook for configuration that applies
+;; to both modes.  Language-specific setup lives in neocaml--setup-mode.
+
+(defvar neocaml-base-mode-map
   (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map prog-mode-map)
     (define-key map (kbd "C-c C-a") #'ff-find-other-file)
     (define-key map (kbd "C-c 4 C-a") #'ff-find-other-file-other-window)
     (define-key map (kbd "C-c C-c") #'compile)
@@ -852,15 +864,13 @@ Intended for use in `find-file-hook'."
         "--"
         ["Report a neocaml bug" neocaml-report-bug]
         ["neocaml version" neocaml-version]))
-    map))
-
-(defvar neocaml-interface-mode-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map neocaml-mode-map)))
+    map)
+  "Keymap shared by `neocaml-mode' and `neocaml-interface-mode'.")
 
 (defun neocaml--setup-mode (language)
   "Set up tree-sitter font-lock, indentation, and navigation for LANGUAGE.
-Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
+Called from `neocaml-mode' and `neocaml-interface-mode' to configure
+the language-specific parts of the mode."
   ;; Offer to install missing grammars
   (when-let* ((missing (seq-filter (lambda (r) (not (treesit-language-available-p (car r))))
                                    neocaml-grammar-recipes)))
@@ -879,69 +889,75 @@ Shared setup used by both `neocaml-mode' and `neocaml-interface-mode'."
       ;; show the node at point in the minibuffer
       (treesit-inspect-mode))
 
-    ;; comment settings
-    (setq-local comment-start "(* ")
-    (setq-local comment-end " *)")
-    (setq-local comment-start-skip "(\\*+[ \t]*")
-
     ;; font-lock settings
     (setq-local treesit-font-lock-settings
                 (neocaml-mode--font-lock-settings language))
 
-    ;; TODO: Make this configurable?
-    (setq-local treesit-font-lock-feature-list
-                '((comment definition)
-                  (keyword string number)
-                  (attribute builtin constant type)
-                  (operator bracket delimiter variable function)))
-
     ;; indentation
     (setq-local treesit-simple-indent-rules (neocaml--indent-rules language))
-    (setq-local indent-line-function #'treesit-indent)
 
     ;; Navigation
     (when (boundp 'treesit-thing-settings)
       (setq-local treesit-thing-settings
                   (neocaml--thing-settings language)))
-    ;; Fallback for Emacs 29 (no treesit-thing-settings)
-    (unless (boundp 'treesit-thing-settings)
-      (setq-local forward-sexp-function #'neocaml-forward-sexp))
-    (setq-local treesit-defun-type-regexp
-                (cons neocaml--defun-type-regexp
-                      #'neocaml--defun-valid-p))
-    (setq-local treesit-defun-name-function #'neocaml--defun-name)
-
-    ;; ff-find-other-file setup
-    (setq-local ff-other-file-alist neocaml-other-file-alist)
-
-    ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-    (setq-local prettify-symbols-alist
-                (if neocaml-prettify-symbols-full
-                    (append neocaml-prettify-symbols-alist
-                            neocaml-prettify-symbols-extra-alist)
-                  neocaml-prettify-symbols-alist))
 
     (treesit-major-mode-setup)))
 
+(define-derived-mode neocaml-base-mode prog-mode "OCaml"
+  "Base major mode for OCaml files, providing shared setup.
+This mode is not intended to be used directly.  Use `neocaml-mode'
+for .ml files and `neocaml-interface-mode' for .mli files."
+  :syntax-table neocaml-base-mode-syntax-table
+
+  ;; comment settings
+  (setq-local comment-start "(* ")
+  (setq-local comment-end " *)")
+  (setq-local comment-start-skip "(\\*+[ \t]*")
+
+  ;; TODO: Make this configurable?
+  (setq-local treesit-font-lock-feature-list
+              '((comment definition)
+                (keyword string number)
+                (attribute builtin constant type)
+                (operator bracket delimiter variable function)))
+
+  (setq-local indent-line-function #'treesit-indent)
+
+  ;; Fallback for Emacs 29 (no treesit-thing-settings)
+  (unless (boundp 'treesit-thing-settings)
+    (setq-local forward-sexp-function #'neocaml-forward-sexp))
+  (setq-local treesit-defun-type-regexp
+              (cons neocaml--defun-type-regexp
+                    #'neocaml--defun-valid-p))
+  (setq-local treesit-defun-name-function #'neocaml--defun-name)
+
+  ;; ff-find-other-file setup
+  (setq-local ff-other-file-alist neocaml-other-file-alist)
+
+  ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
+  (setq-local prettify-symbols-alist
+              (if neocaml-prettify-symbols-full
+                  (append neocaml-prettify-symbols-alist
+                          neocaml-prettify-symbols-extra-alist)
+                neocaml-prettify-symbols-alist))
+
+  (neocaml--setup-compilation))
+
 ;;;###autoload
-(define-derived-mode neocaml-mode prog-mode "OCaml"
+(define-derived-mode neocaml-mode neocaml-base-mode "OCaml"
   "Major mode for editing OCaml code.
 
-\\{neocaml-mode-map}"
-  :syntax-table neocaml-mode-syntax-table
+\\{neocaml-base-mode-map}"
   (setq-local treesit-simple-imenu-settings neocaml--imenu-settings)
-  (neocaml--setup-mode 'ocaml)
-  (neocaml--setup-compilation))
+  (neocaml--setup-mode 'ocaml))
 
 ;;;###autoload
-(define-derived-mode neocaml-interface-mode prog-mode "OCaml[Interface]"
+(define-derived-mode neocaml-interface-mode neocaml-base-mode "OCaml[Interface]"
   "Major mode for editing OCaml interface (mli) code.
 
-\\{neocaml-interface-mode-map}"
-  :syntax-table neocaml-mode-syntax-table
+\\{neocaml-base-mode-map}"
   (setq-local treesit-simple-imenu-settings neocaml--interface-imenu-settings)
-  (neocaml--setup-mode 'ocaml-interface)
-  (neocaml--setup-compilation))
+  (neocaml--setup-mode 'ocaml-interface))
 
 ;;;###autoload
 (progn

@@ -174,7 +174,7 @@ more. It works with neocaml out of the box:
 (use-package ocaml-eglot
   :ensure t
   :hook
-  ((neocaml-mode neocaml-interface-mode) . ocaml-eglot)
+  (neocaml-base-mode . ocaml-eglot)
   (ocaml-eglot . eglot-ensure))
 ```
 
@@ -194,7 +194,8 @@ You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by
 enabling `prettify-symbols-mode` via a hook:
 
 ```emacs-lisp
-(add-hook 'neocaml-mode-hook #'prettify-symbols-mode)
+;; Enable for both .ml and .mli files at once
+(add-hook 'neocaml-base-mode-hook #'prettify-symbols-mode)
 ```
 
 When it comes to indentation you've got several options:
@@ -213,7 +214,8 @@ You can change the indention function used by Neocaml like this:
   "Set up my custom indentation for neocaml-mode."
   (setq-local indent-line-function 'indent-relative))
 
-(add-hook 'neocaml-mode-hook 'my-neocaml-mode-setup)
+;; Use neocaml-base-mode-hook to apply to both .ml and .mli files
+(add-hook 'neocaml-base-mode-hook 'my-neocaml-mode-setup)
 ```
 
 ## Toplevel (REPL) Integration
@@ -224,7 +226,8 @@ You can also start a OCaml REPL (toplevel) and interact with it using
 `neocaml-repl-minor-mode`. You can enable the mode like this:
 
 ``` emacs-lisp
-(add-hook 'neocaml-mode-hook #'neocaml-repl-minor-mode)
+;; Enable for both .ml and .mli files at once
+(add-hook 'neocaml-base-mode-hook #'neocaml-repl-minor-mode)
 ```
 
 If you're using `use-package` you'd probably do something like:
@@ -233,7 +236,7 @@ If you're using `use-package` you'd probably do something like:
 (use-package neocaml
   :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest)
   :config
-  (add-hook 'neocaml-mode-hook #'neocaml-repl-minor-mode)
+  (add-hook 'neocaml-base-mode-hook #'neocaml-repl-minor-mode)
   ;; other config options...
   )
 ```
