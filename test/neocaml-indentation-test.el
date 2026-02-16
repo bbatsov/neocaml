@@ -166,6 +166,33 @@ x + y")
   let y = 2 in
   x + y")
 
+  (when-indenting-it "indents let* binding operator chain"
+    "let () =
+  let* x = foo in
+  let* y = bar in
+  x + y")
+
+  (when-indenting-it "indents let+ binding operator"
+    "let () =
+  let+ x = foo in
+  x + 1")
+
+  (when-indenting-it "indents let* with multiline body"
+    "let main () =
+  let* response =
+    Http.get url
+  in
+  let* body =
+    Response.body response
+  in
+  print_endline body")
+
+  (when-indenting-it "indents and* binding operator"
+    "let () =
+  let* x = foo
+  and* y = bar in
+  x + y")
+
   (when-indenting-it "indents a match expression"
     "match x with
 | A -> 1
