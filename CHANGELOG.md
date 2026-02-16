@@ -5,6 +5,15 @@
 ### Bug fixes
 
 - Fix `compile-goto-error` landing one column before the actual error position.  OCaml uses 0-indexed columns; `compilation-first-column` is now set to 0 accordingly.
+- Fix `neocaml-repl-send-definition` signaling an error when point is not inside a definition.
+- Fix `;;` terminator detection: only check whether input ends with `;;` instead of searching anywhere in the string, avoiding false positives from `;;` inside strings or comments.
+- Fix `neocaml-repl-send-phrase` to skip `;;` inside strings and comments when locating phrase boundaries.
+
+### New features
+
+- Add `neocaml-repl-load-file` (`C-c C-l`): load the current file into the REPL via the `#use` directive.
+- Add REPL input history persistence across sessions via `neocaml-repl-history-file` and `neocaml-repl-history-size`.
+- Flash the sent region when evaluating code in the REPL (`send-region`, `send-definition`, `send-phrase`, `send-buffer`).
 
 ### Changes
 
