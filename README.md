@@ -81,24 +81,6 @@ and indentation rules can reference actual language constructs rather
 than fragile regular expressions.  This results in fewer edge-case bugs
 and simpler, more maintainable code.
 
-## Goal
-
-Build a modern Emacs major mode for OCaml, powered by TreeSitter
-for font-locking and indentation.
-
-> [!NOTE]
->
-> This primary goal has been fully fulfilled, as of `neocaml` 0.1 - the
-> mode's first "official" release.
-
-Secondary goal - port this functionality to Tuareg, if feasible.
-
-## Status
-
-The project is still young, but already usable for day-to-day OCaml editing.
-Font-locking, indentation, navigation, imenu, and REPL integration all work
-well. Bug reports and contributions are welcome!
-
 ## Installation
 
 ### MELPA
