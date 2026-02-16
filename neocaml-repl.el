@@ -56,9 +56,14 @@
   :group 'neocaml-repl
   :package-version '(neocaml . "0.1.0"))
 
+(defvar-local neocaml-repl--source-buffer nil
+  "Source buffer from which the REPL was last invoked.
+Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
+
 (defvar neocaml-repl-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map comint-mode-map)
+    (define-key map (kbd "C-c C-z") #'neocaml-repl-switch-to-source)
     map)
   "Keymap for `neocaml-repl-mode'.")
 
@@ -123,13 +128,25 @@ If a process is already running, switch to its buffer."
         (neocaml-repl-mode))
       (pop-to-buffer buffer))))
 
+(defun neocaml-repl-switch-to-source ()
+  "Switch from the REPL back to the source buffer that last invoked it."
+  (interactive)
+  (if (and neocaml-repl--source-buffer
+           (buffer-live-p neocaml-repl--source-buffer))
+      (pop-to-buffer neocaml-repl--source-buffer)
+    (message "No source buffer to return to")))
+
 ;;;###autoload
 (defun neocaml-repl-switch-to-repl ()
-  "Switch to the OCaml REPL buffer if it exists, otherwise start a new one."
+  "Switch to the OCaml REPL, saving the current buffer as the source.
+If a REPL is already running, switch to it; otherwise start a new one.
+Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   (interactive)
-  (if (get-buffer neocaml-repl-buffer-name)
-      (pop-to-buffer neocaml-repl-buffer-name)
-    (neocaml-repl-start)))
+  (let ((source (current-buffer)))
+    (if (get-buffer neocaml-repl-buffer-name)
+        (pop-to-buffer neocaml-repl-buffer-name)
+      (neocaml-repl-start))
+    (setq neocaml-repl--source-buffer source)))
 
 ;;;###autoload
 (defun neocaml-repl-send-region (start end)
