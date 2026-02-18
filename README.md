@@ -255,7 +255,7 @@ alternatives.
 
 | Feature                    | neocaml                    | caml-mode     | tuareg-mode  |
 |----------------------------|----------------------------|---------------|--------------|
-| Required Emacs version     | 30+                        | 24+           | 26+          |
+| Required Emacs version     | 29.1+ (30+ recommended)    | 24+           | 26+          |
 | Font-lock                  | Tree-sitter (4 levels)     | Regex         | Regex        |
 | Indentation                | Tree-sitter + cycle-indent | Custom engine | SMIE         |
 | REPL integration           | Yes                        | Yes           | Yes          |
