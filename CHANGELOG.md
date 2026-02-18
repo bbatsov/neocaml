@@ -2,6 +2,13 @@
 
 ## main (unreleased)
 
+### New features
+
+- Add `electric-indent-chars` for `{}()` so `electric-indent-mode` reindents after typing delimiters.
+- Add `fill-paragraph` support for OCaml `(* ... *)` comments via tree-sitter.
+- Add `comment-end-skip` setting for proper comment operations.
+- Document `outline-minor-mode` and `treesit-fold` for code folding in README.
+
 ## 0.2.0 (2026-02-17)
 
 ### Bug fixes
