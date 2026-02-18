@@ -217,6 +217,7 @@ The following commands are available for interacting with the OCaml toplevel:
 | `C-c C-c` | `neocaml-repl-send-definition` | Send the current definition to the REPL |
 | `C-c C-r` | `neocaml-repl-send-region` | Send the selected region to the REPL |
 | `C-c C-b` | `neocaml-repl-send-buffer` | Send the entire buffer to the REPL |
+| `C-c C-l` | `neocaml-repl-load-file` | Load the current file into the REPL via `#use` |
 | `C-c C-p` | `neocaml-repl-send-phrase` | Send the current phrase (code up to next `;;`) to the REPL |
 | `C-c C-i` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
 | `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
