@@ -813,6 +813,35 @@ Intended for use in `find-file-hook'."
             (find-alternate-file source))
         (message "Note: this file is under _build/ (no source found)")))))
 
+;;;; Fill paragraph
+
+(defun neocaml--fill-paragraph (&optional _justify)
+  "Fill the OCaml comment at point.
+Uses tree-sitter to find comment boundaries, then narrows to the
+comment body (excluding delimiters) and fills.  Returns t if point
+was in a comment, nil otherwise to let the default handler run."
+  (let* ((node (treesit-node-at (point)))
+         (comment (treesit-parent-until
+                   node
+                   (lambda (n) (equal (treesit-node-type n) "comment"))
+                   t)))
+    (when comment
+      (let ((start (treesit-node-start comment))
+            (end (treesit-node-end comment)))
+        (save-excursion
+          (save-restriction
+            ;; Narrow to comment body: skip (* prefix and *) suffix
+            (goto-char start)
+            (when (looking-at "(\\*+[ \t]*")
+              (setq start (match-end 0)))
+            (goto-char end)
+            (when (looking-back "[ \t]*\\*+)" nil)
+              (setq end (match-beginning 0)))
+            (narrow-to-region start end)
+            (let ((fill-paragraph-function nil))
+              (fill-paragraph nil))
+            t))))))
+
 ;;;; Utility commands
 
 (defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
@@ -920,6 +949,10 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   ;; Electric indentation on delimiters
   (setq-local electric-indent-chars
               (append "{}()" electric-indent-chars))
+
+  ;; Fill paragraph
+  (setq-local fill-paragraph-function #'neocaml--fill-paragraph)
+  (setq-local adaptive-fill-mode t)
 
   ;; TODO: Make this configurable?
   (setq-local treesit-font-lock-feature-list
