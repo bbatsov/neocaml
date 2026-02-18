@@ -38,12 +38,15 @@ One last thing - we really need more Emacs packages with fun names! :D
 
 - Tree-sitter based font-locking (4 levels) for `.ml` and `.mli` files
 - Tree-sitter based indentation with cycle-indent support
-- Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`)
+- Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`, sentence movement with `M-a`/`M-e`)
 - Imenu with language-specific categories for `.ml` and `.mli`
 - Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
 - OCaml toplevel (REPL) integration (`neocaml-repl`)
+- `fill-paragraph` support for OCaml `(* ... *)` comments
+- Electric indentation on delimiter characters
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
+- `_build` directory awareness (offers to switch to source when opening build artifacts)
 - Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
 - Prettify-symbols for common OCaml operators
 
