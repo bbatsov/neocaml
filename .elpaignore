@@ -1,4 +1,6 @@
 test/
+doc/
 Eldev
 .eldev/
 .github/
+CONTRIBUTING.md
