@@ -105,13 +105,8 @@ when you open the respective type of files.
 
 You can use `C-c C-a` to toggle between implementation and interface files.
 
-To use `neocaml` with Eglot you'll need to register the modes with `ocamllsp`:
-
-```emacs-lisp
-(with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs
-               '((neocaml-mode neocaml-interface-mode) . ("ocamllsp"))))
-```
+To use `neocaml` with Eglot, register the modes with `ocamllsp` as shown
+in the installation examples above.
 
 > [!NOTE]
 > neocaml sets the `eglot-language-id` symbol property on both modes
