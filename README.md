@@ -27,7 +27,7 @@ OCaml, but not very familiar with Emacs Lisp and Emacs major modes in general.
 For me it's the other way around, and that's what makes this a fun and interesting project for me:
 
 - I enjoy working on Emacs packages
-- I want to do more work TreeSitter, how that it's getting more traction
+- I want to do more work with TreeSitter, now that it's getting more traction
 - I really like OCaml and it's one of my favorite "hobby" languages
 
 They say that third time's the charm, right?
@@ -99,7 +99,7 @@ Or with `use-package` on Emacs 30+:
 
 ## Usage
 
-The `neocaml` package bundled two major modes - one for OCaml code
+The `neocaml` package bundles two major modes - one for OCaml code
 and one for OCaml interfaces (`.mli`). Both modes will be auto-enabled
 when you open the respective type of files.
 
@@ -136,14 +136,14 @@ more. It works with neocaml out of the box:
 ## Configuration
 
 The modes provide 4 levels of font-locking, as is the standard for TreeSitter-powered
-modes. The default font-locking level is Emacs is 3, and you can change like this:
+modes. The default font-locking level in Emacs is 3, and you can change it like this:
 
 ```emacs-lisp
-;; this font-lock everything neocaml supports
+;; this font-locks everything neocaml supports
 (setq treesit-font-lock-level 4)
 ```
 
-See the documention for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
+See the documentation for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
 
 You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by
 enabling `prettify-symbols-mode` via a hook:
@@ -159,10 +159,10 @@ When it comes to indentation you've got several options:
   - Supports `let` bindings, `let...in` chains, `match`/`try` expressions, `if`/`then`/`else`, variant and record types, modules, signatures, loops, `fun`/`function` expressions, lists, arrays, sequences, and more
   - It still needs some work, so it might not always behave the way you'd like it to
 - Use the built-in Emacs function `indent-relative` that simply indents the next line relative to the previous line and allows you manually indent/outdent further. Very simple, but kind of bullet-proof.
-- Use the indent function of `ocp-indent.el` (this requires for you to have `ocp-indent.el` and `ocp-indent` installed
+- Use the indent function of `ocp-indent.el` (this requires for you to have `ocp-indent.el` and `ocp-indent` installed)
 - Use the indent function of Tuareg.
 
-You can change the indention function used by Neocaml like this:
+You can change the indentation function used by Neocaml like this:
 
 ```emacs-lisp
 (defun my-neocaml-mode-setup ()
@@ -190,7 +190,7 @@ definitions), see [treesit-fold](https://github.com/emacs-tree-sitter/treesit-fo
 
 `neocaml` provides integration with the OCaml toplevel (REPL). This allows you to evaluate OCaml code directly from your source buffer and see the results.
 
-You can also start a OCaml REPL (toplevel) and interact with it using
+You can also start an OCaml REPL (toplevel) and interact with it using
 `neocaml-repl-minor-mode`. You can enable the mode like this:
 
 ```emacs-lisp
@@ -269,7 +269,7 @@ alternatives.
 | Menhir / opam support      | No                         | No            | Yes          |
 | Code templates / skeletons | No                         | Yes           | Yes          |
 
-Keep in mind also that `tuareg-mode` used `caml-mode` internally for some functionality.
+Keep in mind also that `tuareg-mode` uses `caml-mode` internally for some functionality.
 I think both modes will probably be folded into one down the road.
 
 ### The impact of LSP on major modes
@@ -299,11 +299,11 @@ and simpler, more maintainable code.
 You can install the required `ocaml` and `ocaml-interface` grammars by running
 `M-x neocaml-install-grammars`.
 
-You can you configure `neocaml--debug` to get more debug information from TreeSitter:
+You can configure `neocaml--debug` to get more debug information from TreeSitter:
 
 - When you set this to `t` it will output indentation debug data and enable
 `treesitter-inspect-mode` (this shows the current node in the modeline)
-- When you set this to `'font-lock` it will also output some font-lock debug info. (note this can be get very noisy)
+- When you set this to `'font-lock` it will also output some font-lock debug info. (note this can get very noisy)
 
 ```emacs-lisp
 ;; enable all TreeSitter debug information
@@ -349,7 +349,7 @@ for each grammar (e.g. "Val" and "External" for `.mli` vs "Value" for `.ml`).
 
 ### Font-locking
 
-   You can control the amount of fontification applied by Font Lock mode of
+You can control the amount of fontification applied by Font Lock mode of
 major modes based on tree-sitter by customizing the variable
 `treesit-font-lock-level`.  Its value is a number between 1 and 4:
 
