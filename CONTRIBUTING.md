@@ -49,6 +49,7 @@ covering `.mli` support, font-locking levels, and indentation rules.
 Based on ideas and code from:
 
 - [clojure-ts-mode](https://github.com/clojure-emacs/clojure-ts-mode)
+- [tuareg](https://github.com/ocaml/tuareg)
 - [ocaml-ts-mode](https://github.com/dmitrig/ocaml-ts-mode)
 - [nvim-treesitter's OCaml TreeSitter queries](https://github.com/nvim-treesitter/nvim-treesitter/tree/master/queries/ocaml)
 - <https://www.masteringemacs.org/article/lets-write-a-treesitter-major-mode>
