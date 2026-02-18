@@ -170,6 +170,19 @@ You can change the indention function used by Neocaml like this:
 (add-hook 'neocaml-base-mode-hook 'my-neocaml-mode-setup)
 ```
 
+### Code Folding
+
+On Emacs 30+, `outline-minor-mode` works out of the box with neocaml -- it
+automatically picks up definition headings from the tree-sitter imenu settings.
+Enable it via a hook:
+
+```emacs-lisp
+(add-hook 'neocaml-base-mode-hook #'outline-minor-mode)
+```
+
+For tree-sitter-aware code folding (fold any node, not just top-level
+definitions), see [treesit-fold](https://github.com/emacs-tree-sitter/treesit-fold).
+
 ## Toplevel (REPL) Integration
 
 `neocaml` provides integration with the OCaml toplevel (REPL). This allows you to evaluate OCaml code directly from your source buffer and see the results.
