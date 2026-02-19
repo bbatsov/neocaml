@@ -3,6 +3,7 @@
 [![MELPA](https://melpa.org/packages/neocaml-badge.svg)](https://melpa.org/#/neocaml)
 [![MELPA Stable](https://stable.melpa.org/packages/neocaml-badge.svg)](https://stable.melpa.org/#/neocaml)
 [![CI](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml/badge.svg)](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-red?logo=github)](https://github.com/sponsors/bbatsov)
 
 `neocaml` is a **n**ew **E**macs package for programming in OCaml.  It features
 both a couple of major modes (for OCaml and OCaml Interface), using TreeSitter,
@@ -288,6 +289,20 @@ SMIE-based indentation.  It parses the full syntax tree, so fontification
 and indentation rules can reference actual language constructs rather
 than fragile regular expressions.  This results in fewer edge-case bugs
 and simpler, more maintainable code.
+
+## Funding
+
+While neocaml is free software and will always be, the project would benefit
+from some funding. Consider supporting its ongoing development if you find it
+useful.
+
+**Please consider [supporting financially neocaml's development](#funding).**
+
+You can support the development of neocaml via:
+
+- [GitHub Sponsors](https://github.com/sponsors/bbatsov)
+- [Patreon](https://www.patreon.com/bbatsov)
+- [PayPal](https://www.paypal.me/bbatsov)
 
 ## Contributing
 
