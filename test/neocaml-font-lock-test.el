@@ -243,7 +243,20 @@ triple asserts that positions START through END have FACE."
     (when-fontifying-it "fontifies various keywords"
       ("let rec f x = f x"
        (1 3 font-lock-keyword-face)
-       (5 7 font-lock-keyword-face))))
+       (5 7 font-lock-keyword-face)))
+
+    (when-fontifying-it "fontifies let* binding operator as keyword"
+      ;; let* x = Some 1 in x
+      ;; 1234
+      ("let* x = Some 1 in x"
+       (1 4 font-lock-keyword-face)))
+
+    (when-fontifying-it "fontifies and* binding operator as keyword"
+      ;; let* x = Some 1 and* y = Some 2 in x + y
+      ;; 1234             7890
+      ("let* x = Some 1 and* y = Some 2 in x + y"
+       (1 4 font-lock-keyword-face)
+       (17 20 font-lock-keyword-face))))
 
   (describe "string feature"
     (when-fontifying-it "fontifies string literals"

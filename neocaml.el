@@ -259,7 +259,8 @@ The return value is suitable for `treesit-font-lock-settings'."
    :feature 'keyword
    `([,@neocaml-mode--keywords] @font-lock-keyword-face
      (fun_expression "->" @font-lock-keyword-face)
-     (match_case "->" @font-lock-keyword-face))
+     (match_case "->" @font-lock-keyword-face)
+     (value_definition [(let_operator) (let_and_operator)] @font-lock-keyword-face))
 
    ;; See https://ocaml.org/manual/5.3/attributes.html
    ;; and https://ocaml.org/manual/5.3/extensionnodes.html
