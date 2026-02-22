@@ -4,6 +4,7 @@
 
 ### New features
 
+- Highlight binding operators (`let*`, `let+`, `and*`, `and+`) as keywords.
 - Add `electric-indent-chars` for `{}()` so `electric-indent-mode` reindents after typing delimiters.
 - Add `fill-paragraph` support for OCaml `(* ... *)` comments via tree-sitter.
 - Add `comment-end-skip` setting for proper comment operations.
