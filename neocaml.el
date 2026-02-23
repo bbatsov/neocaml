@@ -945,7 +945,6 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local comment-start "(* ")
   (setq-local comment-end " *)")
   (setq-local comment-start-skip "(\\*+[ \t]*")
-  (setq-local comment-end-skip "[ \t]*\\*+)")
 
   ;; Electric indentation on delimiters
   (setq-local electric-indent-chars

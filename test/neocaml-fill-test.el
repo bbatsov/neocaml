@@ -22,11 +22,6 @@
         (neocaml-mode)
         (expect fill-paragraph-function :to-be #'neocaml--fill-paragraph)))
 
-    (it "sets comment-end-skip"
-      (with-temp-buffer
-        (neocaml-mode)
-        (expect comment-end-skip :to-equal "[ \t]*\\*+)")))
-
     (it "enables adaptive-fill-mode"
       (with-temp-buffer
         (neocaml-mode)
@@ -105,6 +100,45 @@
           (goto-char 5)
           (fill-paragraph))
         (expect (buffer-string) :to-match "^(\\*")
-        (expect (buffer-string) :to-match "\\*)$")))))
+        (expect (buffer-string) :to-match "\\*)$"))))
+
+  (describe "comment toggling"
+    (it "comments a single line"
+      (with-temp-buffer
+        (insert "let x = 1")
+        (neocaml-mode)
+        (comment-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "(* let x = 1 *)")))
+
+    (it "uncomments a single line"
+      (with-temp-buffer
+        (insert "(* let x = 1 *)")
+        (neocaml-mode)
+        (uncomment-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "let x = 1")))
+
+    (it "round-trips comment then uncomment on a single line"
+      (with-temp-buffer
+        (insert "let x = 1")
+        (neocaml-mode)
+        (comment-region (point-min) (point-max))
+        (uncomment-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "let x = 1")))
+
+    (it "round-trips comment then uncomment on multiple lines"
+      (with-temp-buffer
+        (insert "let x = 1\nlet y = 2\nlet z = 3\n")
+        (neocaml-mode)
+        (comment-region (point-min) (point-max))
+        (uncomment-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "let x = 1\nlet y = 2\nlet z = 3\n")))
+
+    (it "comments multiple lines individually"
+      (with-temp-buffer
+        (insert "let x = 1\nlet y = 2\n")
+        (neocaml-mode)
+        (comment-region (point-min) (point-max))
+        (expect (buffer-string) :to-match "(\\* let x = 1 \\*)")
+        (expect (buffer-string) :to-match "(\\* let y = 2 \\*)")))))
 
 ;;; neocaml-fill-test.el ends here
