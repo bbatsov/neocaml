@@ -4,6 +4,7 @@
 
 ### Bug fixes
 
+- Fix `M-q` (`fill-paragraph`) not indenting continuation lines in comments.
 - Fix `M-;` (`comment-dwim`) failing to remove ` *)` when uncommenting a region.
 
 ### New features

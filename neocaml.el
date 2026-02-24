@@ -836,10 +836,18 @@ was in a comment, nil otherwise to let the default handler run."
             (when (looking-at "(\\*+[ \t]*")
               (setq start (match-end 0)))
             (goto-char end)
-            (when (looking-back "[ \t]*\\*+)" nil)
-              (setq end (match-beginning 0)))
-            (narrow-to-region start end)
-            (let ((fill-paragraph-function nil))
+            (when (looking-back "\\*+)" nil)
+              (goto-char (match-beginning 0))
+              (skip-chars-backward " \t")
+              (setq end (point)))
+            ;; Compute fill-prefix from body start column so
+            ;; continuation lines are indented to align with text
+            ;; after the opening delimiter.
+            (goto-char start)
+            (let* ((body-col (current-column))
+                   (fill-prefix (make-string body-col ?\s))
+                   (fill-paragraph-function nil))
+              (narrow-to-region start end)
               (fill-paragraph nil))
             t))))))
 

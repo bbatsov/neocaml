@@ -41,22 +41,27 @@
           (goto-char (point-min))
           (forward-char 5)
           (fill-paragraph))
-        (expect (buffer-string) :to-match "^(\\*")
-        (expect (buffer-string) :to-match "\\*)$")
-        ;; Should have been wrapped into multiple lines
-        (expect (count-lines (point-min) (point-max)) :to-be-greater-than 1)))
+        ;; Continuation lines indented to align with text after (* ,
+        ;; and space before *) preserved.
+        (expect (buffer-substring-no-properties (point-min) (point-max))
+                :to-equal
+                (concat "(* This is a very long comment that should\n"
+                        "   be wrapped because it exceeds the\n"
+                        "   fill column by quite a bit and needs\n"
+                        "   reformatting *)"))))
 
     (it "fills a multi-line comment"
       (with-temp-buffer
-        (insert "(* word1 word2 word3\nword4 word5 word6\nword7 word8 *)")
+        (insert "(* word1 word2 word3\n   word4 word5 word6\n   word7 word8 *)")
         (neocaml-mode)
         (let ((fill-column 70))
           (goto-char (point-min))
           (forward-char 5)
           (fill-paragraph))
-        ;; With fill-column 70, everything fits on one line inside the comment
-        (expect (buffer-string) :to-match "^(\\*")
-        (expect (buffer-string) :to-match "\\*)$")))
+        ;; With fill-column 70, all words join onto one line
+        (expect (buffer-substring-no-properties (point-min) (point-max))
+                :to-equal
+                "(* word1 word2 word3 word4 word5 word6 word7 word8 *)")))
 
     (it "does not touch code outside comments"
       (with-temp-buffer
@@ -88,9 +93,29 @@
         (let ((fill-column 40))
           (goto-char 10)
           (fill-paragraph))
-        (expect (buffer-string) :to-match "^(\\*\\*")
-        (expect (buffer-string) :to-match "\\*)$")
-        (expect (count-lines (point-min) (point-max)) :to-be-greater-than 1)))
+        ;; Continuation lines indented to align with text after (** ,
+        ;; and space before *) preserved.
+        (expect (buffer-substring-no-properties (point-min) (point-max))
+                :to-equal
+                (concat "(** This is a documentation comment that is\n"
+                        "    quite long and should be wrapped\n"
+                        "    properly when fill-paragraph is\n"
+                        "    invoked on it *)"))))
+
+    (it "fills an indented comment"
+      (with-temp-buffer
+        (insert "  (* This is an indented comment that should also be wrapped correctly when fill-paragraph runs *)")
+        (neocaml-mode)
+        (let ((fill-column 40))
+          (goto-char 10)
+          (fill-paragraph))
+        ;; fill-prefix respects the actual column offset (5 spaces for
+        ;; 2-space indent + "(* ").
+        (expect (buffer-substring-no-properties (point-min) (point-max))
+                :to-equal
+                (concat "  (* This is an indented comment that should\n"
+                        "     also be wrapped correctly when\n"
+                        "     fill-paragraph runs *)"))))
 
     (it "preserves comment delimiters"
       (with-temp-buffer
