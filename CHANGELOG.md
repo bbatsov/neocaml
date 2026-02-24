@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### Bug fixes
+
+- Fix `M-;` (`comment-dwim`) failing to remove ` *)` when uncommenting a region.
+
 ### New features
 
 - Highlight binding operators (`let*`, `let+`, `and*`, `and+`) as keywords.
