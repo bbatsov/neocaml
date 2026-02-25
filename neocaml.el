@@ -851,6 +851,32 @@ was in a comment, nil otherwise to let the default handler run."
               (fill-paragraph nil))
             t))))))
 
+;;;; Comment continuation (M-j)
+
+(defun neocaml--comment-body-column ()
+  "Return the column where comment body text starts, or nil."
+  (let* ((node (treesit-node-at (point)))
+         (comment (treesit-parent-until
+                   node
+                   (lambda (n) (equal (treesit-node-type n) "comment"))
+                   t)))
+    (when comment
+      (save-excursion
+        (goto-char (treesit-node-start comment))
+        (when (looking-at "(\\*+[ \t]*")
+          (goto-char (match-end 0))
+          (current-column))))))
+
+(defun neocaml--comment-indent-new-line (&optional soft)
+  "Break line at point and indent, continuing comment if within one.
+SOFT works the same as in `comment-indent-new-line'."
+  (let ((body-col (neocaml--comment-body-column)))
+    (if body-col
+        (progn
+          (if soft (insert-and-inherit ?\n) (newline 1))
+          (insert-char ?\s body-col))
+      (comment-indent-new-line soft))))
+
 ;;;; Utility commands
 
 (defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
@@ -953,6 +979,8 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local comment-start "(* ")
   (setq-local comment-end " *)")
   (setq-local comment-start-skip "(\\*+[ \t]*")
+  (setq-local comment-multi-line t)
+  (setq-local comment-line-break-function #'neocaml--comment-indent-new-line)
 
   ;; Electric indentation on delimiters
   (setq-local electric-indent-chars

@@ -9,6 +9,7 @@
 
 ### New features
 
+- Add `comment-indent-new-line` support: `M-j` inside comments continues the comment with proper indentation.
 - Highlight binding operators (`let*`, `let+`, `and*`, `and+`) as keywords.
 - Add `electric-indent-chars` for `{}()` so `electric-indent-mode` reindents after typing delimiters.
 - Add `fill-paragraph` support for OCaml `(* ... *)` comments via tree-sitter.

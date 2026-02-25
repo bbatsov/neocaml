@@ -127,6 +127,43 @@
         (expect (buffer-string) :to-match "^(\\*")
         (expect (buffer-string) :to-match "\\*)$"))))
 
+  (describe "comment continuation"
+    (it "inserts newline with correct indentation in regular comment"
+      (with-temp-buffer
+        (insert "(* some text")
+        (neocaml-mode)
+        (goto-char (point-max))
+        (neocaml--comment-indent-new-line)
+        (expect (line-number-at-pos) :to-equal 2)
+        (expect (current-column) :to-equal 3)))
+
+    (it "inserts newline with correct indentation in doc comment"
+      (with-temp-buffer
+        (insert "(** some text")
+        (neocaml-mode)
+        (goto-char (point-max))
+        (neocaml--comment-indent-new-line)
+        (expect (line-number-at-pos) :to-equal 2)
+        (expect (current-column) :to-equal 4)))
+
+    (it "inserts newline with correct indentation in indented comment"
+      (with-temp-buffer
+        (insert "  (* some text")
+        (neocaml-mode)
+        (goto-char (point-max))
+        (neocaml--comment-indent-new-line)
+        (expect (line-number-at-pos) :to-equal 2)
+        (expect (current-column) :to-equal 5)))
+
+    (it "falls back outside comments"
+      (with-temp-buffer
+        (insert "let x = 1")
+        (neocaml-mode)
+        (goto-char (point-max))
+        ;; Should not error
+        (neocaml--comment-indent-new-line)
+        (expect (line-number-at-pos) :to-equal 2))))
+
   (describe "comment toggling"
     (it "comments a single line"
       (with-temp-buffer
