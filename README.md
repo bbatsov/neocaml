@@ -243,10 +243,7 @@ The following commands are available for interacting with the OCaml toplevel:
 You can customize the OCaml REPL integration with the following variables:
 
 ```emacs-lisp
-;; Change the OCaml toplevel program
-(setq neocaml-repl-program-name "utop")  ; Use utop instead of ocaml
-
-;; Add command-line arguments
+;; Add command-line arguments to the default OCaml toplevel
 (setq neocaml-repl-program-args '("-short-paths" "-color=never"))
 
 ;; Change the REPL buffer name
@@ -261,6 +258,13 @@ You can customize the OCaml REPL integration with the following variables:
 (setq neocaml-repl-program-name "utop")
 (setq neocaml-repl-program-args '("-emacs"))
 ```
+
+> [!NOTE]
+> If you launch Emacs from a desktop shortcut (e.g. Emacs.app on macOS) rather
+> than a terminal, your shell's `PATH` may not be inherited. This can cause
+> `utop` or `ocaml` to not be found. The
+> [exec-path-from-shell](https://github.com/purcell/exec-path-from-shell)
+> package is the usual fix for this.
 
 ## Comparison with Other Modes
 
