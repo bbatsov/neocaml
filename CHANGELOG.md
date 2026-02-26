@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.3.0 (2026-02-26)
+
 ### Bug fixes
 
 - Fix `M-q` (`fill-paragraph`) not indenting continuation lines in comments.

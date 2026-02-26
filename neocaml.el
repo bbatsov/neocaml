@@ -6,7 +6,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/bbatsov/neocaml
 ;; Keywords: languages ocaml ml
-;; Version: 0.2.0
+;; Version: 0.3.0
 ;; Package-Requires: ((emacs "29.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -106,7 +106,7 @@ When set to `font-lock', show fontification info as well.
 
 Only intended for use at development time.")
 
-(defconst neocaml-version "0.2.0")
+(defconst neocaml-version "0.3.0")
 
 (defun neocaml-version ()
   "Display the current package version in the minibuffer.
