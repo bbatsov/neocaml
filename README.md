@@ -98,6 +98,12 @@ Or with `use-package` on Emacs 30+:
 > If the required tree-sitter grammars are not installed, run
 > `M-x neocaml-install-grammars` to install them.
 
+> [!TIP]
+> If you have another OCaml major mode installed (e.g. `tuareg` or `caml-mode`),
+> consider removing it to avoid conflicts over `.ml` and `.mli` file
+> associations. See the [FAQ](#i-have-tuareg-installed-will-neocaml-be-used-for-ml--mli-files)
+> for details.
+
 ## Usage
 
 The `neocaml` package bundles two major modes - one for OCaml code
@@ -322,6 +328,25 @@ neocaml does not implement electric comment delimiters (tuareg does, but the
 logic is quite complex). Instead, use `M-;` (`comment-dwim`) to insert comment
 delimiters -- it will insert `(* *)` with point positioned between them,
 properly indented. This is simpler and more predictable.
+
+### I have tuareg installed. Will neocaml be used for `.ml` / `.mli` files?
+
+It depends on load order. Both packages add entries to `auto-mode-alist`, and
+whichever loads last wins. If tuareg is taking over your OCaml files, the
+simplest fix is to uninstall it. If you want to keep both installed, make sure
+neocaml's entries come first:
+
+```emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.mli?\\'" . neocaml-mode))
+```
+
+Or with `use-package`, ensure neocaml loads after tuareg:
+
+```emacs-lisp
+(use-package neocaml
+  :ensure t
+  :after tuareg)  ; loads after tuareg, so neocaml's auto-mode-alist entries win
+```
 
 ## Funding
 
