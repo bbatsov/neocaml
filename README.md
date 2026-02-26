@@ -43,7 +43,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - Imenu with language-specific categories for `.ml` and `.mli`
 - Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
 - OCaml toplevel (REPL) integration (`neocaml-repl`)
-- `fill-paragraph` support for OCaml `(* ... *)` comments
+- Comment support: `fill-paragraph` (`M-q`), comment continuation (`M-j`), and `comment-dwim` (`M-;`)
 - Electric indentation on delimiter characters
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
@@ -169,6 +169,26 @@ You can change the indentation function used by Neocaml like this:
 (add-hook 'neocaml-base-mode-hook 'my-neocaml-mode-setup)
 ```
 
+### Comments
+
+OCaml uses block comments `(* ... *)` exclusively (no line comments), which
+requires some mode-level configuration for Emacs comment commands to work well.
+neocaml sets all the necessary variables internally, so everything works out of
+the box:
+
+- **`M-;`** (`comment-dwim`) -- comments/uncomments regions, inserts inline
+  comments, etc. Works as expected with OCaml's `(* ... *)` delimiters.
+- **`M-j`** (`default-indent-new-line`) -- inside a comment, inserts a newline
+  and indents the continuation line to align with the comment body text. For
+  example, pressing `M-j` inside `(** doc text` produces a new line indented to
+  column 4 (after `(** `), keeping the comment open rather than closing and
+  reopening it.
+- **`M-q`** (`fill-paragraph`) -- refills the current comment, wrapping text at
+  `fill-column` with continuation lines properly indented to the body column.
+
+These commands respect both regular comments (`(* ... *)`) and doc comments
+(`(** ... *)`), and work correctly for indented comments.
+
 ### Code Folding
 
 On Emacs 30+, `outline-minor-mode` works out of the box with neocaml -- it
@@ -289,6 +309,15 @@ SMIE-based indentation.  It parses the full syntax tree, so fontification
 and indentation rules can reference actual language constructs rather
 than fragile regular expressions.  This results in fewer edge-case bugs
 and simpler, more maintainable code.
+
+## FAQ
+
+### Why doesn't `(` automatically insert `(* *)` inside comments?
+
+neocaml does not implement electric comment delimiters (tuareg does, but the
+logic is quite complex). Instead, use `M-;` (`comment-dwim`) to insert comment
+delimiters -- it will insert `(* *)` with point positioned between them,
+properly indented. This is simpler and more predictable.
 
 ## Funding
 
