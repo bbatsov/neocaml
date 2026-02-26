@@ -854,7 +854,7 @@ was in a comment, nil otherwise to let the default handler run."
 ;;;; Comment continuation (M-j)
 
 (defun neocaml--comment-body-column ()
-  "Return the column where comment body text starts, or nil."
+  "Return the column of the comment body text start, or nil."
   (let* ((node (treesit-node-at (point)))
          (comment (treesit-parent-until
                    node
