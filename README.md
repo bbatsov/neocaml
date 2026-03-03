@@ -208,6 +208,21 @@ Enable it via a hook:
 For tree-sitter-aware code folding (fold any node, not just top-level
 definitions), see [treesit-fold](https://github.com/emacs-tree-sitter/treesit-fold).
 
+### Structural Selection
+
+[expreg](https://github.com/casouri/expreg) provides expand-region-style
+selection that leverages tree-sitter for language-aware expansion. It walks the
+AST to grow/shrink the selection to the next syntactic node, which works
+particularly well with OCaml's deeply nested expressions (match arms, let
+bindings, module structures, etc.):
+
+```emacs-lisp
+(use-package expreg
+  :ensure t
+  :bind (("C-=" . expreg-expand)
+         ("C--" . expreg-contract)))
+```
+
 ## Toplevel (REPL) Integration
 
 `neocaml` provides integration with the OCaml toplevel (REPL). This allows you to evaluate OCaml code directly from your source buffer and see the results.
