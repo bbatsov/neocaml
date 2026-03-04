@@ -974,7 +974,14 @@ the language-specific parts of the mode."
       (setq-local treesit-thing-settings
                   (neocaml--thing-settings language)))
 
-    (treesit-major-mode-setup)))
+    (treesit-major-mode-setup)
+
+    ;; Workaround for treesit-transpose-sexps being broken on Emacs 30
+    ;; (bug#60655).  Emacs 31 rewrites the function to work correctly.
+    (when (and (fboundp 'transpose-sexps-default-function)
+               (< emacs-major-version 31))
+      (setq-local transpose-sexps-function
+                  #'transpose-sexps-default-function))))
 
 (define-derived-mode neocaml-base-mode prog-mode "OCaml"
   "Base major mode for OCaml files, providing shared setup.
