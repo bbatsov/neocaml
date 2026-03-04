@@ -714,6 +714,15 @@ Configures sexp, sentence, text, and comment navigation."
      (text ,(regexp-opt '("comment" "string" "quoted_string" "character")))
      (comment "comment"))))
 
+(defun neocaml-mark-sentence ()
+  "Mark the current statement around point.
+Uses tree-sitter sentence navigation to select the entire statement
+\(e.g. a `let' binding, type definition, or module definition)."
+  (interactive)
+  (backward-sentence)
+  (push-mark (point) nil t)
+  (forward-sentence))
+
 ;;;; Compilation support
 
 (defconst neocaml--compilation-error-regexp
@@ -928,6 +937,10 @@ SOFT works the same as in `comment-indent-new-line'."
         ("Find..."
          ["Find Interface/Implementation" ff-find-other-file]
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
+        "--"
+        ["Mark Definition" mark-defun]
+        ["Mark Expression" mark-sexp]
+        ["Mark Statement" neocaml-mark-sentence]
         "--"
         ["Transpose Expression" transpose-sexps]
         ["Transpose Statement" transpose-sentences]

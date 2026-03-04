@@ -2,6 +2,16 @@
 
 ## main (unreleased)
 
+### Bug fixes
+
+- [#20](https://github.com/bbatsov/neocaml/issues/20): Work around broken `transpose-sexps` on Emacs 30 (bug#60655). Falls back to default transpose behavior; Emacs 31 has a proper fix.
+
+### New features
+
+- Add `neocaml-mark-sentence` command to mark the current statement around point.
+- Add "Navigate" submenu to the OCaml menu with structural navigation commands.
+- Add mark and transpose commands to the OCaml menu.
+
 ## 0.3.0 (2026-02-26)
 
 ### Bug fixes
