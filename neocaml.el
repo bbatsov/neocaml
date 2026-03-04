@@ -929,6 +929,9 @@ SOFT works the same as in `comment-indent-new-line'."
          ["Find Interface/Implementation" ff-find-other-file]
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
         "--"
+        ["Transpose Expression" transpose-sexps]
+        ["Transpose Statement" transpose-sentences]
+        "--"
         ["Compile..." compile]
         ["Cycle indent function" neocaml-cycle-indent-function]
         ["Install tree-sitter grammars" neocaml-install-grammars]
