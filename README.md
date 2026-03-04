@@ -135,6 +135,27 @@ more. It works with neocaml out of the box:
   (ocaml-eglot . eglot-ensure))
 ```
 
+## Navigation
+
+neocaml uses tree-sitter to power all structural navigation commands. These are
+standard Emacs keybindings, but backed by the AST rather than heuristics:
+
+| Keybinding | Command | Description |
+|---|---|---|
+| `C-M-a` | `beginning-of-defun` | Move to the beginning of the current definition |
+| `C-M-e` | `end-of-defun` | Move to the end of the current definition |
+| `C-M-f` | `forward-sexp` | Move forward over a balanced expression |
+| `C-M-b` | `backward-sexp` | Move backward over a balanced expression |
+| `M-a` | `backward-sentence` | Move to the beginning of the current statement (Emacs 30+) |
+| `M-e` | `forward-sentence` | Move to the end of the current statement (Emacs 30+) |
+
+"Definitions" include `let` bindings, type definitions, module bindings, class
+definitions, exceptions, and externals. "Statements" cover the same plus
+`open`, `include`, and expression items -- essentially any top-level or
+block-level construct.
+
+All navigation commands are also available from the OCaml menu under "Navigate".
+
 ## Configuration
 
 The modes provide 4 levels of font-locking, as is the standard for TreeSitter-powered

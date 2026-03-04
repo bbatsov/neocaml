@@ -918,6 +918,13 @@ SOFT works the same as in `comment-indent-new-line'."
     (define-key map (kbd "C-c C-c") #'compile)
     (easy-menu-define neocaml-mode-menu map "Neocaml Mode Menu"
       '("OCaml"
+        ("Navigate"
+         ["Beginning of Definition" beginning-of-defun]
+         ["End of Definition" end-of-defun]
+         ["Forward Expression" forward-sexp]
+         ["Backward Expression" backward-sexp]
+         ["Forward Statement" forward-sentence]
+         ["Backward Statement" backward-sentence])
         ("Find..."
          ["Find Interface/Implementation" ff-find-other-file]
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
