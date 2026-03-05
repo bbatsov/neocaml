@@ -891,9 +891,35 @@ SOFT works the same as in `comment-indent-new-line'."
 (defconst neocaml-report-bug-url "https://github.com/bbatsov/neocaml/issues/new"
   "The URL to report a `neocaml' issue.")
 
+(defun neocaml--grammar-info (language)
+  "Return a string describing the status of the LANGUAGE grammar."
+  (if (treesit-language-available-p language)
+      (let ((recipe (assq language neocaml-grammar-recipes)))
+        (format "%s (expected: %s)" language (or (nth 2 recipe) "unknown")))
+    (format "%s (not installed)" language)))
+
+(defun neocaml-bug-report-info ()
+  "Display debug information for bug reports.
+The information is also copied to the kill ring."
+  (interactive)
+  (let* ((info (format (concat "Emacs: %s\n"
+                                "System: %s\n"
+                                "neocaml: %s\n"
+                                "Grammars: %s, %s\n"
+                                "Eglot: %s")
+                       emacs-version
+                       system-type
+                       neocaml-version
+                       (neocaml--grammar-info 'ocaml)
+                       (neocaml--grammar-info 'ocaml-interface)
+                       (if (bound-and-true-p eglot--managed-mode) "active" "inactive"))))
+    (kill-new info)
+    (message "%s\n(copied to kill ring)" info)))
+
 (defun neocaml-report-bug ()
   "Report a bug in your default browser."
   (interactive)
+  (neocaml-bug-report-info)
   (browse-url neocaml-report-bug-url))
 
 (defconst neocaml-ocaml-docs-base-url "https://ocaml.org/docs/"
@@ -952,6 +978,7 @@ SOFT works the same as in `comment-indent-new-line'."
          ["Browse OCaml Docs" neocaml-browse-ocaml-docs])
         "--"
         ["Report a neocaml bug" neocaml-report-bug]
+        ["Show bug report info" neocaml-bug-report-info]
         ["neocaml version" neocaml-version]))
     map)
   "Keymap shared by `neocaml-mode' and `neocaml-interface-mode'.")
