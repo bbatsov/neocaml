@@ -13,23 +13,18 @@ It's also as cool as Neo from "The Matrix". ;-)
 
 ## Why?
 
-Because `caml-mode` is ancient, and `tuareg-mode` is a beast. (it's very powerful, but also very complex)
-The time seems ripe for a modern, leaner, TreeSitter-powered mode for
-OCaml.
+Because `caml-mode` is ancient, and `tuareg-mode`, while very powerful, has
+grown complex over the years. The time seems ripe for a modern, leaner,
+tree-sitter-powered mode for OCaml.
 
-There have been two other attempts to create TreeSitter-powered
-major modes for Emacs, but they didn't get very far:
+There have been two earlier attempts at tree-sitter OCaml modes for Emacs:
 
-- [ocaml-ts-mode](https://github.com/dmitrig/ocaml-ts-mode) (first one, available in MELPA)
-- [ocaml-ts-mode](https://github.com/terrateamio/ocaml-ts-mode) (second one)
+- [ocaml-ts-mode](https://github.com/dmitrig/ocaml-ts-mode) by dmitrig
+- [ocaml-ts-mode](https://github.com/terrateamio/ocaml-ts-mode) by terrateam
 
-Looking at the code of both modes, I inferred that the authors were probably knowledgable in
-OCaml, but not very familiar with Emacs Lisp and Emacs major modes in general.
-For me it's the other way around, and that's what makes this a fun and interesting project for me:
-
-- I enjoy working on Emacs packages
-- I want to do more work with TreeSitter, now that it's getting more traction
-- I really like OCaml and it's one of my favorite "hobby" languages
+Both provided useful early exploration of what a tree-sitter OCaml mode could
+look like, and helped inspire this project. neocaml aims to take the idea
+further with a more complete feature set and active maintenance.
 
 They say that third time's the charm, right?
 
