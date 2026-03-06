@@ -9,8 +9,12 @@
 ### New features
 
 - Add `neocaml-mark-sentence` command to mark the current statement around point.
+- Add `neocaml-bug-report-info` command for collecting debug information in bug reports.
 - Add "Navigate" submenu to the OCaml menu with structural navigation commands.
 - Add mark and transpose commands to the OCaml menu.
+- Highlight escape sequences (`\n`, `\t`, etc.) in strings with `font-lock-escape-face`.
+- Highlight conversion specifications (`%d`, `%s`, etc.) in format strings with `font-lock-regexp-face`.
+- Highlight `match+` and similar binding operators as keywords in match expressions.
 
 ## 0.3.0 (2026-02-26)
 
