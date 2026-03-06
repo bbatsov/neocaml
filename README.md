@@ -182,18 +182,36 @@ When it comes to indentation you've got several options:
   - Supports `let` bindings, `let...in` chains, `match`/`try` expressions, `if`/`then`/`else`, variant and record types, modules, signatures, loops, `fun`/`function` expressions, lists, arrays, sequences, and more
   - It still needs some work, so it might not always behave the way you'd like it to
 - Use the built-in Emacs function `indent-relative` that simply indents the next line relative to the previous line and allows you manually indent/outdent further. Very simple, but kind of bullet-proof.
-- Use the indent function of `ocp-indent.el` (this requires for you to have `ocp-indent.el` and `ocp-indent` installed)
-- Use the indent function of Tuareg.
+- Use the indent function of [ocp-indent](https://github.com/OCamlPro/ocp-indent) (this requires `ocp-indent.el` and the `ocp-indent` binary)
+- Use the indent function of [Tuareg](https://github.com/ocaml/tuareg).
 
 You can change the indentation function used by Neocaml like this:
 
 ```emacs-lisp
+;; Use indent-relative (simple, but bullet-proof)
 (defun my-neocaml-mode-setup ()
-  "Set up my custom indentation for neocaml-mode."
   (setq-local indent-line-function 'indent-relative))
 
-;; Use neocaml-base-mode-hook to apply to both .ml and .mli files
 (add-hook 'neocaml-base-mode-hook 'my-neocaml-mode-setup)
+```
+
+To use `ocp-indent` instead:
+
+```emacs-lisp
+(defun my-neocaml-mode-setup ()
+  (setq-local indent-line-function #'ocp-indent-line)
+  (setq-local indent-region-function #'ocp-indent-region))
+
+(add-hook 'neocaml-base-mode-hook #'my-neocaml-mode-setup)
+```
+
+To use Tuareg's SMIE-based indentation:
+
+```emacs-lisp
+(defun my-neocaml-mode-setup ()
+  (setq-local indent-line-function #'tuareg-indent-line))
+
+(add-hook 'neocaml-base-mode-hook #'my-neocaml-mode-setup)
 ```
 
 ### Comments
