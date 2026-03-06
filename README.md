@@ -380,7 +380,7 @@ alternatives.
 | Navigation (defun, sexp)   | Yes                        | Yes           | Yes          |
 | Imenu                      | Yes (.ml and .mli)         | Yes           | Yes          |
 | .ml/.mli toggle            | Yes                        | Yes           | Yes          |
-| LSP (Eglot) integration    | Yes                        | Manual setup  | Manual setup |
+| LSP (Eglot) integration    | Yes (auto-configured)      | Yes (manual)  | Yes (manual) |
 | Debugger (ocamldebug)      | No                         | Yes           | Yes          |
 | Compilation commands       | Error regexp + C-c C-c     | Yes           | Yes          |
 | `_build` directory aware   | Yes                        | No            | Yes          |
