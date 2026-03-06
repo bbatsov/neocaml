@@ -282,6 +282,11 @@ The return value is suitable for `treesit-font-lock-settings'."
    '([(string) (quoted_string) (character)] @font-lock-string-face)
 
    :language language
+   :feature 'string
+   :override t
+   '((escape_sequence) @font-lock-escape-face)
+
+   :language language
    :feature 'number
    :override t
    '([(number) (signed_number)] @font-lock-number-face)

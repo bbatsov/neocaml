@@ -275,9 +275,22 @@ triple asserts that positions START through END have FACE."
       ("\"\""
        (1 2 font-lock-string-face)))
 
-    (when-fontifying-it "fontifies strings with escape sequences"
+    (when-fontifying-it "fontifies escape sequences in strings"
+      ;; "line1\nline2"
+      ;; 1234567890123456
       ("\"line1\\nline2\""
-       (1 14 font-lock-string-face))))
+       (1 6 font-lock-string-face)
+       (7 8 font-lock-escape-face)
+       (9 14 font-lock-string-face)))
+
+    (when-fontifying-it "fontifies multiple escape sequences"
+      ;; "a\t\nb"
+      ;; 12345678
+      ("\"a\\t\\nb\""
+       (1 2 font-lock-string-face)
+       (3 4 font-lock-escape-face)
+       (5 6 font-lock-escape-face)
+       (7 8 font-lock-string-face))))
 
   (describe "number feature"
     (when-fontifying-it "fontifies integers"
