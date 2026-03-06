@@ -13,7 +13,7 @@ It's also as cool as Neo from "The Matrix". ;-)
 
 ## Why?
 
-Because `caml-mode` is ancient, and `tuareg-mode`, while very powerful, has
+Because `caml-mode` is ancient, and `tuareg`, while very powerful, has
 grown complex over the years. The time seems ripe for a modern, leaner,
 tree-sitter-powered mode for OCaml.
 
@@ -211,7 +211,7 @@ When it comes to indentation you've got several options:
   - It still needs some work, so it might not always behave the way you'd like it to
 - Use the built-in Emacs function `indent-relative` that simply indents the next line relative to the previous line and allows you manually indent/outdent further. Very simple, but kind of bullet-proof.
 - Use the indent function of [ocp-indent](https://github.com/OCamlPro/ocp-indent) (this requires `ocp-indent.el` and the `ocp-indent` binary)
-- Use the indent function of [Tuareg](https://github.com/ocaml/tuareg).
+- Use the indent function of [tuareg](https://github.com/ocaml/tuareg).
 
 You can quickly toggle between tree-sitter indentation and `indent-relative`
 using `M-x neocaml-cycle-indent-function` (also available from the OCaml menu).
@@ -238,7 +238,7 @@ To use `ocp-indent` instead:
 (add-hook 'neocaml-base-mode-hook #'my-neocaml-mode-setup)
 ```
 
-To use Tuareg's SMIE-based indentation:
+To use tuareg's SMIE-based indentation:
 
 ```emacs-lisp
 (defun my-neocaml-mode-setup ()
@@ -371,7 +371,7 @@ alternatives.
 
 ### Feature Overview
 
-| Feature                    | neocaml                    | caml-mode     | tuareg-mode  |
+| Feature                    | neocaml                    | caml-mode     | tuareg       |
 |----------------------------|----------------------------|---------------|--------------|
 | Required Emacs version     | 29.1+ (30+ recommended)    | 24+           | 26+          |
 | Font-lock                  | Tree-sitter (4 levels)     | Regex         | Regex        |
@@ -387,7 +387,7 @@ alternatives.
 | Menhir / opam support      | No                         | No            | Yes          |
 | Code templates / skeletons | No                         | Yes           | Yes          |
 
-Keep in mind also that `tuareg-mode` uses `caml-mode` internally for some functionality.
+Keep in mind also that `tuareg` uses `caml-mode` internally for some functionality.
 I think both modes will probably be folded into one down the road.
 
 ### The impact of LSP on major modes
