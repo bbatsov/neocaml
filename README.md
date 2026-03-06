@@ -400,21 +400,17 @@ and indentation rules can reference actual language constructs rather
 than fragile regular expressions.  This results in fewer edge-case bugs
 and simpler, more maintainable code.
 
-## FAQ
+## Migrating from tuareg / caml-mode
 
-### Why doesn't `(` automatically insert `(* *)` inside comments?
+If you're switching to neocaml from tuareg or caml-mode, here's what you need
+to know.
 
-neocaml does not implement electric comment delimiters (tuareg does, but the
-logic is quite complex). Instead, use `M-;` (`comment-dwim`) to insert comment
-delimiters -- it will insert `(* *)` with point positioned between them,
-properly indented. This is simpler and more predictable.
+### File associations
 
-### I have tuareg installed. Will neocaml be used for `.ml` / `.mli` files?
-
-It depends on load order. Both packages add entries to `auto-mode-alist`, and
-whichever loads last wins. If tuareg is taking over your OCaml files, the
-simplest fix is to uninstall it. If you want to keep both installed, make sure
-neocaml's entries come first:
+Both tuareg and neocaml register themselves for `.ml` and `.mli` files via
+`auto-mode-alist`. Whichever loads last wins. The simplest approach is to
+uninstall tuareg. If you want to keep both installed, make sure neocaml's
+entries come first:
 
 ```emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.mli?\\'" . neocaml-mode))
@@ -427,6 +423,56 @@ Or with `use-package`, ensure neocaml loads after tuareg:
   :ensure t
   :after tuareg)  ; loads after tuareg, so neocaml's auto-mode-alist entries win
 ```
+
+### Keybinding differences
+
+Some keybindings have different meanings across the modes:
+
+| Keybinding | neocaml | tuareg / caml-mode |
+|---|---|---|
+| `C-c C-c` | `compile` | Eval phrase (caml-mode) |
+| `C-c C-z` | Switch to REPL | Switch to REPL |
+| `C-c C-a` | Toggle .ml/.mli | Not bound |
+| `C-c C-r` | Send region to REPL | Send region to REPL |
+| `C-c C-b` | Send buffer to REPL | Send buffer to REPL |
+
+### Merlin vs Eglot
+
+If you're using Merlin for completion, type display, and jump-to-definition,
+the equivalent in neocaml is Eglot + `ocamllsp`. Eglot is built into Emacs 29+
+and `ocamllsp` provides all the features Merlin did via the standard LSP
+protocol. See the [ocaml-eglot](#ocaml-eglot) section for OCaml-specific
+extensions like type enclosing and case analysis.
+
+### Keeping tuareg's indentation
+
+If you prefer tuareg's SMIE-based indentation over neocaml's tree-sitter
+indentation, you can use it directly -- see the
+[Indentation](#indentation) section for the setup snippet.
+
+### What you gain
+
+- Tree-sitter powered font-locking (more accurate, 4 configurable levels)
+- Tree-sitter powered navigation (sexp, sentence, defun)
+- Built-in Eglot integration with automatic language ID configuration
+- `_build` directory awareness
+- Simpler, more maintainable codebase
+
+### What you lose
+
+- `ocamldebug` integration (neocaml does not include a debugger frontend)
+- Menhir / opam support
+- Electric comment delimiters (`(` inserting `(* *)` inside comments)
+- Code templates / skeletons
+
+## FAQ
+
+### Why doesn't `(` automatically insert `(* *)` inside comments?
+
+neocaml does not implement electric comment delimiters (tuareg does, but the
+logic is quite complex). Instead, use `M-;` (`comment-dwim`) to insert comment
+delimiters -- it will insert `(* *)` with point positioned between them,
+properly indented. This is simpler and more predictable.
 
 ## Funding
 
