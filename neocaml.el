@@ -772,26 +772,44 @@ Uses tree-sitter sentence navigation to select the entire statement
                     ":"))))
   "Regexp matching OCaml compiler error, warning, and backtrace messages.")
 
+;; OCaml error messages report 0-indexed byte positions with exclusive
+;; end (e.g. "characters 2-8" means bytes 2..7).  Emacs compilation
+;; mode expects 1-indexed inclusive columns.  We convert directly in
+;; these functions rather than using `compilation-first-column' because
+;; that variable is checked in the destination buffer -- which may not
+;; be in `neocaml-mode' (e.g. JSON files processed by OCaml tools).
+;; By converting here, the columns are correct regardless of the
+;; destination buffer's major mode.
+
+(defun neocaml--compilation-begin-column ()
+  "Return the begin-column from an OCaml compilation message.
+Converts from OCaml's 0-indexed column to Emacs's 1-indexed column."
+  (when (match-beginning 6)
+    (1+ (string-to-number (match-string 6)))))
+
 (defun neocaml--compilation-end-column ()
   "Return the end-column from an OCaml compilation message.
-OCaml uses exclusive end-columns but Emacs expects inclusive ones."
+OCaml reports an exclusive 0-indexed end-column; Emacs expects an
+inclusive 1-indexed end-column.  The +1 (0-to-1 indexing) and -1
+\(exclusive-to-inclusive) cancel out, so we return the raw value."
   (when (match-beginning 7)
-    (+ (string-to-number (match-string 7))
-       (if (>= emacs-major-version 28) -1 0))))
+    (string-to-number (match-string 7))))
 
 (defvar compilation-error-regexp-alist)
 (defvar compilation-error-regexp-alist-alist)
 
 (defun neocaml--setup-compilation ()
-  "Register OCaml compilation error regexp with compile.el."
+  "Register OCaml compilation error regexp with compile.el.
+The regexp and associated column functions are installed globally
+in `compilation-error-regexp-alist-alist' because `*compilation*'
+buffers are not in any language-specific mode.  All active entries
+are tried against every line of compilation output."
   (require 'compile)
-  ;; OCaml uses 0-indexed character positions in error messages.
-  (setq-local compilation-first-column 0)
   (setq compilation-error-regexp-alist-alist
         (assq-delete-all 'ocaml compilation-error-regexp-alist-alist))
   (push `(ocaml
           ,neocaml--compilation-error-regexp
-          3 (4 . 5) (6 . neocaml--compilation-end-column) (8 . 9) 1
+          3 (4 . 5) (neocaml--compilation-begin-column . neocaml--compilation-end-column) (8 . 9) 1
           (8 font-lock-function-name-face))
         compilation-error-regexp-alist-alist)
   (setq compilation-error-regexp-alist

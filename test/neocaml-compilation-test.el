@@ -144,17 +144,18 @@ Returns nil if the regexp does not match."
       (expect (plist-get info :line) :to-equal 1)
       (expect (plist-get info :col) :to-be nil)))
 
-  (it "sets compilation-first-column to 0 for OCaml's 0-indexed columns"
-    (with-temp-buffer
-      (neocaml-mode)
-      (expect compilation-first-column :to-equal 0)))
-
-  (it "computes end-column correctly"
+  (it "converts begin-column from 0-indexed to 1-indexed"
     (with-temp-buffer
       (insert "File \"foo.ml\", line 4, characters 6-20:\nError: type error\n")
       (goto-char (point-min))
       (re-search-forward neocaml--compilation-error-regexp)
-      (expect (neocaml--compilation-end-column) :to-equal
-              (+ 20 (if (>= emacs-major-version 28) -1 0))))))
+      (expect (neocaml--compilation-begin-column) :to-equal 7)))
+
+  (it "converts end-column from 0-indexed exclusive to 1-indexed inclusive"
+    (with-temp-buffer
+      (insert "File \"foo.ml\", line 4, characters 6-20:\nError: type error\n")
+      (goto-char (point-min))
+      (re-search-forward neocaml--compilation-error-regexp)
+      (expect (neocaml--compilation-end-column) :to-equal 20))))
 
 ;;; neocaml-compilation-test.el ends here
