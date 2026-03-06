@@ -290,7 +290,14 @@ triple asserts that positions START through END have FACE."
        (1 2 font-lock-string-face)
        (3 4 font-lock-escape-face)
        (5 6 font-lock-escape-face)
-       (7 8 font-lock-string-face))))
+       (7 8 font-lock-string-face)))
+
+    (when-fontifying-it "fontifies conversion specifications in format strings"
+      ;; let _ = Printf.printf "%d items: %s"
+      ;; positions:              24-25     34-35
+      ("let _ = Printf.printf \"%d items: %s\""
+       (24 25 font-lock-regexp-face)
+       (34 35 font-lock-regexp-face))))
 
   (describe "number feature"
     (when-fontifying-it "fontifies integers"

@@ -284,7 +284,8 @@ The return value is suitable for `treesit-font-lock-settings'."
    :language language
    :feature 'string
    :override t
-   '((escape_sequence) @font-lock-escape-face)
+   '((escape_sequence) @font-lock-escape-face
+     (conversion_specification) @font-lock-regexp-face)
 
    :language language
    :feature 'number
