@@ -218,7 +218,12 @@ When it comes to indentation you've got several options:
 - Use the indent function of [ocp-indent](https://github.com/OCamlPro/ocp-indent) (this requires `ocp-indent.el` and the `ocp-indent` binary)
 - Use the indent function of [Tuareg](https://github.com/ocaml/tuareg).
 
-You can change the indentation function used by Neocaml like this:
+You can quickly toggle between tree-sitter indentation and `indent-relative`
+using `M-x neocaml-cycle-indent-function` (also available from the OCaml menu).
+This is handy when the tree-sitter indentation doesn't do what you want for a
+particular piece of code.
+
+You can also permanently change the indentation function like this:
 
 ```emacs-lisp
 ;; Use indent-relative (simple, but bullet-proof)
@@ -318,7 +323,12 @@ If you're using `use-package` you'd probably do something like:
   )
 ```
 
-The following commands are available for interacting with the OCaml toplevel:
+The following keybindings are available when `neocaml-repl-minor-mode` is active:
+
+> [!NOTE]
+> `C-c C-c` is bound to `compile` in the base mode. When
+> `neocaml-repl-minor-mode` is enabled, it is rebound to
+> `neocaml-repl-send-definition`.
 
 | Keybinding | Command | Description |
 |------------|---------|-------------|
