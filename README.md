@@ -158,15 +158,39 @@ All navigation commands are also available from the OCaml menu under "Navigate".
 
 ## Configuration
 
-The modes provide 4 levels of font-locking, as is the standard for TreeSitter-powered
-modes. The default font-locking level in Emacs is 3, and you can change it like this:
+### Font-locking
+
+neocaml provides 4 levels of font-locking, as is the standard for tree-sitter
+modes. The default level in Emacs is 3, and you can change it like this:
 
 ```emacs-lisp
 ;; this font-locks everything neocaml supports
 (setq treesit-font-lock-level 4)
 ```
 
-See the documentation for `treesit-font-lock-level` and `treesit-font-lock-features` for more details.
+The font-lock features available at each level are:
+
+| Level | Features |
+|-------|----------|
+| 1 | `comment`, `definition` |
+| 2 | `keyword`, `string`, `number` |
+| 3 | `attribute`, `builtin`, `constant`, `type` |
+| 4 | `operator`, `bracket`, `delimiter`, `variable`, `function` |
+
+You can selectively enable or disable individual features using
+`M-x treesit-font-lock-recompute-features`. See the documentation for
+`treesit-font-lock-level` and `treesit-font-lock-feature-list` for more details.
+
+The faces used are standard `font-lock-*-face` faces, so any theme applies
+automatically. You can also customize individual faces, for example:
+
+```emacs-lisp
+;; Use a custom color for type names
+(custom-set-faces
+ '(font-lock-type-face ((t (:foreground "DarkSeaGreen4")))))
+```
+
+#### Prettify Symbols
 
 You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by
 enabling `prettify-symbols-mode` via a hook:
@@ -175,6 +199,8 @@ enabling `prettify-symbols-mode` via a hook:
 ;; Enable for both .ml and .mli files at once
 (add-hook 'neocaml-base-mode-hook #'prettify-symbols-mode)
 ```
+
+### Indentation
 
 When it comes to indentation you've got several options:
 
