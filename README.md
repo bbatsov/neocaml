@@ -445,11 +445,13 @@ Some keybindings have different meanings across the modes:
 
 ### Merlin vs Eglot
 
-If you're using Merlin for completion, type display, and jump-to-definition,
-the equivalent in neocaml is Eglot + `ocamllsp`. Eglot is built into Emacs 29+
-and `ocamllsp` provides all the features Merlin did via the standard LSP
-protocol. See the [ocaml-eglot](#ocaml-eglot) section for OCaml-specific
-extensions like type enclosing and case analysis.
+Merlin works fine with neocaml -- it's a minor mode that hooks into any major
+mode. That said, you might want to consider switching to Eglot + `ocamllsp`,
+which provides the same features (completion, type display, jump-to-definition)
+via the standard LSP protocol. Eglot is built into Emacs 29+ and neocaml
+includes the necessary configuration out of the box. See the
+[ocaml-eglot](#ocaml-eglot) section for OCaml-specific extensions like type
+enclosing and case analysis.
 
 ### Keeping tuareg's indentation
 
