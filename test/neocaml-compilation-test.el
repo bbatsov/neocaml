@@ -120,6 +120,22 @@ Returns nil if the regexp does not match."
       (expect (plist-get info :severity) :to-equal 0)
       (expect (plist-get info :line) :to-equal 10)))
 
+  (it "matches an indented location (arbitrary whitespace) as error"
+    (let ((info (neocaml-test--match-compilation
+                 "  File \"doc.json\", line 1, characters 2-8\n")))
+      (expect info :not :to-be nil)
+      (expect (plist-get info :file) :to-equal "doc.json")
+      (expect (plist-get info :severity) :to-equal 2)
+      (expect (plist-get info :line) :to-equal 1)
+      (expect (plist-get info :col) :to-equal 2)))
+
+  (it "matches a tab-indented location"
+    (let ((info (neocaml-test--match-compilation
+                 "\tFile \"foo.ml\", line 3, characters 0-5:\n")))
+      (expect info :not :to-be nil)
+      (expect (plist-get info :file) :to-equal "foo.ml")
+      (expect (plist-get info :severity) :to-equal 2)))
+
   (it "matches a file location with no characters"
     (let ((info (neocaml-test--match-compilation
                  "File \"foo.ml\", line 1:\nError: Syntax error\n")))

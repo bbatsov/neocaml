@@ -735,9 +735,10 @@ Uses tree-sitter sentence navigation to select the entire statement
 (defconst neocaml--compilation-error-regexp
   (eval-when-compile
     (rx bol
-        ;; 0 or 7 leading spaces. 7 spaces = ancillary location (info level).
-        ;; Requiring exactly 7 avoids false matches on Python tracebacks.
-        (? (group-n 9 "       "))
+        ;; Leading whitespace: 7 spaces = ancillary location (info level),
+        ;; any other whitespace = default severity (error/warning per group 8).
+        (or (group-n 9 "       ")
+            (* (in " \t")))
         (group-n 1
                  (or "File "
                      ;; Exception backtraces (OCaml >= 4.11 includes function names)
