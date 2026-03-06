@@ -19,8 +19,8 @@ tree-sitter-powered mode for OCaml.
 
 There have been two earlier attempts at tree-sitter OCaml modes for Emacs:
 
-- [ocaml-ts-mode](https://github.com/dmitrig/ocaml-ts-mode) by dmitrig
-- [ocaml-ts-mode](https://github.com/terrateamio/ocaml-ts-mode) by terrateam
+- [ocaml-ts-mode](https://github.com/dmitrig/ocaml-ts-mode)
+- [ocaml-ts-mode](https://github.com/terrateamio/ocaml-ts-mode)
 
 Both provided useful early exploration of what a tree-sitter OCaml mode could
 look like, and helped inspire this project. neocaml aims to take the idea
