@@ -6,7 +6,7 @@
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-red?logo=github)](https://github.com/sponsors/bbatsov)
 
 `neocaml` is a **n**ew **E**macs package for programming in OCaml.  It features
-both a couple of major modes (for OCaml and OCaml Interface), using TreeSitter,
+two major modes (for OCaml and OCaml Interface), using Tree-sitter,
 and integration with an OCaml toplevel (a.k.a. REPL).
 
 It's also as cool as Neo from "The Matrix". ;-)
@@ -206,7 +206,7 @@ enabling `prettify-symbols-mode` via a hook:
 
 When it comes to indentation you've got several options:
 
-- Using the built-in TreeSitter indentation
+- Using the built-in Tree-sitter indentation
   - Supports `let` bindings, `let...in` chains, `match`/`try` expressions, `if`/`then`/`else`, variant and record types, modules, signatures, loops, `fun`/`function` expressions, lists, arrays, sequences, and more
   - It still needs some work, so it might not always behave the way you'd like it to
 - Use the built-in Emacs function `indent-relative` that simply indents the next line relative to the previous line and allows you manually indent/outdent further. Very simple, but kind of bullet-proof.
@@ -403,7 +403,7 @@ For OCaml-specific LSP extensions that go beyond the standard protocol
 [ocaml-eglot](https://github.com/tarides/ocaml-eglot) is the recommended
 companion package.
 
-### Why TreeSitter?
+### Why Tree-sitter?
 
 Tree-sitter provides incremental, error-tolerant parsing that is
 significantly faster and more accurate than regex-based font-lock and
