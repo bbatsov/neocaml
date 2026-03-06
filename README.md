@@ -101,7 +101,7 @@ Or with `use-package` on Emacs 30+:
 > [!TIP]
 > If you have another OCaml major mode installed (e.g. `tuareg` or `caml-mode`),
 > consider removing it to avoid conflicts over `.ml` and `.mli` file
-> associations. See the [FAQ](#i-have-tuareg-installed-will-neocaml-be-used-for-ml--mli-files)
+> associations. See [Migrating from tuareg / caml-mode](#migrating-from-tuareg--caml-mode)
 > for details.
 
 ## Usage
@@ -134,6 +134,13 @@ more. It works with neocaml out of the box:
   (neocaml-base-mode . ocaml-eglot)
   (ocaml-eglot . eglot-ensure))
 ```
+
+### Compilation
+
+`C-c C-c` runs `M-x compile`, and neocaml registers an OCaml-specific error
+regexp so that `next-error` (`M-g n`) and `previous-error` (`M-g p`) jump
+directly to the source locations reported by the OCaml compiler, including
+errors, warnings, alerts, and exception backtraces.
 
 ## Navigation
 
@@ -304,7 +311,7 @@ If you're using `use-package` you'd probably do something like:
 
 ```emacs-lisp
 (use-package neocaml
-  :vc (:url "https://github.com/bbatsov/neocaml" :rev :newest)
+  :ensure t
   :config
   (add-hook 'neocaml-base-mode-hook #'neocaml-repl-minor-mode)
   ;; other config options...
@@ -487,6 +494,13 @@ You can support the development of neocaml via:
 - [GitHub Sponsors](https://github.com/sponsors/bbatsov)
 - [Patreon](https://www.patreon.com/bbatsov)
 - [PayPal](https://www.paypal.me/bbatsov)
+
+## Troubleshooting
+
+If you run into issues, `M-x neocaml-bug-report-info` collects useful debug
+information (Emacs version, neocaml version, grammar status, Eglot status) and
+copies it to the kill ring. Paste this into your bug report to help us
+diagnose the problem faster.
 
 ## Contributing
 
