@@ -162,7 +162,7 @@ All navigation commands are also available from the OCaml menu under "Navigate".
 
 ### Font-locking
 
-neocaml provides 4 levels of font-locking, as is the standard for tree-sitter
+neocaml provides 4 levels of font-locking, as is the standard for Tree-sitter
 modes. The default level in Emacs is 3, and you can change it like this:
 
 ```emacs-lisp
@@ -172,25 +172,78 @@ modes. The default level in Emacs is 3, and you can change it like this:
 
 The font-lock features available at each level are:
 
-| Level | Features |
-|-------|----------|
-| 1 | `comment`, `definition` |
-| 2 | `keyword`, `string`, `number` |
-| 3 | `attribute`, `builtin`, `constant`, `type` |
-| 4 | `operator`, `bracket`, `delimiter`, `variable`, `function` |
+| Level | Features                                                       | What they cover                                                            |
+|-------|----------------------------------------------------------------|----------------------------------------------------------------------------|
+| 1     | `comment`, `definition`                                        | Comments, doc comments, let/val/type/method bindings, value patterns       |
+| 2     | `keyword`, `string`, `number`                                  | Language keywords, strings, characters, escape sequences, format specs     |
+| 3     | `attribute`, `builtin`, `constant`, `type`                     | PPX attributes/extensions, builtin ids/types, `true`/`false`/`()`, type names, modules, constructors |
+| 4     | `operator`, `bracket`, `delimiter`, `variable`, `function`     | Operators, brackets, `,`/`;`/`.`, value names, labels, function calls     |
 
-You can selectively enable or disable individual features using
-`M-x treesit-font-lock-recompute-features`. See the documentation for
-`treesit-font-lock-level` and `treesit-font-lock-feature-list` for more details.
+#### Selecting features
+
+You don't have to use the level system. If you want fine-grained control over
+what gets highlighted, you can cherry-pick individual features using
+`treesit-font-lock-recompute-features`:
+
+```emacs-lisp
+(defun my-neocaml-font-lock-setup ()
+  (treesit-font-lock-recompute-features
+   ;; enable these features
+   '(comment definition keyword string number
+     attribute builtin constant type operator variable)
+   ;; disable these features
+   '(bracket delimiter function)))
+
+(add-hook 'neocaml-base-mode-hook #'my-neocaml-font-lock-setup)
+```
+
+This gives you operators and variables without bracket and delimiter noise, for
+example. You can also call `M-x treesit-font-lock-recompute-features`
+interactively to toggle features in the current buffer.
+
+#### Customizing faces
 
 The faces used are standard `font-lock-*-face` faces, so any theme applies
-automatically. You can also customize individual faces, for example:
+automatically. You can customize individual faces to change how specific
+syntactic elements look:
 
 ```emacs-lisp
 ;; Use a custom color for type names
 (custom-set-faces
  '(font-lock-type-face ((t (:foreground "DarkSeaGreen4")))))
 ```
+
+#### Adding custom font-lock rules
+
+For distinctions that neocaml doesn't make by default (e.g. highlighting block
+keywords differently from control flow keywords), you can layer additional
+Tree-sitter font-lock rules via a hook:
+
+```emacs-lisp
+(defface my-ocaml-block-keyword-face
+  '((t :inherit font-lock-keyword-face :weight bold))
+  "Face for OCaml block-delimiting keywords.")
+
+(defun my-neocaml-block-keywords ()
+  (setq treesit-font-lock-settings
+        (append treesit-font-lock-settings
+                (treesit-font-lock-rules
+                 :language (treesit-parser-language
+                            (car (treesit-parser-list)))
+                 :override t
+                 :feature 'keyword
+                 '(["begin" "end" "struct" "sig" "object"
+                    "do" "done" "fun" "function"]
+                   @my-ocaml-block-keyword-face))))
+  (treesit-font-lock-recompute-features))
+
+(add-hook 'neocaml-base-mode-hook #'my-neocaml-block-keywords)
+```
+
+The rules use standard Tree-sitter query syntax with `:override t` to take
+precedence over neocaml's built-in rules. You can target any node type the
+grammar produces -- use `M-x treesit-explore-mode` to inspect the syntax tree
+and find the right node types to match.
 
 #### Prettify Symbols
 
