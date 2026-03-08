@@ -123,11 +123,11 @@ displaying it."
 
 (defconst neocaml-grammar-recipes
   '((ocaml "https://github.com/tree-sitter/tree-sitter-ocaml"
-           "v0.24.0"
+           "v0.24.2"
            "grammars/ocaml/src")
     ;; that's the grammar for mli code
     (ocaml-interface "https://github.com/tree-sitter/tree-sitter-ocaml"
-                     "v0.24.0"
+                     "v0.24.2"
                      "grammars/interface/src"))
   "Tree-sitter grammar recipes for OCaml and OCaml Interface.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
