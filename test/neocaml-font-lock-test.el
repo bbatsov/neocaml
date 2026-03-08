@@ -394,7 +394,11 @@ triple asserts that positions START through END have FACE."
       ;; type t = bool
       ;; 1234567890123
       ("type t = bool"
-       (10 13 font-lock-builtin-face)))
+       (10 13 font-lock-builtin-face))
+      ;; type t = int iarray (OCaml 5.4+)
+      ;; 12345678901234567890
+      ("type t = int iarray"
+       (14 19 font-lock-builtin-face)))
 
     (when-fontifying-it "does not fontify user types as builtin"
       ;; type t = my_type

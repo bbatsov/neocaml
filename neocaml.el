@@ -204,7 +204,7 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 
 (defvar neocaml-mode--builtin-types
   '("int" "char" "bytes" "string" "float" "bool" "unit" "exn"
-    "array" "list" "option" "int32" "int64" "nativeint" "format6" "lazy_t")
+    "array" "iarray" "list" "option" "int32" "int64" "nativeint" "format6" "lazy_t")
   "OCaml builtin type names for tree-sitter font-locking.
 List taken from the upstream highlights.scm.")
 
