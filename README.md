@@ -172,12 +172,12 @@ modes. The default level in Emacs is 3, and you can change it like this:
 
 The font-lock features available at each level are:
 
-| Level | Features                                                       | What they cover                                                            |
-|-------|----------------------------------------------------------------|----------------------------------------------------------------------------|
-| 1     | `comment`, `definition`                                        | Comments, doc comments, let/val/type/method bindings, value patterns       |
-| 2     | `keyword`, `string`, `number`                                  | Language keywords, strings, characters, escape sequences, format specs     |
-| 3     | `attribute`, `builtin`, `constant`, `type`                     | PPX attributes/extensions, builtin ids/types, `true`/`false`/`()`, type names, modules, constructors |
-| 4     | `operator`, `bracket`, `delimiter`, `variable`, `function`     | Operators, brackets, `,`/`;`/`.`, value names, labels, function calls     |
+| Level | Features                                                              | What they cover                                                            |
+|-------|-----------------------------------------------------------------------|----------------------------------------------------------------------------|
+| 1     | `comment`, `definition`                                               | Comments, doc comments, let/val/type/method bindings, value patterns       |
+| 2     | `keyword`, `string`, `type`                                           | Language keywords, strings, characters, type names, modules, constructors  |
+| 3     | `attribute`, `builtin`, `constant`, `escape-sequence`, `number`       | PPX attributes/extensions, builtin ids/types, `true`/`false`/`()`, escape sequences, format specs, numbers |
+| 4     | `operator`, `bracket`, `delimiter`, `variable`, `label`, `function`   | Operators, brackets, `,`/`;`/`.`, value names, labeled arguments, function calls |
 
 #### Selecting features
 
@@ -189,8 +189,9 @@ what gets highlighted, you can cherry-pick individual features using
 (defun my-neocaml-font-lock-setup ()
   (treesit-font-lock-recompute-features
    ;; enable these features
-   '(comment definition keyword string number
-     attribute builtin constant type operator variable)
+   '(comment definition keyword string type
+     attribute builtin constant escape-sequence number
+     operator variable label)
    ;; disable these features
    '(bracket delimiter function)))
 
