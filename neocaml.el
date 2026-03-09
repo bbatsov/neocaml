@@ -564,15 +564,27 @@ Filters out nodes nested inside `let_expression',
   "Return the defun name of NODE.
 Return nil if there is no name or if NODE is not a defun node."
   (pcase (treesit-node-type node)
-    ((or "type_binding"
-         "method_definition"
-         "instance_variable_definition"
-         "module_binding"
-         "module_type_definition"
-         "class_binding"
-         "class_type_binding")
+    ("type_binding"
      (treesit-node-text
       (treesit-node-child-by-field-name node "name") t))
+    ("module_binding"
+     (treesit-node-text
+      (treesit-search-subtree node "module_name" nil nil 1) t))
+    ("module_type_definition"
+     (treesit-node-text
+      (treesit-search-subtree node "module_type_name" nil nil 1) t))
+    ("class_binding"
+     (treesit-node-text
+      (treesit-search-subtree node "class_name" nil nil 1) t))
+    ("class_type_binding"
+     (treesit-node-text
+      (treesit-search-subtree node "class_type_name" nil nil 1) t))
+    ("method_definition"
+     (treesit-node-text
+      (treesit-search-subtree node "method_name" nil nil 1) t))
+    ("instance_variable_definition"
+     (treesit-node-text
+      (treesit-search-subtree node "instance_variable_name" nil nil 1) t))
     ("exception_definition"
      (treesit-node-text
       (treesit-search-subtree node "constructor_name" nil nil 2) t))
