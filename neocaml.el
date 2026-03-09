@@ -1115,8 +1115,8 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   ;; TODO: Make this configurable?
   (setq-local treesit-font-lock-feature-list
               '((comment definition)
-                (keyword string number)
-                (attribute builtin constant type)
+                (keyword string type)
+                (attribute builtin constant number)
                 (operator bracket delimiter variable function)))
 
   (setq-local indent-line-function #'treesit-indent)

@@ -305,36 +305,84 @@ triple asserts that positions START through END have FACE."
        (24 25 font-lock-regexp-face)
        (34 35 font-lock-regexp-face))))
 
-  (describe "number feature"
-    (when-fontifying-it "fontifies integers"
-      ("let x = 42"
-       (9 10 font-lock-number-face)))
+  (describe "type feature"
+    (when-fontifying-it "fontifies type constructors"
+      ;; user-defined types get type-face (builtin types get builtin-face)
+      ("type t = my_type"
+       (6 6 font-lock-type-face)
+       (10 16 font-lock-type-face)))
 
-    (when-fontifying-it "fontifies floats"
-      ("let x = 3.14"
-       (9 12 font-lock-number-face)))
+    (when-fontifying-it "fontifies type variables"
+      ;; type 'a t = 'a my_list
+      ;; 12345678901234567890123
+      ("type 'a t = 'a my_list"
+       (6 7 font-lock-type-face)
+       (9 9 font-lock-type-face)
+       (13 14 font-lock-type-face)
+       (16 22 font-lock-type-face)))
 
-    (when-fontifying-it "fontifies hex literals"
-      ("let x = 0xFF"
-       (9 12 font-lock-number-face)))
+    (when-fontifying-it "fontifies module names"
+      ;; module M = List
+      ;; 123456789012345
+      ("module M = List"
+       (8 8 font-lock-type-face)
+       (12 15 font-lock-type-face)))
 
-    (when-fontifying-it "fontifies underscore-separated numbers"
-      ("let x = 1_000_000"
-       (9 17 font-lock-number-face)))
+    (when-fontifying-it "fontifies function type arrow"
+      ;; module type S = sig\n  val f : int -> int\nend
+      ("module type S = sig\n  val f : int -> int\nend"
+       (35 36 font-lock-type-face)))
 
-    (when-fontifying-it "fontifies binary literals"
-      ("let x = 0b1010"
-       (9 14 font-lock-number-face)))
+    (when-fontifying-it "fontifies tuple type star"
+      ;; type t = int * string
+      ;; 123456789012345678901
+      ("type t = int * string"
+       (14 14 font-lock-type-face)))
 
-    (when-fontifying-it "fontifies negative float exponents"
-      ("let x = 1.5e-3"
-       (9 14 font-lock-number-face)))
+    (when-fontifying-it "fontifies constructor declaration star"
+      ;; type t =\n  | A of int * string
+      ("type t =\n  | A of int * string"
+       (23 23 font-lock-type-face)))
 
-    (when-fontifying-it "fontifies signed numbers in patterns"
-      ;; match x with\n| -1 -> true\n| _ -> false
-      ;; pos: -(16) 1(17)
-      ("match x with\n| -1 -> true\n| _ -> false"
-       (16 17 font-lock-number-face))))
+    (when-fontifying-it "fontifies record declaration delimiters"
+      ;; type r = { x : int; y : string }
+      ;; 12345678901234567890123456789012
+      ("type r = { x : int; y : string }"
+       (10 10 font-lock-type-face)
+       (19 19 font-lock-type-face)
+       (32 32 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies module_type_name"
+      ;; module type S = sig end
+      ;; 12345678901234567890123
+      ("module type S = sig end"
+       (13 13 font-lock-type-face)))
+
+    (when-fontifying-it "fontifies constructor names in expressions"
+      ;; let x = Some 1
+      ;; 123456789012345
+      ("let x = Some 1"
+       (9 12 font-lock-constant-face)))
+
+    (when-fontifying-it "fontifies constructor names in patterns"
+      ;; match x with\n| Some v -> v\n| None -> 0
+      ;; S(16)o(17)m(18)e(19); N(30)o(31)n(32)e(33)
+      ("match x with\n| Some v -> v\n| None -> 0"
+       (16 19 font-lock-constant-face)
+       (30 33 font-lock-constant-face)))
+
+    (when-fontifying-it "fontifies constructor names in type declarations"
+      ;; type t =\n  | Foo\n  | Bar of int
+      ;; \n pos 14 = F, 16 = o; 22 = B, 24 = r
+      ("type t =\n  | Foo\n  | Bar of int"
+       (14 16 font-lock-constant-face)
+       (22 24 font-lock-constant-face)))
+
+    (when-fontifying-it "fontifies polymorphic variant tags"
+      ;; `Red
+      ;; 12345
+      ("let x = `Red"
+       (10 12 font-lock-constant-face))))
 
   ;; ---- Level 3 features ------------------------------------------------
 
@@ -417,84 +465,36 @@ triple asserts that positions START through END have FACE."
       ("let _ = ()"
        (9 10 font-lock-constant-face))))
 
-  (describe "type feature"
-    (when-fontifying-it "fontifies type constructors"
-      ;; user-defined types get type-face (builtin types get builtin-face)
-      ("type t = my_type"
-       (6 6 font-lock-type-face)
-       (10 16 font-lock-type-face)))
+  (describe "number feature"
+    (when-fontifying-it "fontifies integers"
+      ("let x = 42"
+       (9 10 font-lock-number-face)))
 
-    (when-fontifying-it "fontifies type variables"
-      ;; type 'a t = 'a my_list
-      ;; 12345678901234567890123
-      ("type 'a t = 'a my_list"
-       (6 7 font-lock-type-face)
-       (9 9 font-lock-type-face)
-       (13 14 font-lock-type-face)
-       (16 22 font-lock-type-face)))
+    (when-fontifying-it "fontifies floats"
+      ("let x = 3.14"
+       (9 12 font-lock-number-face)))
 
-    (when-fontifying-it "fontifies module names"
-      ;; module M = List
-      ;; 123456789012345
-      ("module M = List"
-       (8 8 font-lock-type-face)
-       (12 15 font-lock-type-face)))
+    (when-fontifying-it "fontifies hex literals"
+      ("let x = 0xFF"
+       (9 12 font-lock-number-face)))
 
-    (when-fontifying-it "fontifies function type arrow"
-      ;; module type S = sig\n  val f : int -> int\nend
-      ("module type S = sig\n  val f : int -> int\nend"
-       (35 36 font-lock-type-face)))
+    (when-fontifying-it "fontifies underscore-separated numbers"
+      ("let x = 1_000_000"
+       (9 17 font-lock-number-face)))
 
-    (when-fontifying-it "fontifies tuple type star"
-      ;; type t = int * string
-      ;; 123456789012345678901
-      ("type t = int * string"
-       (14 14 font-lock-type-face)))
+    (when-fontifying-it "fontifies binary literals"
+      ("let x = 0b1010"
+       (9 14 font-lock-number-face)))
 
-    (when-fontifying-it "fontifies constructor declaration star"
-      ;; type t =\n  | A of int * string
-      ("type t =\n  | A of int * string"
-       (23 23 font-lock-type-face)))
+    (when-fontifying-it "fontifies negative float exponents"
+      ("let x = 1.5e-3"
+       (9 14 font-lock-number-face)))
 
-    (when-fontifying-it "fontifies record declaration delimiters"
-      ;; type r = { x : int; y : string }
-      ;; 12345678901234567890123456789012
-      ("type r = { x : int; y : string }"
-       (10 10 font-lock-type-face)
-       (19 19 font-lock-type-face)
-       (32 32 font-lock-type-face)))
-
-    (when-fontifying-it "fontifies module_type_name"
-      ;; module type S = sig end
-      ;; 12345678901234567890123
-      ("module type S = sig end"
-       (13 13 font-lock-type-face)))
-
-    (when-fontifying-it "fontifies constructor names in expressions"
-      ;; let x = Some 1
-      ;; 123456789012345
-      ("let x = Some 1"
-       (9 12 font-lock-constant-face)))
-
-    (when-fontifying-it "fontifies constructor names in patterns"
-      ;; match x with\n| Some v -> v\n| None -> 0
-      ;; S(16)o(17)m(18)e(19); N(30)o(31)n(32)e(33)
-      ("match x with\n| Some v -> v\n| None -> 0"
-       (16 19 font-lock-constant-face)
-       (30 33 font-lock-constant-face)))
-
-    (when-fontifying-it "fontifies constructor names in type declarations"
-      ;; type t =\n  | Foo\n  | Bar of int
-      ;; \n pos 14 = F, 16 = o; 22 = B, 24 = r
-      ("type t =\n  | Foo\n  | Bar of int"
-       (14 16 font-lock-constant-face)
-       (22 24 font-lock-constant-face)))
-
-    (when-fontifying-it "fontifies polymorphic variant tags"
-      ;; `Red
-      ;; 12345
-      ("let x = `Red"
-       (10 12 font-lock-constant-face))))
+    (when-fontifying-it "fontifies signed numbers in patterns"
+      ;; match x with\n| -1 -> true\n| _ -> false
+      ;; pos: -(16) 1(17)
+      ("match x with\n| -1 -> true\n| _ -> false"
+       (16 17 font-lock-number-face))))
 
   ;; ---- Level 4 features ------------------------------------------------
 
