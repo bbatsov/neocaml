@@ -6,6 +6,11 @@
 
 - [#20](https://github.com/bbatsov/neocaml/issues/20): Work around broken `transpose-sexps` on Emacs 30 (bug#60655). Falls back to default transpose behavior; Emacs 31 has a proper fix.
 
+### Changes
+
+- Bump required tree-sitter-ocaml grammar from v0.24.0 to v0.24.2. **Users must reinstall their grammars** via `M-x neocaml-install-grammars`. The upstream release includes breaking changes to the parse tree structure (see [tree-sitter-ocaml#126](https://github.com/tree-sitter/tree-sitter-ocaml/issues/126)).
+- neocaml now warns at startup if the installed grammar is older than expected.
+
 ### New features
 
 - Add `neocaml-mark-sentence` command to mark the current statement around point.
@@ -15,6 +20,7 @@
 - Highlight escape sequences (`\n`, `\t`, etc.) in strings with `font-lock-escape-face`.
 - Highlight conversion specifications (`%d`, `%s`, etc.) in format strings with `font-lock-regexp-face`.
 - Highlight `match+` and similar binding operators as keywords in match expressions.
+- [#23](https://github.com/bbatsov/neocaml/issues/23): Add `iarray` to the list of builtin types.
 
 ## 0.3.0 (2026-02-26)
 
