@@ -172,12 +172,37 @@ modes. The default level in Emacs is 3, and you can change it like this:
 
 The font-lock features available at each level are:
 
-| Level | Features                                                              | What they cover                                                            |
-|-------|-----------------------------------------------------------------------|----------------------------------------------------------------------------|
-| 1     | `comment`, `definition`                                               | Comments, doc comments, let/val/type/method bindings, value patterns       |
-| 2     | `keyword`, `string`, `type`                                           | Language keywords, strings, characters, type names, modules, constructors  |
-| 3     | `attribute`, `builtin`, `constant`, `escape-sequence`, `number`       | PPX attributes/extensions, builtin ids/types, `true`/`false`/`()`, escape sequences, format specs, numbers |
-| 4     | `operator`, `bracket`, `delimiter`, `variable`, `property`, `label`, `function` | Operators, brackets, `,`/`;`/`.`, value names, record fields, labeled arguments, function calls |
+**Level 1** (minimal — comments and definitions):
+
+- `comment` — comments and doc comments: `(* ... *)`, `(** ... *)`
+- `definition` — let/val/type/method bindings and value patterns: `let f x = ...`, `val x : int`
+
+**Level 2** (add keywords, strings, types):
+
+- `keyword` — language keywords and arrows: `let`, `match`, `fun`, `if`, `->`, ...
+- `string` — strings and characters: `"hello"`, `'a'`, `{|raw|}`
+- `type` — type names, modules, constructors, type punctuation: `int`, `List`, `Some`, `'a`, `->`/`*` in type expressions
+
+**Level 3** (default — full-blown fontification):
+
+- `attribute` — PPX attributes and extension nodes: `[@inline]`, `[@@deriving show]`, `[%test ...]`
+- `builtin` — builtin identifiers, exceptions, and types: `print_endline`, `Not_found`, `int`, `string`
+- `constant` — boolean and unit literals: `true`, `false`, `()`
+- `escape-sequence` — escape sequences and format specs in strings: `\n`, `\t`, `%d`, `%s`
+- `number` — numeric literals: `42`, `3.14`, `0xFF`, `0b1010`
+
+**Level 4** (maximum detail):
+
+Level 4 can get very noisy — rather than enabling it wholesale, consider
+cherry-picking individual features from it (see [Selecting features](#selecting-features) below).
+
+- `operator` — operators: `+`, `::`, `<-`, `#` (method invocation)
+- `bracket` — brackets: `()`, `[]`, `{}`, `[| |]`
+- `delimiter` — delimiters: `,`, `.`, `;`, `:`, `;;`
+- `variable` — value names in expressions: `x`, `y` in `x + y`
+- `property` — record field access: `name` in `person.name`
+- `label` — labeled arguments: `x` in `~x:1`, `y` in `?y:2`
+- `function` — function calls: `f` in `f x`, `map` in `List.map`, pipe targets `x |> f`
 
 #### Selecting features
 
