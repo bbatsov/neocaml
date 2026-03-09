@@ -307,7 +307,7 @@ The return value is suitable for `treesit-font-lock-settings'."
    '([(string) (quoted_string) (character)] @font-lock-string-face)
 
    :language language
-   :feature 'string
+   :feature 'escape-sequence
    :override t
    '((escape_sequence) @font-lock-escape-face
      (conversion_specification) @font-lock-regexp-face)
@@ -1116,7 +1116,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local treesit-font-lock-feature-list
               '((comment definition)
                 (keyword string type)
-                (attribute builtin constant number)
+                (attribute builtin constant escape-sequence number)
                 (operator bracket delimiter variable function)))
 
   (setq-local indent-line-function #'treesit-indent)

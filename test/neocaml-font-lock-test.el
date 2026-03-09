@@ -279,31 +279,7 @@ triple asserts that positions START through END have FACE."
 
     (when-fontifying-it "fontifies empty strings"
       ("\"\""
-       (1 2 font-lock-string-face)))
-
-    (when-fontifying-it "fontifies escape sequences in strings"
-      ;; "line1\nline2"
-      ;; 1234567890123456
-      ("\"line1\\nline2\""
-       (1 6 font-lock-string-face)
-       (7 8 font-lock-escape-face)
-       (9 14 font-lock-string-face)))
-
-    (when-fontifying-it "fontifies multiple escape sequences"
-      ;; "a\t\nb"
-      ;; 12345678
-      ("\"a\\t\\nb\""
-       (1 2 font-lock-string-face)
-       (3 4 font-lock-escape-face)
-       (5 6 font-lock-escape-face)
-       (7 8 font-lock-string-face)))
-
-    (when-fontifying-it "fontifies conversion specifications in format strings"
-      ;; let _ = Printf.printf "%d items: %s"
-      ;; positions:              24-25     34-35
-      ("let _ = Printf.printf \"%d items: %s\""
-       (24 25 font-lock-regexp-face)
-       (34 35 font-lock-regexp-face))))
+       (1 2 font-lock-string-face))))
 
   (describe "type feature"
     (when-fontifying-it "fontifies type constructors"
@@ -464,6 +440,31 @@ triple asserts that positions START through END have FACE."
     (when-fontifying-it "fontifies unit"
       ("let _ = ()"
        (9 10 font-lock-constant-face))))
+
+  (describe "escape-sequence feature"
+    (when-fontifying-it "fontifies escape sequences in strings"
+      ;; "line1\nline2"
+      ;; 1234567890123456
+      ("\"line1\\nline2\""
+       (1 6 font-lock-string-face)
+       (7 8 font-lock-escape-face)
+       (9 14 font-lock-string-face)))
+
+    (when-fontifying-it "fontifies multiple escape sequences"
+      ;; "a\t\nb"
+      ;; 12345678
+      ("\"a\\t\\nb\""
+       (1 2 font-lock-string-face)
+       (3 4 font-lock-escape-face)
+       (5 6 font-lock-escape-face)
+       (7 8 font-lock-string-face)))
+
+    (when-fontifying-it "fontifies conversion specifications in format strings"
+      ;; let _ = Printf.printf "%d items: %s"
+      ;; positions:              24-25     34-35
+      ("let _ = Printf.printf \"%d items: %s\""
+       (24 25 font-lock-regexp-face)
+       (34 35 font-lock-regexp-face))))
 
   (describe "number feature"
     (when-fontifying-it "fontifies integers"
