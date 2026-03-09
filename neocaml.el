@@ -147,6 +147,30 @@ Suitable for use as the value of `treesit-language-source-alist'.")
         (let ((treesit-language-source-alist neocaml-grammar-recipes))
           (treesit-install-language-grammar grammar))))))
 
+(defvar neocaml--grammar-compatibility-checked nil
+  "Non-nil if grammar compatibility has already been checked this session.")
+
+(defun neocaml--check-grammar-compatibility ()
+  "Check that installed grammars are compatible with this version of neocaml.
+Emit a warning if an outdated grammar is detected."
+  (unless neocaml--grammar-compatibility-checked
+    (setq neocaml--grammar-compatibility-checked t)
+    (dolist (lang '(ocaml ocaml-interface))
+      (when (treesit-language-available-p lang)
+        (let ((expected (nth 2 (assq lang neocaml-grammar-recipes))))
+          ;; In v0.24.1+, module_binding lost its "name" field.
+          ;; If this query compiles, the grammar predates v0.24.1.
+          (condition-case nil
+              (progn
+                (treesit-query-compile lang
+                  '((module_binding name: (_) @n)))
+                (display-warning
+                 'neocaml
+                 (format "The installed `%s' grammar appears older than %s. \
+Run M-x neocaml-install-grammars to update."
+                         lang expected)))
+            (treesit-query-error nil)))))))
+
 ;; adapted from tuareg-mode
 (defvar neocaml-base-mode-syntax-table
   (let ((st (make-syntax-table)))
@@ -1030,6 +1054,9 @@ the language-specific parts of the mode."
                                    neocaml-grammar-recipes)))
     (when (y-or-n-p "OCaml tree-sitter grammars are not installed.  Install them now?")
       (neocaml-install-grammars)))
+
+  ;; Warn if installed grammars are outdated
+  (neocaml--check-grammar-compatibility)
 
   (when (treesit-ready-p language)
     (treesit-parser-create language)
