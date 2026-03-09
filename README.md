@@ -177,7 +177,7 @@ The font-lock features available at each level are:
 | 1     | `comment`, `definition`                                               | Comments, doc comments, let/val/type/method bindings, value patterns       |
 | 2     | `keyword`, `string`, `type`                                           | Language keywords, strings, characters, type names, modules, constructors  |
 | 3     | `attribute`, `builtin`, `constant`, `escape-sequence`, `number`       | PPX attributes/extensions, builtin ids/types, `true`/`false`/`()`, escape sequences, format specs, numbers |
-| 4     | `operator`, `bracket`, `delimiter`, `variable`, `label`, `function`   | Operators, brackets, `,`/`;`/`.`, value names, labeled arguments, function calls |
+| 4     | `operator`, `bracket`, `delimiter`, `variable`, `property`, `label`, `function` | Operators, brackets, `,`/`;`/`.`, value names, record fields, labeled arguments, function calls |
 
 #### Selecting features
 
@@ -191,7 +191,7 @@ what gets highlighted, you can cherry-pick individual features using
    ;; enable these features
    '(comment definition keyword string type
      attribute builtin constant escape-sequence number
-     operator variable label)
+     operator variable property label)
    ;; disable these features
    '(bracket delimiter function)))
 

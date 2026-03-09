@@ -598,13 +598,14 @@ triple asserts that positions START through END have FACE."
       ;; In `x + y`, x and y are plain value_name uses
       ("let _ = x + y"
        (9 9 font-lock-variable-use-face)
-       (13 13 font-lock-variable-use-face)))
+       (13 13 font-lock-variable-use-face))))
 
+  (describe "property feature"
     (when-fontifying-it "fontifies field name use"
       ;; r.name
       ;; 123456
       ("r.name"
-       (3 6 font-lock-variable-use-face))))
+       (3 6 font-lock-property-use-face))))
 
   (describe "label feature"
     (when-fontifying-it "fontifies labeled argument at call site"

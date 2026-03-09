@@ -10,7 +10,7 @@
 
 - Bump required tree-sitter-ocaml grammar from v0.24.0 to v0.24.2. **Users must reinstall their grammars** via `M-x neocaml-install-grammars`. The upstream release includes breaking changes to the parse tree structure (see [tree-sitter-ocaml#126](https://github.com/tree-sitter/tree-sitter-ocaml/issues/126)).
 - neocaml now warns at startup if the installed grammar is older than expected.
-- Reorganize font-lock feature levels to align with Emacs conventions: `type` moved to level 2, `number` moved to level 3, `escape-sequence` split into its own feature at level 3, and `label` split into its own feature at level 4.
+- Reorganize font-lock feature levels to align with Emacs conventions: `type` moved to level 2, `number` moved to level 3, `escape-sequence` split into its own feature at level 3, and `property` and `label` split into their own features at level 4.
 
 ### New features
 

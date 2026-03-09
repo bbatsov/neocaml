@@ -371,8 +371,11 @@ The return value is suitable for `treesit-font-lock-settings'."
 
    :language language
    :feature 'variable
-   '((value_name) @font-lock-variable-use-face
-     (field_name) @font-lock-variable-use-face)
+   '((value_name) @font-lock-variable-use-face)
+
+   :language language
+   :feature 'property
+   '((field_name) @font-lock-property-use-face)
 
    :language language
    :feature 'label
@@ -1120,7 +1123,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
               '((comment definition)
                 (keyword string type)
                 (attribute builtin constant escape-sequence number)
-                (operator bracket delimiter variable label function)))
+                (operator bracket delimiter variable property label function)))
 
   (setq-local indent-line-function #'treesit-indent)
 
