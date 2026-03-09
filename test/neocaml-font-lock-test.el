@@ -604,8 +604,9 @@ triple asserts that positions START through END have FACE."
       ;; r.name
       ;; 123456
       ("r.name"
-       (3 6 font-lock-variable-use-face)))
+       (3 6 font-lock-variable-use-face))))
 
+  (describe "label feature"
     (when-fontifying-it "fontifies labeled argument at call site"
       ;; let _ = f ~x:1 ~y:2
       ;; 12345678901234567890
