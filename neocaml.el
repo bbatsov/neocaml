@@ -155,21 +155,23 @@ Suitable for use as the value of `treesit-language-source-alist'.")
 Emit a warning if an outdated grammar is detected."
   (unless neocaml--grammar-compatibility-checked
     (setq neocaml--grammar-compatibility-checked t)
-    (dolist (lang '(ocaml ocaml-interface))
-      (when (treesit-language-available-p lang)
-        (let ((expected (nth 2 (assq lang neocaml-grammar-recipes))))
-          ;; In v0.24.1+, module_binding lost its "name" field.
-          ;; If this query compiles, the grammar predates v0.24.1.
-          (condition-case nil
-              (progn
-                (treesit-query-compile lang
-                  '((module_binding name: (_) @n)))
-                (display-warning
-                 'neocaml
-                 (format "The installed `%s' grammar appears older than %s. \
-Run M-x neocaml-install-grammars to update."
-                         lang expected)))
-            (treesit-query-error nil)))))))
+    (when (treesit-language-available-p 'ocaml)
+      (let ((expected (nth 2 (assq 'ocaml neocaml-grammar-recipes))))
+        ;; In v0.24.2, module_binding lost its "name" field.
+        ;; We parse a snippet and check whether that field still exists.
+        ;; treesit-query-compile doesn't validate field names, so we
+        ;; must check against an actual parse tree.
+        (with-temp-buffer
+          (insert "module M = struct end")
+          (let* ((parser (treesit-parser-create 'ocaml))
+                 (root (treesit-parser-root-node parser))
+                 (node (treesit-search-subtree root "module_binding")))
+            (when (and node (treesit-node-child-by-field-name node "name"))
+              (display-warning
+               'neocaml
+               (format "The installed tree-sitter OCaml grammar appears older \
+than %s.  Run M-x neocaml-install-grammars to update."
+                       expected)))))))))
 
 ;; adapted from tuareg-mode
 (defvar neocaml-base-mode-syntax-table
