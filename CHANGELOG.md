@@ -2,6 +2,12 @@
 
 ## main (unreleased)
 
+## 0.4.1 (2026-03-10)
+
+### Bug fixes
+
+- [#24](https://github.com/bbatsov/neocaml/issues/24): Fix grammar compatibility check always warning even with up-to-date grammars. `treesit-query-compile` doesn't validate field names, so the check now uses `treesit-node-child-by-field-name` on an actual parse tree instead.
+
 ## 0.4.0 (2026-03-10)
 
 ### Bug fixes
