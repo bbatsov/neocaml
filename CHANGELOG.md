@@ -2,9 +2,13 @@
 
 ## main (unreleased)
 
+## 0.4.0 (2026-03-10)
+
 ### Bug fixes
 
 - [#20](https://github.com/bbatsov/neocaml/issues/20): Work around broken `transpose-sexps` on Emacs 30 (bug#60655). Falls back to default transpose behavior; Emacs 31 has a proper fix.
+- [#22](https://github.com/bbatsov/neocaml/issues/22): Fix compilation regexp to handle arbitrary leading whitespace in OCaml error messages.
+- [#22](https://github.com/bbatsov/neocaml/issues/22): Fix off-by-one in compilation column positions. OCaml uses 0-indexed columns; the begin-column is now correctly converted to Emacs's 1-indexed columns.
 
 ### Changes
 
