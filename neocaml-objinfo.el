@@ -99,10 +99,29 @@ The flags -no-approx and -no-code suppress verbose output from
     (message "Refreshed objinfo for %s"
              (file-name-nondirectory neocaml-objinfo--file))))
 
+(defun neocaml-objinfo-next-unit ()
+  "Move to the next compilation unit."
+  (interactive)
+  (end-of-line)
+  (if (re-search-forward "^Name: " nil t)
+      (beginning-of-line)
+    (goto-char (point-max))
+    (message "No more units")))
+
+(defun neocaml-objinfo-previous-unit ()
+  "Move to the previous compilation unit."
+  (interactive)
+  (beginning-of-line)
+  (unless (re-search-backward "^Name: " nil t)
+    (goto-char (point-min))
+    (message "No previous unit")))
+
 (defvar neocaml-objinfo-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map special-mode-map)
     (define-key map "g" #'neocaml-objinfo-revert)
+    (define-key map "n" #'neocaml-objinfo-next-unit)
+    (define-key map "p" #'neocaml-objinfo-previous-unit)
     map)
   "Keymap for `neocaml-objinfo-mode'.")
 

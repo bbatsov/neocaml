@@ -73,7 +73,46 @@
 
     (it "binds g to revert"
       (expect (lookup-key neocaml-objinfo-mode-map "g")
-              :to-equal #'neocaml-objinfo-revert)))
+              :to-equal #'neocaml-objinfo-revert))
+
+    (it "binds n and p to unit navigation"
+      (expect (lookup-key neocaml-objinfo-mode-map "n")
+              :to-equal #'neocaml-objinfo-next-unit)
+      (expect (lookup-key neocaml-objinfo-mode-map "p")
+              :to-equal #'neocaml-objinfo-previous-unit)))
+
+  (describe "unit navigation"
+    (it "moves to the next unit"
+      (with-temp-buffer
+        (insert "Name: Foo\nInterfaces imported:\nName: Bar\n")
+        (neocaml-objinfo-mode)
+        (goto-char (point-min))
+        (neocaml-objinfo-next-unit)
+        (expect (looking-at "Name: Bar") :to-be-truthy)))
+
+    (it "moves to the previous unit"
+      (with-temp-buffer
+        (insert "Name: Foo\nInterfaces imported:\nName: Bar\n")
+        (neocaml-objinfo-mode)
+        (goto-char (point-max))
+        (neocaml-objinfo-previous-unit)
+        (expect (looking-at "Name: Bar") :to-be-truthy)))
+
+    (it "stays at end when no more units"
+      (with-temp-buffer
+        (insert "Name: Foo\n")
+        (neocaml-objinfo-mode)
+        (goto-char (point-min))
+        (neocaml-objinfo-next-unit)
+        (expect (eobp) :to-be-truthy)))
+
+    (it "stays at beginning when no previous unit"
+      (with-temp-buffer
+        (insert "Name: Foo\n")
+        (neocaml-objinfo-mode)
+        (goto-char (point-max))
+        (neocaml-objinfo-previous-unit)
+        (expect (bobp) :to-be-truthy))))
 
   (describe "neocaml-objinfo--run"
     (it "errors when program is not found"
