@@ -60,15 +60,17 @@ The flags -no-approx and -no-code suppress verbose output from
 (defvar-local neocaml-objinfo--file nil
   "The compiled artifact file being displayed.")
 
-(defconst neocaml-objinfo--unit-re "^Name: "
+(defconst neocaml-objinfo--unit-re
+  (rx bol (or "Name: " "Unit name: " "Cmt unit name: "))
   "Regexp matching the start of a compilation unit in ocamlobjinfo output.")
 
 (defvar neocaml-objinfo-font-lock-keywords
   `(;; Section headers: "Unit name:", "Interfaces imported:", etc.
-    (,(rx bol (group upper (+ (any alnum blank ?_))) ":")
+    (,(rx bol (group (any alpha) (+ (any alnum blank ?_ ?-))) ":")
      (1 font-lock-keyword-face))
-    ;; Unit name value
-    (,(rx bol "Name: " (group (+ (any alnum ?_))))
+    ;; Unit name value (after "Name:", "Unit name:", "Cmt unit name:")
+    (,(rx bol (or "Name: " "Unit name: " "Cmt unit name: ")
+          (group (+ (any alnum ?_))))
      (1 font-lock-type-face))
     ;; CRC hashes (32-char hex or dashes)
     (,(rx bol "\t" (group (= 32 (any hex-digit ?-))) "\t")
@@ -142,7 +144,9 @@ Press \\`g' to refresh after recompilation, \\`q' to quit.
   (setq-local font-lock-defaults '(neocaml-objinfo-font-lock-keywords))
   (setq-local revert-buffer-function #'neocaml-objinfo-revert)
   (setq-local imenu-generic-expression
-              `((nil ,(rx bol "Name: " (group (+ (any alnum ?_)))) 1)))
+              `((nil ,(rx bol (or "Name: " "Unit name: " "Cmt unit name: ")
+                         (group (+ (any alnum ?_))))
+                     1)))
   (buffer-disable-undo)
   (when buffer-file-name
     (setq neocaml-objinfo--file buffer-file-name)

@@ -22,13 +22,37 @@
         (expect (get-text-property (point) 'face)
                 :to-equal font-lock-keyword-face)))
 
-    (it "highlights unit name value"
+    (it "highlights unit name value after Name:"
       (with-temp-buffer
         (insert "Name: Olisp__Types\n")
         (neocaml-objinfo-mode)
         (font-lock-ensure)
         (expect (get-text-property 7 'face)
                 :to-equal font-lock-type-face)))
+
+    (it "highlights unit name value after Unit name:"
+      (with-temp-buffer
+        (insert "Unit name: Foo\n")
+        (neocaml-objinfo-mode)
+        (font-lock-ensure)
+        (expect (get-text-property 12 'face)
+                :to-equal font-lock-type-face)))
+
+    (it "highlights section headers with hyphens"
+      (with-temp-buffer
+        (insert "Extra dynamically-loaded libraries:\n")
+        (neocaml-objinfo-mode)
+        (font-lock-ensure)
+        (expect (get-text-property 1 'face)
+                :to-equal font-lock-keyword-face)))
+
+    (it "highlights section headers starting with lowercase"
+      (with-temp-buffer
+        (insert "cmt interface digest: abc123\n")
+        (neocaml-objinfo-mode)
+        (font-lock-ensure)
+        (expect (get-text-property 1 'face)
+                :to-equal font-lock-keyword-face)))
 
     (it "highlights CRC hashes"
       (with-temp-buffer
@@ -97,6 +121,14 @@
         (goto-char (point-max))
         (neocaml-objinfo-previous-unit)
         (expect (looking-at "Name: Bar") :to-be-truthy)))
+
+    (it "navigates between Unit name: entries"
+      (with-temp-buffer
+        (insert "Unit name: Foo\nInterfaces imported:\nUnit name: Bar\n")
+        (neocaml-objinfo-mode)
+        (goto-char (point-min))
+        (neocaml-objinfo-next-unit)
+        (expect (looking-at "Unit name: Bar") :to-be-truthy)))
 
     (it "stays at end when no more units"
       (with-temp-buffer
