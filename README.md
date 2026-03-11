@@ -452,7 +452,12 @@ automatically show the `ocamlobjinfo` output instead of binary content.
 
 You can also view a file explicitly with `M-x neocaml-objinfo-view-file`.
 
-Press `g` to refresh after recompilation, `q` to quit.
+| Keybinding | Command | Description |
+|------------|---------|-------------|
+| `g` | `neocaml-objinfo-revert` | Refresh the output (e.g. after recompilation) |
+| `n` | `neocaml-objinfo-next-unit` | Jump to the next compilation unit (useful in archives) |
+| `p` | `neocaml-objinfo-previous-unit` | Jump to the previous compilation unit |
+| `q` | `quit-window` | Close the buffer |
 
 ### Configuration
 
