@@ -443,6 +443,27 @@ You can customize the OCaml REPL integration with the following variables:
 > [exec-path-from-shell](https://github.com/purcell/exec-path-from-shell)
 > package is the usual fix for this.
 
+## Viewing Compiled Artifacts
+
+neocaml can display OCaml compiled artifacts (`.cmi`, `.cmo`, `.cmx`,
+`.cma`, `.cmxa`, `.cmxs`, `.cmt`, `.cmti`) in a human-readable form
+using `ocamlobjinfo`. Just open any compiled file and neocaml will
+automatically show the `ocamlobjinfo` output instead of binary content.
+
+You can also view a file explicitly with `M-x neocaml-objinfo-view-file`.
+
+Press `g` to refresh after recompilation, `q` to quit.
+
+### Configuration
+
+```emacs-lisp
+;; Use a wrapper script (e.g. for opam exec)
+(setq neocaml-objinfo-program "opam exec -- ocamlobjinfo")
+
+;; Customize the flags passed to ocamlobjinfo
+(setq neocaml-objinfo-program-args '("-no-approx" "-no-code"))
+```
+
 ## Comparison with Other Modes
 
 People love comparisons, so here's a comparison of neocaml with its main historical
