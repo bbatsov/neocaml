@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### New features
+
+- Add `neocaml-objinfo-mode` for viewing OCaml compiled artifacts (`.cmi`, `.cmo`, `.cmx`, `.cma`, `.cmxa`, `.cmxs`, `.cmt`, `.cmti`) via `ocamlobjinfo`. Includes font-lock, imenu navigation, and revert support.
+
 ## 0.4.1 (2026-03-10)
 
 ### Bug fixes
