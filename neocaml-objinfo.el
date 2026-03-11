@@ -60,6 +60,9 @@ The flags -no-approx and -no-code suppress verbose output from
 (defvar-local neocaml-objinfo--file nil
   "The compiled artifact file being displayed.")
 
+(defconst neocaml-objinfo--unit-re "^Name: "
+  "Regexp matching the start of a compilation unit in ocamlobjinfo output.")
+
 (defvar neocaml-objinfo-font-lock-keywords
   `(;; Section headers: "Unit name:", "Interfaces imported:", etc.
     (,(rx bol (group upper (+ (any alnum blank ?_))) ":")
@@ -95,7 +98,7 @@ The flags -no-approx and -no-code suppress verbose output from
   (interactive)
   (when neocaml-objinfo--file
     (neocaml-objinfo--run neocaml-objinfo--file)
-    (font-lock-ensure)
+    (font-lock-flush)
     (message "Refreshed objinfo for %s"
              (file-name-nondirectory neocaml-objinfo--file))))
 
@@ -103,7 +106,7 @@ The flags -no-approx and -no-code suppress verbose output from
   "Move to the next compilation unit."
   (interactive)
   (end-of-line)
-  (if (re-search-forward "^Name: " nil t)
+  (if (re-search-forward neocaml-objinfo--unit-re nil t)
       (beginning-of-line)
     (goto-char (point-max))
     (message "No more units")))
@@ -112,7 +115,7 @@ The flags -no-approx and -no-code suppress verbose output from
   "Move to the previous compilation unit."
   (interactive)
   (beginning-of-line)
-  (unless (re-search-backward "^Name: " nil t)
+  (unless (re-search-backward neocaml-objinfo--unit-re nil t)
     (goto-char (point-min))
     (message "No previous unit")))
 
@@ -155,9 +158,9 @@ Press \\`g' to refresh after recompilation, \\`q' to quit.
          (name (format "*objinfo: %s*" (file-name-nondirectory file)))
          (buf (get-buffer-create name)))
     (with-current-buffer buf
+      (neocaml-objinfo-mode)
       (setq neocaml-objinfo--file file)
-      (neocaml-objinfo--run file)
-      (neocaml-objinfo-mode))
+      (neocaml-objinfo--run file))
     (pop-to-buffer buf)))
 
 ;;;###autoload
