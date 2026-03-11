@@ -64,6 +64,9 @@ The flags -no-approx and -no-code suppress verbose output from
   `(;; Section headers: "Unit name:", "Interfaces imported:", etc.
     (,(rx bol (group upper (+ (any alnum blank ?_))) ":")
      (1 font-lock-keyword-face))
+    ;; Unit name value
+    (,(rx bol "Name: " (group (+ (any alnum ?_))))
+     (1 font-lock-type-face))
     ;; CRC hashes (32-char hex or dashes)
     (,(rx bol "\t" (group (= 32 (any hex-digit ?-))) "\t")
      (1 font-lock-comment-face))
@@ -117,7 +120,7 @@ Press \\`g' to refresh after recompilation, \\`q' to quit.
   (setq-local font-lock-defaults '(neocaml-objinfo-font-lock-keywords))
   (setq-local revert-buffer-function #'neocaml-objinfo-revert)
   (setq-local imenu-generic-expression
-              `((nil ,(rx bol (group upper (+ (any alnum blank ?_))) ":") 1)))
+              `((nil ,(rx bol "Name: " (group (+ (any alnum ?_)))) 1)))
   (buffer-disable-undo)
   (when buffer-file-name
     (setq neocaml-objinfo--file buffer-file-name)

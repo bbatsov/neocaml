@@ -22,6 +22,14 @@
         (expect (get-text-property (point) 'face)
                 :to-equal font-lock-keyword-face)))
 
+    (it "highlights unit name value"
+      (with-temp-buffer
+        (insert "Name: Olisp__Types\n")
+        (neocaml-objinfo-mode)
+        (font-lock-ensure)
+        (expect (get-text-property 7 'face)
+                :to-equal font-lock-type-face)))
+
     (it "highlights CRC hashes"
       (with-temp-buffer
         (insert "\t8a4c67b2d5e1f093a7b6c4d8e2f10394\tStdlib\n")
