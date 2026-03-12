@@ -919,16 +919,39 @@ was in a comment, nil otherwise to let the default handler run."
               (goto-char (match-beginning 0))
               (skip-chars-backward " \t")
               (setq end (point)))
-            ;; Compute fill-prefix from body start column so
-            ;; continuation lines are indented to align with text
-            ;; after the opening delimiter.
+            ;; Compute body column before narrowing.
             (goto-char start)
-            (let* ((body-col (current-column))
-                   (fill-prefix (make-string body-col ?\s))
-                   (fill-paragraph-function nil))
+            (let ((body-col (current-column)))
               (narrow-to-region start end)
-              (fill-paragraph nil))
-            t))))))
+              ;; Treat list items (- foo, * foo, + foo) and odoc tags
+              ;; (@param, @return) as paragraph boundaries so they
+              ;; don't get merged into prose.
+              (let* ((paragraph-start
+                      (concat paragraph-start
+                              "\\|[ \t]*[-*+][ \t]"
+                              "\\|[ \t]*@[a-z]+\\b"))
+                     par-start par-end)
+                ;; Find the paragraph containing point (without
+                ;; fill-prefix set, so list items are recognized as
+                ;; paragraph boundaries).
+                (save-excursion
+                  (skip-chars-forward " \t")
+                  (backward-paragraph)
+                  (skip-chars-forward " \t\n")
+                  (setq par-start (point))
+                  (forward-paragraph)
+                  (setq par-end (point)))
+                ;; Use body-col for first-line paragraphs, actual
+                ;; indentation for indented paragraphs (list items).
+                (let* ((par-col (save-excursion
+                                  (goto-char par-start)
+                                  (skip-chars-forward " \t")
+                                  (current-column)))
+                       (fill-prefix
+                        (make-string (max body-col par-col) ?\s))
+                       (fill-paragraph-function nil))
+                  (fill-region-as-paragraph par-start par-end)))))
+          t)))))
 
 ;;;; Comment continuation (M-j)
 

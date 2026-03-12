@@ -125,7 +125,60 @@
           (goto-char 5)
           (fill-paragraph))
         (expect (buffer-string) :to-match "^(\\*")
-        (expect (buffer-string) :to-match "\\*)$"))))
+        (expect (buffer-string) :to-match "\\*)$")))
+
+    (it "preserves list items in comments"
+      (with-temp-buffer
+        (insert "(* Some long comment text that explains the function behavior\n   - item one\n   - item two *)")
+        (neocaml-mode)
+        (let ((fill-column 70))
+          (goto-char 5)
+          (fill-paragraph))
+        (expect (buffer-string) :to-match "\n   - item one")
+        (expect (buffer-string) :to-match "\n   - item two")))
+
+    (it "preserves list items in doc comments"
+      (with-temp-buffer
+        (insert "(** Some long comment text that explains the function behavior\n    - item one\n    - item two *)")
+        (neocaml-mode)
+        (let ((fill-column 70))
+          (goto-char 5)
+          (fill-paragraph))
+        (expect (buffer-string) :to-match "\n    - item one")
+        (expect (buffer-string) :to-match "\n    - item two")))
+
+    (it "wraps long prose before list items"
+      (with-temp-buffer
+        (insert "(** Long prose that needs to be wrapped at the fill column and should not eat the list items below\n    - first item\n    - second item *)")
+        (neocaml-mode)
+        (let ((fill-column 50))
+          (goto-char 5)
+          (fill-paragraph))
+        ;; Prose should be wrapped
+        (expect (buffer-string) :to-match "\n    ")
+        ;; List items must survive
+        (expect (buffer-string) :to-match "\n    - first item")
+        (expect (buffer-string) :to-match "\n    - second item")))
+
+    (it "preserves + list markers"
+      (with-temp-buffer
+        (insert "(* Description\n   + first\n   + second *)")
+        (neocaml-mode)
+        (let ((fill-column 70))
+          (goto-char 5)
+          (fill-paragraph))
+        (expect (buffer-string) :to-match "\n   \\+ first")
+        (expect (buffer-string) :to-match "\n   \\+ second")))
+
+    (it "preserves odoc tags as paragraph boundaries"
+      (with-temp-buffer
+        (insert "(** Some description text\n    @param x the input\n    @return the output *)")
+        (neocaml-mode)
+        (let ((fill-column 70))
+          (goto-char 5)
+          (fill-paragraph))
+        (expect (buffer-string) :to-match "\n    @param x the input")
+        (expect (buffer-string) :to-match "\n    @return the output"))))
 
   (describe "comment continuation"
     (it "inserts newline with correct indentation in regular comment"
