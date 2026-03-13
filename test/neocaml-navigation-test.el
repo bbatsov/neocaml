@@ -222,4 +222,76 @@
                            (point)))
               :to-be-truthy))))
 
+;;;; list navigation (Emacs 30+ only)
+
+(describe "navigation: list (Emacs 30+)"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available"))
+    (unless (boundp 'treesit-thing-settings)
+      (signal 'buttercup-pending "treesit-thing-settings not available (requires Emacs 30+)")))
+
+  (it "forward-list moves over a parenthesized expression"
+    (with-neocaml-buffer "let x = (1 + 2) + 3\n"
+      (search-forward "= ")
+      (forward-list)
+      (expect (char-before) :to-equal ?\))))
+
+  (it "forward-list moves over a list expression"
+    (with-neocaml-buffer "let x = [1; 2; 3]\n"
+      (search-forward "= ")
+      (forward-list)
+      (expect (char-before) :to-equal ?\])))
+
+  (it "forward-list moves over a record expression"
+    (with-neocaml-buffer "let x = {a = 1; b = 2}\n"
+      (search-forward "= ")
+      (forward-list)
+      (expect (char-before) :to-equal ?})))
+
+  (it "forward-list moves over an array expression"
+    (with-neocaml-buffer "let x = [|1; 2; 3|]\n"
+      (search-forward "= ")
+      (forward-list)
+      (expect (looking-back "\\|\\]" (- (point) 2)) :to-be-truthy)))
+
+  (it "up-list moves out of a parenthesized expression"
+    (with-neocaml-buffer "let x = (1 + 2)\n"
+      (search-forward "1 ")
+      (up-list)
+      (expect (char-before) :to-equal ?\))))
+
+  (it "down-list moves into a parenthesized expression"
+    (with-neocaml-buffer "let x = (1 + 2)\n"
+      (search-forward "= ")
+      (down-list)
+      (expect (char-before) :to-equal ?\()))
+
+  (it "forward-list moves over a polymorphic variant type"
+    (with-neocaml-buffer "type t = [ `Foo | `Bar ]\n"
+      (search-forward "= ")
+      (forward-list)
+      (expect (char-before) :to-equal ?\])))
+
+  (it "forward-list moves over a package type"
+    (with-neocaml-buffer "type t = (module S)\n"
+      (search-forward "= ")
+      (forward-list)
+      (expect (char-before) :to-equal ?\))))
+
+  (it "delete-pair removes matching parentheses"
+    (with-neocaml-buffer "let x = (1 + 2)\n"
+      (search-forward "= ")
+      (delete-pair)
+      (expect (buffer-string) :to-equal "let x = 1 + 2\n")))
+
+  (it "delete-pair removes correct parens in nested code"
+    (with-neocaml-buffer "let _ =\n  (let world = \"world\" in\n   Printf.printf \"Hello %s\\n\" world);\n  ()\n"
+      (search-forward "  (let")
+      (backward-char 4) ;; point on the opening paren before "let"
+      (delete-pair)
+      ;; The semicolon paren should still be intact, and () at the end too
+      (expect (buffer-string) :to-match "let world")
+      (expect (buffer-string) :to-match "()"))))
+
 ;;; neocaml-navigation-test.el ends here
