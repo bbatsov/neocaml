@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### Bug fixes
+
+- [#27](https://github.com/bbatsov/neocaml/issues/27): `neocaml-install-grammars` now accepts a prefix argument (`C-u`) to force reinstallation of grammars, even if they are already installed.
+
 ### New features
 
 - Add `neocaml-objinfo-mode` for viewing OCaml compiled artifacts (`.cmi`, `.cmo`, `.cmx`, `.cma`, `.cmxa`, `.cmxs`, `.cmt`, `.cmti`) via `ocamlobjinfo`. Includes font-lock, imenu navigation, and revert support.

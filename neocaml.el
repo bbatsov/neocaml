@@ -133,12 +133,15 @@ displaying it."
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
 Suitable for use as the value of `treesit-language-source-alist'.")
 
-(defun neocaml-install-grammars ()
-  "Install required language grammars if not already available."
-  (interactive)
+(defun neocaml-install-grammars (&optional force)
+  "Install required language grammars if not already available.
+With prefix argument FORCE, reinstall grammars even if they are
+already installed.  This is useful after upgrading neocaml to a
+version that requires a newer grammar."
+  (interactive "P")
   (dolist (recipe neocaml-grammar-recipes)
     (let ((grammar (car recipe)))
-      (unless (treesit-language-available-p grammar nil)
+      (when (or force (not (treesit-language-available-p grammar nil)))
         (message "Installing %s tree-sitter grammar..." grammar)
         ;; `treesit-language-source-alist' is dynamically scoped.
         ;; Binding it in this let expression allows
@@ -170,7 +173,7 @@ Emit a warning if an outdated grammar is detected."
               (display-warning
                'neocaml
                (format "The installed tree-sitter OCaml grammar appears older \
-than %s.  Run M-x neocaml-install-grammars to update."
+than %s.  Run C-u M-x neocaml-install-grammars to reinstall."
                        expected)))))))))
 
 ;; adapted from tuareg-mode

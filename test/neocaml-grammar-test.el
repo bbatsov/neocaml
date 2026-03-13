@@ -36,6 +36,12 @@
     (neocaml-install-grammars)
     (expect 'treesit-install-language-grammar :to-have-been-called-times 2))
 
+  (it "reinstalls all grammars when FORCE is non-nil"
+    (spy-on 'treesit-language-available-p :and-return-value t)
+    (spy-on 'treesit-install-language-grammar)
+    (neocaml-install-grammars t)
+    (expect 'treesit-install-language-grammar :to-have-been-called-times 2))
+
   (it "binds treesit-language-source-alist to neocaml-grammar-recipes"
     (let (captured-alist)
       (spy-on 'treesit-language-available-p :and-return-value nil)
