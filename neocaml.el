@@ -1246,6 +1246,12 @@ for .ml files and `neocaml-interface-mode' for .mli files."
                     #'neocaml--defun-valid-p))
   (setq-local treesit-defun-name-function #'neocaml--defun-name)
 
+  ;; outline-minor-mode integration (Emacs 30+)
+  (when (boundp 'treesit-outline-predicate)
+    (setq-local treesit-outline-predicate
+                (cons neocaml--defun-type-regexp
+                      #'neocaml--defun-valid-p)))
+
   ;; ff-find-other-file setup
   (setq-local ff-other-file-alist neocaml-other-file-alist)
 
