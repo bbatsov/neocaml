@@ -742,13 +742,87 @@ to be used as `forward-sexp-function'."
       (treesit-beginning-of-thing neocaml--block-regex (- count))
     (treesit-end-of-thing neocaml--block-regex count)))
 
+(defun neocaml--delimiter-p ()
+  "Return non-nil if point is on a delimiter character."
+  (let ((syntax (syntax-after (point))))
+    (and syntax
+         (memq (syntax-class syntax) '(4 5)))))  ; 4=open, 5=close
+
+(defun neocaml--forward-sexp-hybrid (arg)
+  "Hybrid `forward-sexp-function' combining tree-sitter and syntax table.
+When point is on a delimiter character (paren, bracket, brace),
+fall back to syntax-table-based matching so that commands like
+`delete-pair' find the correct matching delimiter.  Otherwise,
+use tree-sitter sexp navigation.
+
+This function is used on Emacs 29 and 30.  Emacs 31+ handles
+this natively via the `list' thing in `treesit-thing-settings'.
+
+ARG is as in `forward-sexp-function'."
+  (let ((arg (or arg 1)))
+    (if (or (neocaml--delimiter-p)
+            ;; Moving backward: check if the character before point
+            ;; (skipping whitespace) is a closing delimiter.
+            (and (< arg 0)
+                 (save-excursion
+                   (skip-chars-backward " \t")
+                   (not (bobp))
+                   (let ((syntax (syntax-after (1- (point)))))
+                     (and syntax (eq (syntax-class syntax) 5))))))
+        ;; On a delimiter: use syntax-table paren matching.
+        ;; `forward-sexp-default-function' wraps `scan-sexps' but is
+        ;; only available from Emacs 30; fall back to raw `scan-sexps'
+        ;; on Emacs 29.
+        (if (fboundp 'forward-sexp-default-function)
+            (forward-sexp-default-function arg)
+          (goto-char (or (scan-sexps (point) arg) (buffer-end arg))))
+      ;; Not on a delimiter: use tree-sitter node navigation.
+      ;; `treesit-forward-sexp' is available from Emacs 30; on Emacs 29
+      ;; fall back to the simpler `neocaml-forward-sexp'.
+      (if (fboundp 'treesit-forward-sexp)
+          (treesit-forward-sexp arg)
+        (neocaml-forward-sexp arg)))))
+
 (defun neocaml--thing-settings (language)
   "Return `treesit-thing-settings' definitions for LANGUAGE.
-Configures sexp, sentence, text, and comment navigation."
+Configures sexp, list, sentence, text, and comment navigation.
+
+The `list' thing covers delimited container nodes (parentheses,
+brackets, braces, arrays).  On Emacs 31+, defining it causes
+`treesit-major-mode-setup' to use the hybrid
+`treesit-forward-sexp-list' for `forward-sexp-function', which
+falls back to syntax-table matching for delimiter characters.
+This makes commands like `delete-pair' work correctly."
   `((,language
      (sexp (not ,(rx (or "{" "}" "(" ")" "[" "]" "[|" "|]"
                          "," "." ";" ";;" ":" "::" ":>" "->"
                          "<-" "=" "|" ".."))))
+     (list ,(regexp-opt '("parenthesized_expression"
+                          "parenthesized_operator"
+                          "parenthesized_pattern"
+                          "parenthesized_type"
+                          "parenthesized_class_expression"
+                          "parenthesized_module_expression"
+                          "parenthesized_module_type"
+                          "list_expression"
+                          "list_pattern"
+                          "list_binding_pattern"
+                          "array_expression"
+                          "array_pattern"
+                          "array_binding_pattern"
+                          "record_expression"
+                          "record_pattern"
+                          "record_binding_pattern"
+                          "record_declaration"
+                          "object_expression"
+                          "object_type"
+                          "object_copy_expression"
+                          "polymorphic_variant_type"
+                          "package_type"
+                          "signature"
+                          "structure"
+                          "class_body_type")
+                        'symbols))
      (sentence ,(regexp-opt '("value_definition"
                               "type_definition"
                               "exception_definition"
@@ -1118,6 +1192,14 @@ the language-specific parts of the mode."
 
     (treesit-major-mode-setup)
 
+    ;; On Emacs 30, treesit-major-mode-setup sets forward-sexp-function
+    ;; to treesit-forward-sexp, which doesn't fall back to scan-sexps
+    ;; for delimiter characters.  This breaks commands like delete-pair.
+    ;; Use a hybrid function that delegates to scan-sexps on delimiters.
+    ;; Emacs 31+ handles this natively via the `list' thing.
+    (unless (fboundp 'treesit-forward-sexp-list)
+      (setq-local forward-sexp-function #'neocaml--forward-sexp-hybrid))
+
     ;; Workaround for treesit-transpose-sexps being broken on Emacs 30
     ;; (bug#60655).  Emacs 31 rewrites the function to work correctly.
     (when (and (fboundp 'transpose-sexps-default-function)
@@ -1155,9 +1237,10 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 
   (setq-local indent-line-function #'treesit-indent)
 
-  ;; Fallback for Emacs 29 (no treesit-thing-settings)
+  ;; Emacs 29 has no treesit-thing-settings, so treesit-major-mode-setup
+  ;; won't configure forward-sexp.  Set the hybrid function directly.
   (unless (boundp 'treesit-thing-settings)
-    (setq-local forward-sexp-function #'neocaml-forward-sexp))
+    (setq-local forward-sexp-function #'neocaml--forward-sexp-hybrid))
   (setq-local treesit-defun-type-regexp
               (cons neocaml--defun-type-regexp
                     #'neocaml--defun-valid-p))
