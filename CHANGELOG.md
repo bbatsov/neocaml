@@ -12,6 +12,7 @@
 ### New features
 
 - Support `outline-minor-mode` for folding top-level definitions (Emacs 30+).
+- Support `which-func-mode` for displaying the current definition name in the mode line.
 - Add `neocaml-objinfo-mode` for viewing OCaml compiled artifacts (`.cmi`, `.cmo`, `.cmx`, `.cma`, `.cmxa`, `.cmxs`, `.cmt`, `.cmti`) via `ocamlobjinfo`. Includes font-lock, imenu navigation, and revert support.
 
 ## 0.4.1 (2026-03-10)

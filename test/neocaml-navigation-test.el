@@ -294,6 +294,28 @@
       (expect (buffer-string) :to-match "let world")
       (expect (buffer-string) :to-match "()"))))
 
+;;;; which-func / add-log integration
+
+(describe "navigation: which-func"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (it "returns the current defun name via add-log-current-defun"
+    (with-neocaml-buffer "let foo x = x + 1\n\nlet bar y = y * 2\n"
+      (search-forward "x + ")
+      (expect (add-log-current-defun) :to-equal "foo")))
+
+  (it "returns the current type name via add-log-current-defun"
+    (with-neocaml-buffer "type color = Red | Green | Blue\n"
+      (search-forward "Green")
+      (expect (add-log-current-defun) :to-equal "color")))
+
+  (it "returns nil outside any definition"
+    (with-neocaml-buffer "let x = 1\n\n\n"
+      (goto-char (point-max))
+      (expect (add-log-current-defun) :to-be nil))))
+
 ;;;; outline integration (Emacs 30+ only)
 
 (describe "navigation: outline (Emacs 30+)"

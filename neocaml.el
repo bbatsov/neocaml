@@ -1250,6 +1250,9 @@ for .ml files and `neocaml-interface-mode' for .mli files."
                     #'neocaml--defun-valid-p))
   (setq-local treesit-defun-name-function #'neocaml--defun-name)
 
+  ;; which-func-mode / add-log integration
+  (setq-local add-log-current-defun-function #'treesit-add-log-current-defun)
+
   ;; outline-minor-mode integration (Emacs 30+)
   (when (boundp 'treesit-outline-predicate)
     (setq-local treesit-outline-predicate
