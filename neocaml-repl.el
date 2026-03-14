@@ -45,7 +45,7 @@
   :group 'neocaml-repl
   :package-version '(neocaml . "0.1.0"))
 
-(defcustom neocaml-repl-program-args '()
+(defcustom neocaml-repl-program-args '("-nopromptcont")
   "Command line arguments for `neocaml-repl-program-name'."
   :type '(repeat string)
   :group 'neocaml-repl

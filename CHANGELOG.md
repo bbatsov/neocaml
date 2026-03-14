@@ -5,6 +5,8 @@
 ### Bug fixes
 
 - [#27](https://github.com/bbatsov/neocaml/issues/27): `neocaml-install-grammars` now accepts a prefix argument (`C-u`) to force reinstallation of grammars, even if they are already installed.
+- Avoid the superfluous spaces after the prompt of the REPL when sending code to
+  the REPL via the commands `neocaml-repl-send-*`.
 
 ### New features
 
