@@ -45,8 +45,18 @@
   :group 'neocaml-repl
   :package-version '(neocaml . "0.1.0"))
 
-(defcustom neocaml-repl-program-args '()
-  "Command line arguments for `neocaml-repl-program-name'."
+(defcustom neocaml-repl-program-args '("-nopromptcont")
+  "Command line arguments for `neocaml-repl-program-name'.
+
+By default this passes \"-nopromptcont\" to the standard `ocaml` toplevel
+to disable continuation prompts for multi-line input, which produces a
+cleaner REPL experience in `comint' buffers.
+
+If you use an alternative OCaml toplevel or REPL (for example, by setting
+`neocaml-repl-program-name' to a program other than \"ocaml\"), that
+program may not understand \"-nopromptcont\".  In such cases you should
+customize this variable and remove or adapt the default flag so it matches
+the command-line interface of the selected REPL."
   :type '(repeat string)
   :group 'neocaml-repl
   :package-version '(neocaml . "0.1.0"))
