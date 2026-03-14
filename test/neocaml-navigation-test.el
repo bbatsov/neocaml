@@ -318,23 +318,22 @@
 
 ;;;; outline integration (Emacs 30+ only)
 
-(describe "navigation: outline (Emacs 30+)"
-  (before-each
-    (unless (treesit-language-available-p 'ocaml)
-      (signal 'buttercup-pending "tree-sitter OCaml grammar not available"))
-    (unless (boundp 'treesit-outline-predicate)
-      (signal 'buttercup-pending "treesit-outline-predicate not available (requires Emacs 30+)")))
+(when (boundp 'treesit-outline-predicate)
+  (describe "navigation: outline (Emacs 30+)"
+    (before-all
+      (unless (treesit-language-available-p 'ocaml)
+        (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
-  (it "sets treesit-outline-predicate"
-    (with-neocaml-buffer "let x = 1\n"
-      (expect (bound-and-true-p treesit-outline-predicate) :not :to-be nil)))
+    (it "sets treesit-outline-predicate"
+      (with-neocaml-buffer "let x = 1\n"
+        (expect treesit-outline-predicate :not :to-be nil)))
 
-  (it "outline-next-heading moves to the next definition"
-    (with-neocaml-buffer "let x = 1\n\nlet y = 2\n\ntype t = int\n"
-      (outline-minor-mode 1)
-      (outline-next-heading)
-      (expect (looking-at "let y") :to-be-truthy)
-      (outline-next-heading)
-      (expect (looking-at "type t") :to-be-truthy))))
+    (it "outline-next-heading moves to the next definition"
+      (with-neocaml-buffer "let x = 1\n\nlet y = 2\n\ntype t = int\n"
+        (outline-minor-mode 1)
+        (outline-next-heading)
+        (expect (looking-at "let y") :to-be-truthy)
+        (outline-next-heading)
+        (expect (looking-at "type t") :to-be-truthy)))))
 
 ;;; neocaml-navigation-test.el ends here
