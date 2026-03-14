@@ -1167,7 +1167,11 @@ the language-specific parts of the mode."
   (neocaml--check-grammar-compatibility)
 
   (when (treesit-ready-p language)
-    (treesit-parser-create language)
+    ;; Emacs 31+ uses treesit-primary-parser to identify the main parser
+    ;; when multiple parsers are active.
+    (let ((parser (treesit-parser-create language)))
+      (when (boundp 'treesit-primary-parser)
+        (setq-local treesit-primary-parser parser)))
 
     (when neocaml--debug
       (setq-local treesit--indent-verbose t)
