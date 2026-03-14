@@ -319,7 +319,7 @@
 ;;;; outline integration (Emacs 30+ only)
 
 (describe "navigation: outline (Emacs 30+)"
-  (before-all
+  (before-each
     (unless (treesit-language-available-p 'ocaml)
       (signal 'buttercup-pending "tree-sitter OCaml grammar not available"))
     (unless (boundp 'treesit-outline-predicate)
@@ -327,7 +327,7 @@
 
   (it "sets treesit-outline-predicate"
     (with-neocaml-buffer "let x = 1\n"
-      (expect treesit-outline-predicate :not :to-be nil)))
+      (expect (bound-and-true-p treesit-outline-predicate) :not :to-be nil)))
 
   (it "outline-next-heading moves to the next definition"
     (with-neocaml-buffer "let x = 1\n\nlet y = 2\n\ntype t = int\n"
