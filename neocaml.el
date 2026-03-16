@@ -970,8 +970,8 @@ does not exist."
   "If the current file is under `_build/', offer to switch to the source.
 Intended for use in `find-file-hook'."
   (when-let* ((file (buffer-file-name)))
-    (when (and (string-match-p "/_build/" file)
-               (derived-mode-p 'neocaml-base-mode))
+    (when (and (derived-mode-p 'neocaml-base-mode)
+               (string-match-p "/_build/" file))
       (if-let* ((source (neocaml--resolve-build-path file)))
           (when (y-or-n-p (format "This file is under _build.  Switch to %s? " source))
             (find-alternate-file source))

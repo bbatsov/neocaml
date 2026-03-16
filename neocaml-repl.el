@@ -183,7 +183,7 @@ If a REPL is already running, switch to it; otherwise start a new one.
 Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   (interactive)
   (let ((source (current-buffer)))
-    (if (get-buffer neocaml-repl-buffer-name)
+    (if (comint-check-proc neocaml-repl-buffer-name)
         (pop-to-buffer neocaml-repl-buffer-name)
       (neocaml-repl-start))
     (setq neocaml-repl--source-buffer source)))
