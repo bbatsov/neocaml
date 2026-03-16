@@ -1269,9 +1269,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local ff-other-file-alist neocaml-other-file-alist)
 
   ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist))
-
-  (neocaml--setup-compilation))
+  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist)))
 
 ;;;###autoload
 (define-derived-mode neocaml-mode neocaml-base-mode "OCaml"
@@ -1297,6 +1295,9 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 ;; Hide OCaml build artifacts from find-file completion
 (dolist (ext '(".cmo" ".cmx" ".cma" ".cmxa" ".cmi" ".annot" ".cmt" ".cmti"))
   (add-to-list 'completion-ignored-extensions ext))
+
+;; Register OCaml compilation error regexp once at load time
+(neocaml--setup-compilation)
 
 ;; Offer to switch away from _build/ copies
 (add-hook 'find-file-hook #'neocaml--check-build-dir)
