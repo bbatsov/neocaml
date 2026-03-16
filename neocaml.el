@@ -592,16 +592,20 @@ The return value is suitable for `treesit-simple-indent-rules'."
   "Regex matching tree-sitter node types treated as defun-like.
 Used as the value of `treesit-defun-type-regexp'.")
 
+(defconst neocaml--nested-context-regexp
+  (regexp-opt '("let_expression"
+                "parenthesized_module_expression"
+                "package_expression")
+              'symbols)
+  "Regexp matching node types that indicate a nested (non-top-level) context.")
+
 (defun neocaml--defun-valid-p (node)
   "Return non-nil if NODE is a top-level definition.
 Filters out nodes nested inside `let_expression',
 `parenthesized_module_expression', or `package_expression'."
   (and (treesit-node-check node 'named)
        (not (treesit-node-top-level
-             node (regexp-opt '("let_expression"
-                                "parenthesized_module_expression"
-                                "package_expression")
-                              'symbols)))))
+             node neocaml--nested-context-regexp))))
 
 (defun neocaml--subtree-text (node type &optional depth)
   "Return the text of the first TYPE child in NODE's subtree.
