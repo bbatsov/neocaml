@@ -2,8 +2,11 @@
 
 ## main (unreleased)
 
+## 0.5.0 (2026-03-16)
+
 ### Bug fixes
 
+- [#26](https://github.com/bbatsov/neocaml/issues/26): Preserve list items and odoc tags as paragraph boundaries when filling comments.
 - [#27](https://github.com/bbatsov/neocaml/issues/27): `neocaml-install-grammars` now accepts a prefix argument (`C-u`) to force reinstallation of grammars, even if they are already installed.
 - Avoid the superfluous spaces after the prompt of the REPL when sending code to
   the REPL via the commands `neocaml-repl-send-*`.
@@ -14,6 +17,7 @@
 - Support `outline-minor-mode` for folding top-level definitions (Emacs 30+).
 - Support `which-func-mode` for displaying the current definition name in the mode line.
 - Add `neocaml-objinfo-mode` for viewing OCaml compiled artifacts (`.cmi`, `.cmo`, `.cmx`, `.cma`, `.cmxa`, `.cmxs`, `.cmt`, `.cmti`) via `ocamlobjinfo`. Includes font-lock, imenu navigation, and revert support.
+- Set `treesit-primary-parser` for Emacs 31+ compatibility.
 
 ## 0.4.1 (2026-03-10)
 
