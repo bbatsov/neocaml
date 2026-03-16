@@ -106,6 +106,14 @@ When set to `font-lock', show fontification info as well.
 
 Only intended for use at development time.")
 
+(defun neocaml--prettify-symbols-alist ()
+  "Return the prettify symbols alist for the current settings.
+Includes extra symbols when `neocaml-prettify-symbols-full' is non-nil."
+  (if neocaml-prettify-symbols-full
+      (append neocaml-prettify-symbols-alist
+              neocaml-prettify-symbols-extra-alist)
+    neocaml-prettify-symbols-alist))
+
 (defconst neocaml-version "0.4.1")
 
 (defun neocaml-version ()
@@ -1263,11 +1271,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local ff-other-file-alist neocaml-other-file-alist)
 
   ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-  (setq-local prettify-symbols-alist
-              (if neocaml-prettify-symbols-full
-                  (append neocaml-prettify-symbols-alist
-                          neocaml-prettify-symbols-extra-alist)
-                neocaml-prettify-symbols-alist))
+  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist))
 
   (neocaml--setup-compilation))
 
