@@ -82,6 +82,11 @@ Set to nil to disable history persistence."
   :group 'neocaml-repl
   :package-version '(neocaml . "0.2.0"))
 
+(defconst neocaml-repl--prompt-regexp
+  "^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# "
+  "Regexp matching OCaml toplevel prompts.
+Matches both the standard \"# \" prompt and utop's \"utop # \" / \"utop[0] # \".")
+
 (defvar-local neocaml-repl--source-buffer nil
   "Source buffer from which the REPL was last invoked.
 Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
@@ -103,7 +108,7 @@ Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
     ("\\(val\\) \\([^:]*\\)\\( *:\\)" (1 font-lock-keyword-face) (2 font-lock-variable-name-face))
     ("\\(type\\) \\([^ =]*\\)" (1 font-lock-keyword-face) (2 font-lock-type-face))
     ;; prompt (standard "# " and utop's "utop # " / "utop[0] # ")
-    ("^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# " . font-lock-comment-face))
+    (neocaml-repl--prompt-regexp . font-lock-comment-face))
   "Font-lock keywords for the OCaml REPL buffer.
 Highlights prompts, errors, warnings, and toplevel response values.")
 
@@ -111,8 +116,7 @@ Highlights prompts, errors, warnings, and toplevel response values.")
   "Major mode for interacting with an OCaml toplevel.
 
 \\{neocaml-repl-mode-map}"
-  ;; Match both the standard "# " prompt and utop's "utop # " / "utop[0] # "
-  (setq comint-prompt-regexp "^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# ")
+  (setq comint-prompt-regexp neocaml-repl--prompt-regexp)
   (setq comint-prompt-read-only t)
   (setq comint-input-sender 'neocaml-repl--input-sender)
   (setq comint-process-echoes nil)
