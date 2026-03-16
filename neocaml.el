@@ -980,16 +980,19 @@ Intended for use in `find-file-hook'."
 
 ;;;; Fill paragraph
 
+(defun neocaml--comment-at-point ()
+  "Return the comment node at or around point, or nil."
+  (treesit-parent-until
+   (treesit-node-at (point))
+   (lambda (n) (equal (treesit-node-type n) "comment"))
+   t))
+
 (defun neocaml--fill-paragraph (&optional _justify)
   "Fill the OCaml comment at point.
 Uses tree-sitter to find comment boundaries, then narrows to the
 comment body (excluding delimiters) and fills.  Returns t if point
 was in a comment, nil otherwise to let the default handler run."
-  (let* ((node (treesit-node-at (point)))
-         (comment (treesit-parent-until
-                   node
-                   (lambda (n) (equal (treesit-node-type n) "comment"))
-                   t)))
+  (let* ((comment (neocaml--comment-at-point)))
     (when comment
       (let ((start (treesit-node-start comment))
             (end (treesit-node-end comment)))
@@ -1042,11 +1045,7 @@ was in a comment, nil otherwise to let the default handler run."
 
 (defun neocaml--comment-body-column ()
   "Return the column of the comment body text start, or nil."
-  (let* ((node (treesit-node-at (point)))
-         (comment (treesit-parent-until
-                   node
-                   (lambda (n) (equal (treesit-node-type n) "comment"))
-                   t)))
+  (let* ((comment (neocaml--comment-at-point)))
     (when comment
       (save-excursion
         (goto-char (treesit-node-start comment))
