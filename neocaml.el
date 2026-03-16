@@ -603,6 +603,12 @@ Filters out nodes nested inside `let_expression',
                                 "package_expression")
                               'symbols)))))
 
+(defun neocaml--subtree-text (node type &optional depth)
+  "Return the text of the first TYPE child in NODE's subtree.
+Search up to DEPTH levels deep (default 1).  Return nil if not found."
+  (when-let* ((child (treesit-search-subtree node type nil nil (or depth 1))))
+    (treesit-node-text child t)))
+
 (defun neocaml--defun-name (node)
   "Return the defun name of NODE.
 Return nil if there is no name or if NODE is not a defun node."
@@ -611,41 +617,30 @@ Return nil if there is no name or if NODE is not a defun node."
      (treesit-node-text
       (treesit-node-child-by-field-name node "name") t))
     ("module_binding"
-     (treesit-node-text
-      (treesit-search-subtree node "module_name" nil nil 1) t))
+     (neocaml--subtree-text node "module_name"))
     ("module_type_definition"
-     (treesit-node-text
-      (treesit-search-subtree node "module_type_name" nil nil 1) t))
+     (neocaml--subtree-text node "module_type_name"))
     ("class_binding"
-     (treesit-node-text
-      (treesit-search-subtree node "class_name" nil nil 1) t))
+     (neocaml--subtree-text node "class_name"))
     ("class_type_binding"
-     (treesit-node-text
-      (treesit-search-subtree node "class_type_name" nil nil 1) t))
+     (neocaml--subtree-text node "class_type_name"))
     ("method_definition"
-     (treesit-node-text
-      (treesit-search-subtree node "method_name" nil nil 1) t))
+     (neocaml--subtree-text node "method_name"))
     ("instance_variable_definition"
-     (treesit-node-text
-      (treesit-search-subtree node "instance_variable_name" nil nil 1) t))
+     (neocaml--subtree-text node "instance_variable_name"))
     ("exception_definition"
-     (treesit-node-text
-      (treesit-search-subtree node "constructor_name" nil nil 2) t))
+     (neocaml--subtree-text node "constructor_name" 2))
     ("external"
-     (treesit-node-text
-      (treesit-search-subtree node "value_name" nil nil 1) t))
+     (neocaml--subtree-text node "value_name"))
     ("let_binding"
      (treesit-node-text
       (treesit-node-child-by-field-name node "pattern") t))
     ("value_specification"
-     (treesit-node-text
-      (treesit-search-subtree node "value_name" nil nil 1) t))
+     (neocaml--subtree-text node "value_name"))
     ("method_specification"
-     (treesit-node-text
-      (treesit-search-subtree node "method_name" nil nil 1) t))
+     (neocaml--subtree-text node "method_name"))
     ("instance_variable_specification"
-     (treesit-node-text
-      (treesit-search-subtree node "instance_variable_name" nil nil 1) t))))
+     (neocaml--subtree-text node "instance_variable_name"))))
 
 
 ;;;; imenu integration
