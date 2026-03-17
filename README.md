@@ -428,6 +428,24 @@ To disable this and use only basic REPL font-lock:
 (setq neocaml-repl-fontify-input nil)
 ```
 
+> [!TIP]
+> You can also get language-aware indentation for REPL input by
+> leveraging `comint-indent-input-line-default`, which delegates
+> indentation to the same indirect buffer used for font-lock:
+>
+> ```emacs-lisp
+> (add-hook 'neocaml-repl-mode-hook
+>           (lambda ()
+>             (setq-local indent-line-function
+>                         #'comint-indent-input-line-default)
+>             (setq-local indent-region-function
+>                         #'comint-indent-input-region-default)))
+> ```
+>
+> This is experimental — tree-sitter parsers see the entire comint
+> buffer (prompts, output, and input), so indentation may be
+> approximate for complex multi-line input.
+
 ### Configuration
 
 You can customize the OCaml REPL integration with the following variables:
