@@ -578,21 +578,47 @@ to know.
 
 ### File associations
 
-Both tuareg and neocaml register themselves for `.ml` and `.mli` files via
-`auto-mode-alist`. Whichever loads last wins. The simplest approach is to
-uninstall tuareg. If you want to keep both installed, make sure neocaml's
-entries come first:
+neocaml automatically registers `.ml` and `.mli` files via `auto-mode-alist` --
+you don't need to add any file associations yourself. Importantly, neocaml uses
+**two separate modes**: `neocaml-mode` for `.ml` files (using the `ocaml`
+tree-sitter grammar) and `neocaml-interface-mode` for `.mli` files (using the
+`ocaml-interface` grammar). Both must be mapped correctly for font-lock and
+indentation to work.
 
-```emacs-lisp
-(add-to-list 'auto-mode-alist '("\\.mli?\\'" . neocaml-mode))
-```
+> [!CAUTION]
+> If you previously used caml-mode or tuareg, **remove any manual
+> `auto-mode-alist` entries** for OCaml files from your config. A common
+> caml-mode pattern like:
+>
+> ```emacs-lisp
+> (add-to-list 'auto-mode-alist '("\\.ml[iylp]?$" . caml-mode))
+> ```
+>
+> maps `.mli` files to a single mode. Replacing `caml-mode` with
+> `neocaml-mode` in such an entry will break `.mli` files because they
+> need `neocaml-interface-mode`, not `neocaml-mode`. The simplest fix is
+> to delete the entry entirely and let neocaml's autoloads handle it.
 
-Or with `use-package`, ensure neocaml loads after tuareg:
+If you need to keep tuareg or caml-mode installed alongside neocaml,
+make sure neocaml loads last so its `auto-mode-alist` entries win:
 
 ```emacs-lisp
 (use-package neocaml
   :ensure t
   :after tuareg)  ; loads after tuareg, so neocaml's auto-mode-alist entries win
+```
+
+#### Unsupported file types
+
+caml-mode and tuareg also handle `.mll` (ocamllex), `.mly` (ocamlyacc/menhir),
+and `.mlp` (camlp4/camlp5) files. neocaml does not currently support these
+formats -- they are DSLs with embedded OCaml, and no tree-sitter grammars exist
+for them yet. If you work with these files, keep your existing mode for them:
+
+```emacs-lisp
+;; Keep tuareg for lexer/parser definitions
+(add-to-list 'auto-mode-alist '("\\.mll\\'" . tuareg-mode))
+(add-to-list 'auto-mode-alist '("\\.mly\\'" . tuareg-mode))
 ```
 
 ### Keybinding differences
@@ -634,6 +660,7 @@ indentation, you can use it directly -- see the
 ### What you lose
 
 - `ocamldebug` integration (neocaml does not include a debugger frontend)
+- `.mll`, `.mly`, `.mlp` file support (no tree-sitter grammars exist for these)
 - Menhir / opam support
 - Electric comment delimiters (`(` inserting `(* *)` inside comments)
 - Code templates / skeletons
