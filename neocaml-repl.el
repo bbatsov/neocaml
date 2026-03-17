@@ -82,6 +82,17 @@ Set to nil to disable history persistence."
   :group 'neocaml-repl
   :package-version '(neocaml . "0.2.0"))
 
+(defcustom neocaml-repl-fontify-input t
+  "When non-nil, fontify REPL input using tree-sitter via `neocaml-mode'.
+This uses `comint-fontify-input-mode' (Emacs 29.1+) to provide full
+syntax highlighting for OCaml code you type in the REPL, while REPL
+output (errors, warnings, values) keeps its own highlighting.
+
+Set to nil to use only the basic REPL font-lock keywords for input."
+  :type 'boolean
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.6.0"))
+
 (defconst neocaml-repl--prompt-regexp
   "^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# "
   "Regexp matching OCaml toplevel prompts.
@@ -142,7 +153,12 @@ Highlights prompts, errors, warnings, and toplevel response values.")
     (add-hook 'kill-buffer-hook #'comint-write-input-ring nil t))
 
   ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist)))
+  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist))
+
+  ;; Tree-sitter fontification for REPL input
+  (when neocaml-repl-fontify-input
+    (setq-local comint-indirect-setup-function #'neocaml-mode)
+    (comint-fontify-input-mode)))
 
 (defun neocaml-repl--input-sender (proc input)
   "Send INPUT to PROC, appending `;;' terminator if missing.
