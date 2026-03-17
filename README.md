@@ -230,14 +230,37 @@ interactively to toggle features in the current buffer.
 #### Customizing faces
 
 The faces used are standard `font-lock-*-face` faces, so any theme applies
-automatically. You can customize individual faces to change how specific
-syntactic elements look:
+automatically. If you want to tweak how specific syntactic elements look, you
+have two options:
+
+**Buffer-local remapping** (recommended) -- changes apply only to neocaml
+buffers, leaving other modes unaffected:
 
 ```emacs-lisp
-;; Use a custom color for type names
+;; Use a custom color for type names in OCaml buffers only
+(add-hook 'neocaml-base-mode-hook
+  (lambda ()
+    (face-remap-add-relative 'font-lock-type-face
+                             :foreground "DarkSeaGreen4")))
+```
+
+You can remap multiple faces in the same hook. Each
+`face-remap-add-relative` call stacks on top of the face's current
+definition, so theme settings are preserved as a base. See
+[Face Remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html)
+in the Emacs Lisp manual for details.
+
+**Global customization** -- changes apply everywhere the face is used:
+
+```emacs-lisp
+;; Change type names globally (affects all modes)
 (custom-set-faces
  '(font-lock-type-face ((t (:foreground "DarkSeaGreen4")))))
 ```
+
+This is simpler but less precise -- since tree-sitter modes share the same
+`font-lock-*-face` faces, a global change will affect every tree-sitter mode
+(and traditional modes) that uses that face.
 
 #### Adding custom font-lock rules
 
