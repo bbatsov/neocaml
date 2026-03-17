@@ -415,6 +415,19 @@ The following keybindings are available when `neocaml-repl-minor-mode` is active
 | `C-c C-i` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
 | `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
 
+### Input Syntax Highlighting
+
+By default, code you type in the REPL is fontified using tree-sitter
+via `comint-fontify-input-mode`, giving you the same syntax highlighting
+as in regular `.ml` buffers. REPL output (errors, warnings, values)
+keeps its own highlighting.
+
+To disable this and use only basic REPL font-lock:
+
+```emacs-lisp
+(setq neocaml-repl-fontify-input nil)
+```
+
 ### Configuration
 
 You can customize the OCaml REPL integration with the following variables:

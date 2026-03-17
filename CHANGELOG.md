@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### New features
+
+- Add tree-sitter font-locking for REPL input via `comint-fontify-input-mode`. Code typed in the REPL now gets the same syntax highlighting as regular `.ml` buffers. Controlled by `neocaml-repl-fontify-input` (default `t`).
+
 ## 0.5.0 (2026-03-16)
 
 ### Bug fixes
