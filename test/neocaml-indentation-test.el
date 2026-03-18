@@ -361,7 +361,33 @@ done")
 
     (when-indenting-with-point-it "keeps top-level at column 0"
       "let x = 42\n  |let y = 1"
-      "let x = 42\n|let y = 1")))
+      "let x = 42\n|let y = 1"))
+
+  ;; ---- Comment indentation ------------------------------------------------
+
+  (describe "comment indentation"
+    (when-indenting-it "preserves indentation in multiline comment"
+      "(** First line.
+    Second line. *)")
+
+    (when-indenting-it "preserves indentation after blank line in doc comment"
+      "(** First line.
+
+    Second line. *)")
+
+    (when-indenting-it "preserves indentation in indented multiline comment"
+      "let x =
+  (* First line.
+     Second line. *)
+  42")
+
+    (when-indenting-with-point-it "indents continuation inside doc comment"
+      "(** First line.\n|Second line. *)"
+      "(** First line.\n    |Second line. *)")
+
+    (when-indenting-with-point-it "indents after blank line in doc comment"
+      "(** First line.\n\n|Second line. *)"
+      "(** First line.\n\n    |Second line. *)")))
 
 (describe "neocaml-interface indentation"
   (before-all
