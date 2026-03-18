@@ -422,9 +422,15 @@ The return value is suitable for `treesit-font-lock-settings'."
 
 ;; Tree-sitter indentation rules for OCaml
 ;; Adapted from nvim indentation queries in nvim-treesitter
-
+;;
 ;; The `ocaml-interface' grammar shares all node types with `ocaml',
 ;; so a single set of indentation rules works for both languages.
+;;
+;; NB: `treesit--indent-1' sets NODE to the largest node
+;; whose start equals BOL.  For continuation lines inside a multi-line
+;; node (e.g., lines inside a comment), NODE is nil and PARENT is the
+;; enclosing node.  This means `node-is' won't match those lines —
+;; use `parent-is' instead, and place such rules before `no-node'.
 
 (defun neocaml--grand-parent-bol (_node parent _bol &rest _)
   "Return the first non-whitespace position on PARENT's parent's line.
@@ -436,6 +442,20 @@ child is indented."
     (save-excursion
       (goto-char (treesit-node-start gp))
       (back-to-indentation)
+      (point))))
+
+(defun neocaml--comment-body-anchor (node parent _bol &rest _)
+  "Return the position of the comment body start.
+Uses NODE if non-nil, otherwise PARENT (for continuation lines
+where NODE is nil).  Used as an indentation anchor so that lines
+inside a multi-line comment align with the text after the opening
+delimiter."
+  (let ((comment (or node parent)))
+    (save-excursion
+      (goto-char (treesit-node-start comment))
+      (if (looking-at "(\\*+[ \t]*")
+          (goto-char (match-end 0))
+        (forward-char))
       (point))))
 
 (defvar neocaml--indent-body-tokens
@@ -468,10 +488,15 @@ which preserves the previous line's indentation level."
   "Return tree-sitter indentation rules for LANGUAGE.
 The return value is suitable for `treesit-simple-indent-rules'."
   `((,language
+     ;; Comment continuation lines: align with the body text after
+     ;; the opening delimiter.  Must come before `no-node' because
+     ;; lines inside a multi-line comment have node=nil, parent=comment.
+     ((parent-is "comment") neocaml--comment-body-anchor 0)
+
      ;; Empty lines: use previous line's indentation, adding offset
      ;; when the previous line ends with a body-expecting token.
-     ;; Must come first because Emacs sets node=nil, parent=compilation_unit
-     ;; for empty lines, which would otherwise match the top-level rule.
+     ;; Must come before the top-level rule because Emacs sets
+     ;; node=nil, parent=compilation_unit for empty lines.
      (no-node prev-line neocaml--empty-line-offset)
 
      ;; Top-level definitions: column 0
@@ -558,8 +583,9 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Error recovery
      ((parent-is "ERROR") parent-bol neocaml-indent-offset)
 
-     ;; Comments and strings preserve previous indentation
-     ((node-is "comment") prev-line 0)
+     ;; Comment continuation lines align with the body start
+     ((node-is "comment") neocaml--comment-body-anchor 0)
+     ;; Strings preserve previous indentation
      ((node-is "string") prev-line 0))))
 
 (defun neocaml-cycle-indent-function ()
