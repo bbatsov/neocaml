@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### Bug fixes
+
+- [#34](https://github.com/bbatsov/neocaml/issues/34): Fix indentation of continuation lines inside multi-line comments. Lines now align with the body text after the opening delimiter.
+
 ### New features
 
 - Add tree-sitter font-locking for REPL input via `comint-fontify-input-mode`. Code typed in the REPL now gets the same syntax highlighting as regular `.ml` buffers. Controlled by `neocaml-repl-fontify-input` (default `t`).
