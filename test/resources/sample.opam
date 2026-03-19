@@ -1,0 +1,39 @@
+opam-version: "2.0"
+name: "example"
+version: "1.0.0"
+synopsis: "An example opam package"
+description: """
+This is a longer description
+of the example package.
+"""
+maintainer: "user@example.com"
+authors: ["Author One" "Author Two"]
+license: "MIT"
+homepage: "https://example.com"
+bug-reports: "https://example.com/issues"
+dev-repo: "git+https://example.com/repo.git"
+
+depends: [
+  "ocaml" {>= "4.14.0"}
+  "dune" {>= "3.0" & build}
+  "alcotest" {with-test}
+]
+
+depopts: [
+  "ppx_deriving"
+]
+
+build: [
+  ["dune" "subst"] {dev}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+]
+
+install: [
+  ["dune" "install" "-p" name]
+]
+
+# This is a line comment
+setenv: [
+  [MY_VAR = "value"]
+]
