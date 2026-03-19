@@ -14,34 +14,66 @@
 (require 'buttercup)
 (require 'neocaml)
 
+;;;; String helpers
+
+(defun neocaml-test--dedent (string)
+  "Remove common leading whitespace from all non-empty lines in STRING.
+A leading newline and trailing whitespace are also removed, so the
+string can be written as:
+
+  (neocaml-test--dedent \"
+    let x = 1
+    let y = 2\")
+
+and the result will be \"let x = 1\\nlet y = 2\"."
+  (let* ((str (if (string-prefix-p "\n" string)
+                  (substring string 1)
+                string))
+         (lines (split-string str "\n"))
+         (non-empty (seq-filter (lambda (l) (not (string-blank-p l))) lines))
+         (min-indent (if non-empty
+                        (apply #'min (mapcar (lambda (l)
+                                              (- (length l) (length (string-trim-left l))))
+                                            non-empty))
+                      0)))
+    (string-trim-right
+     (mapconcat (lambda (l)
+                  (if (string-blank-p l) ""
+                    (substring l min-indent)))
+                lines "\n"))))
+
 ;;;; Buffer setup
 
 (defmacro with-neocaml-test-buffer (mode content &rest body)
   "Set up a temporary buffer with CONTENT in MODE, run BODY.
-MODE should be a symbol like `neocaml-mode' or `neocaml-interface-mode'."
+MODE should be a symbol like `neocaml-mode' or `neocaml-interface-mode'.
+CONTENT is automatically dedented via `neocaml-test--dedent'."
   (declare (indent 2))
   `(with-temp-buffer
-     (insert ,content)
+     (insert (neocaml-test--dedent ,content))
      (funcall #',mode)
      (goto-char (point-min))
      ,@body))
 
 (defmacro with-neocaml-buffer (content &rest body)
-  "Set up a temporary buffer with CONTENT in `neocaml-mode', run BODY."
+  "Set up a temporary buffer with CONTENT in `neocaml-mode', run BODY.
+CONTENT is automatically dedented via `neocaml-test--dedent'."
   (declare (indent 1))
   `(with-neocaml-test-buffer neocaml-mode ,content ,@body))
 
 (defmacro with-neocaml-interface-buffer (content &rest body)
-  "Set up a temporary buffer with CONTENT in `neocaml-interface-mode', run BODY."
+  "Set up a temporary buffer with CONTENT in `neocaml-interface-mode', run BODY.
+CONTENT is automatically dedented via `neocaml-test--dedent'."
   (declare (indent 1))
   `(with-neocaml-test-buffer neocaml-interface-mode ,content ,@body))
 
 (defmacro with-fontified-test-buffer (mode content &rest body)
   "Set up a temporary buffer with CONTENT, apply MODE at font-lock level 4, run BODY.
-All four font-lock levels are activated so every feature is testable."
+All four font-lock levels are activated so every feature is testable.
+CONTENT is automatically dedented via `neocaml-test--dedent'."
   (declare (indent 2))
   `(with-temp-buffer
-     (insert ,content)
+     (insert (neocaml-test--dedent ,content))
      (let ((treesit-font-lock-level 4))
        (funcall #',mode))
      (font-lock-ensure)

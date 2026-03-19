@@ -19,19 +19,32 @@
       (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
   (it "moves to the start of the current let binding"
-    (with-neocaml-buffer "let x = 1\n\nlet y = 2\n"
+    (with-neocaml-buffer "
+        let x = 1
+
+        let y = 2"
       (goto-char (point-max))
       (beginning-of-defun)
       (expect (looking-at "let y") :to-be-truthy)))
 
   (it "moves past multiple defuns"
-    (with-neocaml-buffer "let a = 1\n\nlet b = 2\n\nlet c = 3\n"
+    (with-neocaml-buffer "
+        let a = 1
+
+        let b = 2
+
+        let c = 3"
       (goto-char (point-max))
       (beginning-of-defun 2)
       (expect (looking-at "let b") :to-be-truthy)))
 
   (it "skips nested let-in expressions"
-    (with-neocaml-buffer "let outer =\n  let inner = 1 in\n  inner + 1\n\nlet next = 42\n"
+    (with-neocaml-buffer "
+        let outer =
+          let inner = 1 in
+          inner + 1
+
+        let next = 42"
       (search-forward "next")
       (beginning-of-defun)
       (expect (looking-at "let next") :to-be-truthy)
@@ -44,12 +57,20 @@
       (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
   (it "moves to the end of the current let binding"
-    (with-neocaml-buffer "let x = 1\n\nlet y = 2\n"
+    (with-neocaml-buffer "
+        let x = 1
+
+        let y = 2"
       (end-of-defun)
       (expect (looking-at "\n\\(let y\\|\n\\)") :to-be-truthy)))
 
   (it "moves to the end of a multi-line definition"
-    (with-neocaml-buffer "let area = function\n  | Circle r -> r\n  | Rect h -> h\n\nlet next = 1\n"
+    (with-neocaml-buffer "
+        let area = function
+          | Circle r -> r
+          | Rect h -> h
+
+        let next = 1"
       (end-of-defun)
       ;; Should be past the function definition
       (expect (>= (point) (save-excursion (goto-char (point-min)) (search-forward "Rect h -> h") (line-end-position)))
@@ -63,7 +84,7 @@
       (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
   (it "moves over a parenthesized expression"
-    (with-neocaml-buffer "let x = (1 + 2)\n"
+    (with-neocaml-buffer "let x = (1 + 2)"
       (search-forward "= ")
       (let ((start (point)))
         (forward-sexp)
@@ -72,13 +93,13 @@
         (expect (> (point) start) :to-be-truthy))))
 
   (it "moves over an identifier"
-    (with-neocaml-buffer "let foo = bar\n"
+    (with-neocaml-buffer "let foo = bar"
       (search-forward "= ")
       (forward-sexp)
       (expect (looking-back "bar" (line-beginning-position)) :to-be-truthy)))
 
   (it "moves over a string"
-    (with-neocaml-buffer "let x = \"hello\"\n"
+    (with-neocaml-buffer "let x = \"hello\""
       (search-forward "= ")
       (forward-sexp)
       (expect (looking-back "\"hello\"" (line-beginning-position)) :to-be-truthy))))
@@ -92,7 +113,7 @@
       (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
   (it "returns the name of a let binding"
-    (with-neocaml-buffer "let factorial n = n\n"
+    (with-neocaml-buffer "let factorial n = n"
       (search-forward "factorial")
       (let ((node (treesit-node-at (1- (point)))))
         ;; Navigate up to the let_binding node
@@ -101,7 +122,7 @@
         (expect (neocaml--defun-name node) :to-equal "factorial"))))
 
   (it "returns the name of a type binding"
-    (with-neocaml-buffer "type shape = Circle | Rect\n"
+    (with-neocaml-buffer "type shape = Circle | Rect"
       (search-forward "shape")
       (let ((node (treesit-node-at (1- (point)))))
         (while (and node (not (string= (treesit-node-type node) "type_binding")))
@@ -109,7 +130,7 @@
         (expect (neocaml--defun-name node) :to-equal "shape"))))
 
   (it "returns the name of a module binding"
-    (with-neocaml-buffer "module Foo = struct end\n"
+    (with-neocaml-buffer "module Foo = struct end"
       (search-forward "Foo")
       (let ((node (treesit-node-at (1- (point)))))
         (while (and node (not (string= (treesit-node-type node) "module_binding")))
@@ -117,7 +138,7 @@
         (expect (neocaml--defun-name node) :to-equal "Foo"))))
 
   (it "returns the name of an exception definition"
-    (with-neocaml-buffer "exception Not_found\n"
+    (with-neocaml-buffer "exception Not_found"
       (search-forward "Not_found")
       (let ((node (treesit-node-at (1- (point)))))
         (while (and node (not (string= (treesit-node-type node) "exception_definition")))
@@ -125,7 +146,7 @@
         (expect (neocaml--defun-name node) :to-equal "Not_found"))))
 
   (it "returns the name of a value specification"
-    (with-neocaml-interface-buffer "val area : float -> float\n"
+    (with-neocaml-interface-buffer "val area : float -> float"
       (search-forward "area")
       (let ((node (treesit-node-at (1- (point)))))
         (while (and node (not (string= (treesit-node-type node) "value_specification")))
@@ -142,7 +163,12 @@
       (signal 'buttercup-pending "treesit-thing-settings not available (requires Emacs 30+)")))
 
   (it "forward-sentence moves to the next top-level definition"
-    (with-neocaml-buffer "let x = 1\n\nlet y = 2\n\nlet z = 3\n"
+    (with-neocaml-buffer "
+        let x = 1
+
+        let y = 2
+
+        let z = 3"
       (forward-sentence)
       ;; After forward-sentence from point-min, we should be past the first definition
       (let ((pos (point)))
@@ -150,7 +176,12 @@
         (expect (> (point) pos) :to-be-truthy))))
 
   (it "backward-sentence moves to the previous top-level definition"
-    (with-neocaml-buffer "let x = 1\n\nlet y = 2\n\nlet z = 3\n"
+    (with-neocaml-buffer "
+        let x = 1
+
+        let y = 2
+
+        let z = 3"
       (goto-char (point-max))
       (backward-sentence)
       (expect (looking-at "let z") :to-be-truthy)
@@ -158,7 +189,12 @@
       (expect (looking-at "let y") :to-be-truthy)))
 
   (it "navigates sentences between different definition kinds"
-    (with-neocaml-buffer "type t = int\n\nlet x = 1\n\nexception Foo\n"
+    (with-neocaml-buffer "
+        type t = int
+
+        let x = 1
+
+        exception Foo"
       (goto-char (point-max))
       (backward-sentence)
       (expect (looking-at "exception") :to-be-truthy)
@@ -175,13 +211,19 @@
       (signal 'buttercup-pending "tree-sitter OCaml interface grammar not available")))
 
   (it "beginning-of-defun works in interface mode"
-    (with-neocaml-interface-buffer "val x : int\n\nval y : string\n"
+    (with-neocaml-interface-buffer "
+        val x : int
+
+        val y : string"
       (goto-char (point-max))
       (beginning-of-defun)
       (expect (looking-at "val y") :to-be-truthy)))
 
   (it "end-of-defun works in interface mode"
-    (with-neocaml-interface-buffer "val x : int\n\nval y : string\n"
+    (with-neocaml-interface-buffer "
+        val x : int
+
+        val y : string"
       (end-of-defun)
       ;; Should be past "val x : int"
       (expect (>= (point) (save-excursion
@@ -191,7 +233,7 @@
               :to-be-truthy)))
 
   (it "forward-sexp works in interface mode"
-    (with-neocaml-interface-buffer "val x : int -> string\n"
+    (with-neocaml-interface-buffer "val x : int -> string"
       (search-forward ": ")
       (forward-sexp)
       ;; Should move over some part of the type expression
@@ -211,61 +253,65 @@
       (signal 'buttercup-pending "treesit-thing-settings not available (requires Emacs 30+)")))
 
   (it "forward-list moves over a parenthesized expression"
-    (with-neocaml-buffer "let x = (1 + 2) + 3\n"
+    (with-neocaml-buffer "let x = (1 + 2) + 3"
       (search-forward "= ")
       (forward-list)
       (expect (char-before) :to-equal ?\))))
 
   (it "forward-list moves over a list expression"
-    (with-neocaml-buffer "let x = [1; 2; 3]\n"
+    (with-neocaml-buffer "let x = [1; 2; 3]"
       (search-forward "= ")
       (forward-list)
       (expect (char-before) :to-equal ?\])))
 
   (it "forward-list moves over a record expression"
-    (with-neocaml-buffer "let x = {a = 1; b = 2}\n"
+    (with-neocaml-buffer "let x = {a = 1; b = 2}"
       (search-forward "= ")
       (forward-list)
       (expect (char-before) :to-equal ?})))
 
   (it "forward-list moves over an array expression"
-    (with-neocaml-buffer "let x = [|1; 2; 3|]\n"
+    (with-neocaml-buffer "let x = [|1; 2; 3|]"
       (search-forward "= ")
       (forward-list)
       (expect (looking-back "\\|\\]" (- (point) 2)) :to-be-truthy)))
 
   (it "up-list moves out of a parenthesized expression"
-    (with-neocaml-buffer "let x = (1 + 2)\n"
+    (with-neocaml-buffer "let x = (1 + 2)"
       (search-forward "1 ")
       (up-list)
       (expect (char-before) :to-equal ?\))))
 
   (it "down-list moves into a parenthesized expression"
-    (with-neocaml-buffer "let x = (1 + 2)\n"
+    (with-neocaml-buffer "let x = (1 + 2)"
       (search-forward "= ")
       (down-list)
       (expect (char-before) :to-equal ?\()))
 
   (it "forward-list moves over a polymorphic variant type"
-    (with-neocaml-buffer "type t = [ `Foo | `Bar ]\n"
+    (with-neocaml-buffer "type t = [ `Foo | `Bar ]"
       (search-forward "= ")
       (forward-list)
       (expect (char-before) :to-equal ?\])))
 
   (it "forward-list moves over a package type"
-    (with-neocaml-buffer "type t = (module S)\n"
+    (with-neocaml-buffer "type t = (module S)"
       (search-forward "= ")
       (forward-list)
       (expect (char-before) :to-equal ?\))))
 
   (it "delete-pair removes matching parentheses"
-    (with-neocaml-buffer "let x = (1 + 2)\n"
+    (with-neocaml-buffer "let x = (1 + 2)"
       (search-forward "= ")
       (delete-pair)
-      (expect (buffer-string) :to-equal "let x = 1 + 2\n")))
+      (expect (buffer-string) :to-equal "let x = 1 + 2")))
 
   (it "delete-pair removes correct parens in nested code"
-    (with-neocaml-buffer "let _ =\n  (let world = \"world\" in\n   Printf.printf \"Hello %s\\n\" world);\n  ()\n"
+    (with-neocaml-buffer "
+        let _ =
+          (let world = \"world\" in
+           Printf.printf \"Hello %s\\n\" world);
+          ()"
       (search-forward "  (let")
       (backward-char 4) ;; point on the opening paren before "let"
       (delete-pair)
@@ -281,17 +327,20 @@
       (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
   (it "returns the current defun name via add-log-current-defun"
-    (with-neocaml-buffer "let foo x = x + 1\n\nlet bar y = y * 2\n"
+    (with-neocaml-buffer "
+        let foo x = x + 1
+
+        let bar y = y * 2"
       (search-forward "x + ")
       (expect (add-log-current-defun) :to-equal "foo")))
 
   (it "returns the current type name via add-log-current-defun"
-    (with-neocaml-buffer "type color = Red | Green | Blue\n"
+    (with-neocaml-buffer "type color = Red | Green | Blue"
       (search-forward "Green")
       (expect (add-log-current-defun) :to-equal "color")))
 
   (it "returns nil outside any definition"
-    (with-neocaml-buffer "let x = 1\n\n\n"
+    (with-neocaml-buffer "let x = 1"
       (goto-char (point-max))
       (expect (add-log-current-defun) :to-be nil))))
 
@@ -304,11 +353,16 @@
         (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
     (it "sets treesit-outline-predicate"
-      (with-neocaml-buffer "let x = 1\n"
+      (with-neocaml-buffer "let x = 1"
         (expect treesit-outline-predicate :not :to-be nil)))
 
     (it "outline-next-heading moves to the next definition"
-      (with-neocaml-buffer "let x = 1\n\nlet y = 2\n\ntype t = int\n"
+      (with-neocaml-buffer "
+          let x = 1
+
+          let y = 2
+
+          type t = int"
         (outline-minor-mode 1)
         (outline-next-heading)
         (expect (looking-at "let y") :to-be-truthy)
