@@ -18,17 +18,26 @@
 
 (defun neocaml-test--dedent (string)
   "Remove common leading whitespace from all non-empty lines in STRING.
-A leading newline and trailing whitespace are also removed, so the
-string can be written as:
+A single leading newline is stripped (so the string can start on the
+line after the opening quote), and a single trailing newline followed
+by only whitespace is stripped (so the closing quote can sit on its
+own indented line).  Interior blank lines and trailing newlines that
+are part of the content are preserved.
 
   (neocaml-test--dedent \"
     let x = 1
     let y = 2\")
 
-and the result will be \"let x = 1\\nlet y = 2\"."
+produces \"let x = 1\\nlet y = 2\"."
   (let* ((str (if (string-prefix-p "\n" string)
                   (substring string 1)
                 string))
+         ;; Strip a single trailing newline + optional whitespace
+         ;; (the closing quote's indentation), but preserve
+         ;; intentional trailing newlines in the content.
+         (str (if (string-match "\n[ \t]*\\'" str)
+                  (substring str 0 (match-beginning 0))
+                str))
          (lines (split-string str "\n"))
          (non-empty (seq-filter (lambda (l) (not (string-blank-p l))) lines))
          (min-indent (if non-empty
@@ -36,11 +45,10 @@ and the result will be \"let x = 1\\nlet y = 2\"."
                                               (- (length l) (length (string-trim-left l))))
                                             non-empty))
                       0)))
-    (string-trim-right
-     (mapconcat (lambda (l)
-                  (if (string-blank-p l) ""
-                    (substring l min-indent)))
-                lines "\n"))))
+    (mapconcat (lambda (l)
+                 (if (string-blank-p l) ""
+                   (substring l min-indent)))
+               lines "\n")))
 
 ;;;; Buffer setup
 

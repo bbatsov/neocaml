@@ -340,7 +340,11 @@
       (expect (add-log-current-defun) :to-equal "color")))
 
   (it "returns nil outside any definition"
-    (with-neocaml-buffer "let x = 1"
+    (with-neocaml-buffer "
+        let x = 1
+
+
+        "
       (goto-char (point-max))
       (expect (add-log-current-defun) :to-be nil))))
 
