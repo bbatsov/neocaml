@@ -26,6 +26,16 @@ MODE should be a symbol like `neocaml-mode' or `neocaml-interface-mode'."
      (goto-char (point-min))
      ,@body))
 
+(defmacro with-neocaml-buffer (content &rest body)
+  "Set up a temporary buffer with CONTENT in `neocaml-mode', run BODY."
+  (declare (indent 1))
+  `(with-neocaml-test-buffer neocaml-mode ,content ,@body))
+
+(defmacro with-neocaml-interface-buffer (content &rest body)
+  "Set up a temporary buffer with CONTENT in `neocaml-interface-mode', run BODY."
+  (declare (indent 1))
+  `(with-neocaml-test-buffer neocaml-interface-mode ,content ,@body))
+
 (defmacro with-fontified-test-buffer (mode content &rest body)
   "Set up a temporary buffer with CONTENT, apply MODE at font-lock level 4, run BODY.
 All four font-lock levels are activated so every feature is testable."
