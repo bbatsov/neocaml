@@ -6,7 +6,7 @@
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-red?logo=github)](https://github.com/sponsors/bbatsov)
 
 `neocaml` is a **n**ew **E**macs package for programming in OCaml.  It features
-two major modes (for OCaml and OCaml Interface), using Tree-sitter,
+major modes for OCaml, OCaml Interface, and opam files, using Tree-sitter,
 and integration with an OCaml toplevel (a.k.a. REPL).
 
 It's also as cool as Neo from "The Matrix". ;-)
@@ -40,6 +40,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - OCaml toplevel (REPL) integration (`neocaml-repl`)
 - Comment support: `fill-paragraph` (`M-q`), comment continuation (`M-j`), and `comment-dwim` (`M-;`)
 - Electric indentation on delimiter characters
+- opam file editing (`neocaml-opam-mode`) with font-lock, indentation, and imenu
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - `_build` directory awareness (offers to switch to source when opening build artifacts)
@@ -543,7 +544,8 @@ alternatives.
 | Debugger (ocamldebug)      | No                         | Yes           | Yes          |
 | Compilation commands       | Error regexp + C-c C-c     | Yes           | Yes          |
 | `_build` directory aware   | Yes                        | No            | Yes          |
-| Menhir / opam support      | No                         | No            | Yes          |
+| opam file support          | Yes                        | No            | Yes          |
+| Menhir support             | No                         | No            | Yes          |
 | Code templates / skeletons | No                         | Yes           | Yes          |
 
 Keep in mind also that `tuareg` uses `caml-mode` internally for some functionality.
@@ -661,7 +663,7 @@ indentation, you can use it directly -- see the
 
 - `ocamldebug` integration (neocaml does not include a debugger frontend)
 - `.mll`, `.mly`, `.mlp` file support (no tree-sitter grammars exist for these)
-- Menhir / opam support
+- Menhir support
 - Electric comment delimiters (`(` inserting `(* *)` inside comments)
 - Code templates / skeletons
 
