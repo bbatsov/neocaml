@@ -9,6 +9,7 @@
 (eldev-use-plugin 'autoloads)
 
 (eldev-add-extra-dependencies 'test 'buttercup)
+(eldev-add-loading-roots 'test "test")
 
 ;; configuration for the default linters
 (setq byte-compile-docstring-max-column 120)
