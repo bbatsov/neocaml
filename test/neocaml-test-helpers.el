@@ -29,26 +29,28 @@ are part of the content are preserved.
     let y = 2\")
 
 produces \"let x = 1\\nlet y = 2\"."
-  (let* ((str (if (string-prefix-p "\n" string)
-                  (substring string 1)
-                string))
-         ;; Strip a single trailing newline + optional whitespace
-         ;; (the closing quote's indentation), but preserve
-         ;; intentional trailing newlines in the content.
-         (str (if (string-match "\n[ \t]*\\'" str)
-                  (substring str 0 (match-beginning 0))
-                str))
-         (lines (split-string str "\n"))
-         (non-empty (seq-filter (lambda (l) (not (string-blank-p l))) lines))
-         (min-indent (if non-empty
-                        (apply #'min (mapcar (lambda (l)
-                                              (- (length l) (length (string-trim-left l))))
-                                            non-empty))
-                      0)))
-    (mapconcat (lambda (l)
-                 (if (string-blank-p l) ""
-                   (substring l min-indent)))
-               lines "\n")))
+  (if (not (string-search "\n" string))
+      string
+    (let* ((str (if (string-prefix-p "\n" string)
+                    (substring string 1)
+                  string))
+           ;; Strip a single trailing newline + optional whitespace
+           ;; (the closing quote's indentation), but preserve
+           ;; intentional trailing newlines in the content.
+           (str (if (string-match "\n[ \t]*\\'" str)
+                    (substring str 0 (match-beginning 0))
+                  str))
+           (lines (split-string str "\n"))
+           (non-empty (seq-filter (lambda (l) (not (string-blank-p l))) lines))
+           (min-indent (if non-empty
+                          (apply #'min (mapcar (lambda (l)
+                                                (- (length l) (length (string-trim-left l))))
+                                              non-empty))
+                        0)))
+      (mapconcat (lambda (l)
+                   (if (string-blank-p l) ""
+                     (substring l min-indent)))
+                 lines "\n"))))
 
 ;;;; Buffer setup
 
@@ -75,24 +77,7 @@ CONTENT is automatically dedented via `neocaml-test--dedent'."
   (declare (indent 1))
   `(with-neocaml-test-buffer neocaml-interface-mode ,content ,@body))
 
-(defmacro with-fontified-test-buffer (mode content &rest body)
-  "Set up a temporary buffer with CONTENT, apply MODE at font-lock level 4, run BODY.
-All four font-lock levels are activated so every feature is testable.
-CONTENT is automatically dedented via `neocaml-test--dedent'."
-  (declare (indent 2))
-  `(with-temp-buffer
-     (insert (neocaml-test--dedent ,content))
-     (let ((treesit-font-lock-level 4))
-       (funcall #',mode))
-     (font-lock-ensure)
-     (goto-char (point-min))
-     ,@body))
-
 ;;;; Font-lock helpers
-
-(defun neocaml-test-face-at (pos)
-  "Return the face at POS in the current buffer."
-  (get-text-property pos 'face))
 
 (defun neocaml-test-face-at-range (start end)
   "Return the face at range [START, END] in the current buffer.
@@ -180,12 +165,13 @@ or (START END FACE) for position-based matching."
    (split-string code "\n")
    "\n"))
 
-(defmacro when-indenting-it (description &rest code-strings)
+(defmacro when-indenting--it (mode description &rest code-strings)
   "Create a Buttercup test that asserts each CODE-STRING indents correctly.
-DESCRIPTION is the test name.  Each element of CODE-STRINGS is a
-properly-indented OCaml code string.  The macro strips indentation,
-re-indents via `neocaml-mode', and asserts the result matches the original."
-  (declare (indent 1))
+MODE is the major mode function to use.  DESCRIPTION is the test name.
+Each element of CODE-STRINGS is a properly-indented OCaml code string.
+The macro strips indentation, re-indents via MODE, and asserts the
+result matches the original."
+  (declare (indent 2))
   `(it ,description
      ,@(mapcar
         (lambda (code)
@@ -193,114 +179,89 @@ re-indents via `neocaml-mode', and asserts the result matches the original."
              (expect
               (with-temp-buffer
                 (insert (neocaml-test--strip-indentation expected))
-                (neocaml-mode)
+                (funcall #',mode)
                 (indent-region (point-min) (point-max))
                 (buffer-string))
               :to-equal expected)))
         code-strings)))
+
+(defmacro when-indenting-it (description &rest code-strings)
+  "Create a Buttercup test that asserts each CODE-STRING indents correctly.
+DESCRIPTION is the test name.  Uses `neocaml-mode'."
+  (declare (indent 1))
+  `(when-indenting--it neocaml-mode ,description ,@code-strings))
 
 (defmacro when-indenting-interface-it (description &rest code-strings)
   "Create a Buttercup test that asserts each CODE-STRING indents correctly.
-DESCRIPTION is the test name.  Each element of CODE-STRINGS is a
-properly-indented OCaml interface code string.  The macro strips indentation,
-re-indents via `neocaml-interface-mode', and asserts the result matches the original."
+DESCRIPTION is the test name.  Uses `neocaml-interface-mode'."
   (declare (indent 1))
+  `(when-indenting--it neocaml-interface-mode ,description ,@code-strings))
+
+(defmacro when-indenting-with-point--it (mode description before after)
+  "Create a Buttercup test asserting single-line indentation with cursor tracking.
+MODE is the major mode function.  DESCRIPTION is the test name.
+BEFORE is the buffer content with `|' marking cursor position.
+AFTER is the expected content after `indent-according-to-mode'
+with `|' marking the expected cursor position."
+  (declare (indent 2))
   `(it ,description
-     ,@(mapcar
-        (lambda (code)
-          `(let ((expected ,code))
-             (expect
-              (with-temp-buffer
-                (insert (neocaml-test--strip-indentation expected))
-                (neocaml-interface-mode)
-                (indent-region (point-min) (point-max))
-                (buffer-string))
-              :to-equal expected)))
-        code-strings)))
+     (let* ((after-str ,after)
+            (expected-cursor-pos (1+ (seq-position after-str ?|)))
+            (expected-state (concat (substring after-str 0 (1- expected-cursor-pos))
+                                    (substring after-str expected-cursor-pos))))
+       (with-temp-buffer
+         (insert ,before)
+         (funcall #',mode)
+         (goto-char (point-min))
+         (search-forward "|")
+         (delete-char -1)
+         (font-lock-ensure)
+         (indent-according-to-mode)
+         (expect (buffer-string) :to-equal expected-state)
+         (expect (point) :to-equal expected-cursor-pos)))))
 
 (defmacro when-indenting-with-point-it (description before after)
   "Create a Buttercup test asserting single-line indentation with cursor tracking.
-DESCRIPTION is the test name.  BEFORE is the buffer content before
-indentation with `|' marking the cursor position.  AFTER is the
-expected buffer content after `indent-according-to-mode' with `|'
-marking the expected cursor position."
+DESCRIPTION is the test name.  Uses `neocaml-mode'."
   (declare (indent 1))
-  `(it ,description
-     (let* ((after-str ,after)
-            (expected-cursor-pos (1+ (seq-position after-str ?|)))
-            (expected-state (concat (substring after-str 0 (1- expected-cursor-pos))
-                                    (substring after-str expected-cursor-pos))))
-       (with-temp-buffer
-         (insert ,before)
-         (neocaml-mode)
-         (goto-char (point-min))
-         (search-forward "|")
-         (delete-char -1)
-         (font-lock-ensure)
-         (indent-according-to-mode)
-         (expect (buffer-string) :to-equal expected-state)
-         (expect (point) :to-equal expected-cursor-pos)))))
+  `(when-indenting-with-point--it neocaml-mode ,description ,before ,after))
 
 (defmacro when-indenting-interface-with-point-it (description before after)
   "Create a Buttercup test asserting single-line indentation with cursor tracking.
-DESCRIPTION is the test name.  BEFORE is the buffer content before
-indentation with `|' marking the cursor position.  AFTER is the
-expected buffer content after `indent-according-to-mode' with `|'
-marking the expected cursor position.  Uses `neocaml-interface-mode'."
+DESCRIPTION is the test name.  Uses `neocaml-interface-mode'."
   (declare (indent 1))
+  `(when-indenting-with-point--it neocaml-interface-mode ,description ,before ,after))
+
+(defmacro when-newline-indenting--it (mode description &rest tests)
+  "Create a Buttercup test asserting empty-line indentation.
+MODE is the major mode function.  DESCRIPTION is the test name.
+Each element of TESTS is (CODE EXPECTED-COLUMN) where CODE is a
+source string and EXPECTED-COLUMN is the column that
+`newline-and-indent' should produce after CODE."
+  (declare (indent 2))
   `(it ,description
-     (let* ((after-str ,after)
-            (expected-cursor-pos (1+ (seq-position after-str ?|)))
-            (expected-state (concat (substring after-str 0 (1- expected-cursor-pos))
-                                    (substring after-str expected-cursor-pos))))
-       (with-temp-buffer
-         (insert ,before)
-         (neocaml-interface-mode)
-         (goto-char (point-min))
-         (search-forward "|")
-         (delete-char -1)
-         (font-lock-ensure)
-         (indent-according-to-mode)
-         (expect (buffer-string) :to-equal expected-state)
-         (expect (point) :to-equal expected-cursor-pos)))))
+     (dolist (test (quote ,tests))
+       (let ((code (nth 0 test))
+             (expected-col (nth 1 test)))
+         (with-temp-buffer
+           (insert code)
+           (let ((treesit-font-lock-level 4))
+             (funcall #',mode))
+           (goto-char (point-max))
+           (newline-and-indent)
+           (expect (current-column) :to-equal expected-col))))))
 
 (defmacro when-newline-indenting-it (description &rest tests)
   "Create a Buttercup test asserting empty-line indentation.
-DESCRIPTION is the test name.  Each element of TESTS is
-  (CODE EXPECTED-COLUMN)
-where CODE is an OCaml source string and EXPECTED-COLUMN is the
-column that `newline-and-indent' should produce after CODE."
+DESCRIPTION is the test name.  Uses `neocaml-mode'."
   (declare (indent 1))
-  `(it ,description
-     (dolist (test (quote ,tests))
-       (let ((code (nth 0 test))
-             (expected-col (nth 1 test)))
-         (with-temp-buffer
-           (insert code)
-           (let ((treesit-font-lock-level 4))
-             (neocaml-mode))
-           (goto-char (point-max))
-           (newline-and-indent)
-           (expect (current-column) :to-equal expected-col))))))
+  `(when-newline-indenting--it neocaml-mode ,description ,@tests))
 
 (defmacro when-newline-indenting-interface-it (description &rest tests)
-  "Create a Buttercup test asserting empty-line indentation in interface mode.
-DESCRIPTION is the test name.  Each element of TESTS is
-  (CODE EXPECTED-COLUMN)
-where CODE is an OCaml interface source string and EXPECTED-COLUMN is the
-column that `newline-and-indent' should produce after CODE."
+  "Create a Buttercup test asserting empty-line indentation.
+DESCRIPTION is the test name.  Uses `neocaml-interface-mode'."
   (declare (indent 1))
-  `(it ,description
-     (dolist (test (quote ,tests))
-       (let ((code (nth 0 test))
-             (expected-col (nth 1 test)))
-         (with-temp-buffer
-           (insert code)
-           (let ((treesit-font-lock-level 4))
-             (neocaml-interface-mode))
-           (goto-char (point-max))
-           (newline-and-indent)
-           (expect (current-column) :to-equal expected-col))))))
+  `(when-newline-indenting--it neocaml-interface-mode ,description ,@tests))
 
 (provide 'neocaml-test-helpers)
 
