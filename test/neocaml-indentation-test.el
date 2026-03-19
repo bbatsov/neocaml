@@ -8,139 +8,7 @@
 
 ;;; Code:
 
-(require 'buttercup)
-(require 'neocaml)
-
-(defun neocaml-test--strip-indentation (code)
-  "Remove all leading whitespace from each line of CODE."
-  (mapconcat
-   (lambda (line) (string-trim-left line))
-   (split-string code "\n")
-   "\n"))
-
-(defmacro when-indenting-it (description &rest code-strings)
-  "Create a Buttercup test that asserts each CODE-STRING indents correctly.
-DESCRIPTION is the test name.  Each element of CODE-STRINGS is a
-properly-indented OCaml code string.  The macro strips indentation,
-re-indents via `neocaml-mode', and asserts the result matches the original."
-  (declare (indent 1))
-  `(it ,description
-     ,@(mapcar
-        (lambda (code)
-          `(let ((expected ,code))
-             (expect
-              (with-temp-buffer
-                (insert (neocaml-test--strip-indentation expected))
-                (neocaml-mode)
-                (indent-region (point-min) (point-max))
-                (buffer-string))
-              :to-equal expected)))
-        code-strings)))
-
-(defmacro when-indenting-with-point-it (description before after)
-  "Create a Buttercup test asserting single-line indentation with cursor tracking.
-DESCRIPTION is the test name.  BEFORE is the buffer content before
-indentation with `|' marking the cursor position.  AFTER is the
-expected buffer content after `indent-according-to-mode' with `|'
-marking the expected cursor position.
-
-Inspired by clojure-ts-mode's test macro of the same name."
-  (declare (indent 1))
-  `(it ,description
-     (let* ((after-str ,after)
-            (expected-cursor-pos (1+ (seq-position after-str ?|)))
-            (expected-state (concat (substring after-str 0 (1- expected-cursor-pos))
-                                    (substring after-str expected-cursor-pos))))
-       (with-temp-buffer
-         (insert ,before)
-         (neocaml-mode)
-         (goto-char (point-min))
-         (search-forward "|")
-         (delete-char -1)
-         (font-lock-ensure)
-         (indent-according-to-mode)
-         (expect (buffer-string) :to-equal expected-state)
-         (expect (point) :to-equal expected-cursor-pos)))))
-
-(defmacro when-newline-indenting-it (description &rest tests)
-  "Create a Buttercup test asserting empty-line indentation.
-DESCRIPTION is the test name.  Each element of TESTS is
-  (CODE EXPECTED-COLUMN)
-where CODE is an OCaml source string and EXPECTED-COLUMN is the
-column that `newline-and-indent' should produce after CODE."
-  (declare (indent 1))
-  `(it ,description
-     (dolist (test (quote ,tests))
-       (let ((code (nth 0 test))
-             (expected-col (nth 1 test)))
-         (with-temp-buffer
-           (insert code)
-           (let ((treesit-font-lock-level 4))
-             (neocaml-mode))
-           (goto-char (point-max))
-           (newline-and-indent)
-           (expect (current-column) :to-equal expected-col))))))
-
-(defmacro when-indenting-interface-it (description &rest code-strings)
-  "Create a Buttercup test that asserts each CODE-STRING indents correctly.
-DESCRIPTION is the test name.  Each element of CODE-STRINGS is a
-properly-indented OCaml interface code string.  The macro strips indentation,
-re-indents via `neocaml-interface-mode', and asserts the result matches the original."
-  (declare (indent 1))
-  `(it ,description
-     ,@(mapcar
-        (lambda (code)
-          `(let ((expected ,code))
-             (expect
-              (with-temp-buffer
-                (insert (neocaml-test--strip-indentation expected))
-                (neocaml-interface-mode)
-                (indent-region (point-min) (point-max))
-                (buffer-string))
-              :to-equal expected)))
-        code-strings)))
-
-(defmacro when-indenting-interface-with-point-it (description before after)
-  "Create a Buttercup test asserting single-line indentation with cursor tracking.
-DESCRIPTION is the test name.  BEFORE is the buffer content before
-indentation with `|' marking the cursor position.  AFTER is the
-expected buffer content after `indent-according-to-mode' with `|'
-marking the expected cursor position.  Uses `neocaml-interface-mode'."
-  (declare (indent 1))
-  `(it ,description
-     (let* ((after-str ,after)
-            (expected-cursor-pos (1+ (seq-position after-str ?|)))
-            (expected-state (concat (substring after-str 0 (1- expected-cursor-pos))
-                                    (substring after-str expected-cursor-pos))))
-       (with-temp-buffer
-         (insert ,before)
-         (neocaml-interface-mode)
-         (goto-char (point-min))
-         (search-forward "|")
-         (delete-char -1)
-         (font-lock-ensure)
-         (indent-according-to-mode)
-         (expect (buffer-string) :to-equal expected-state)
-         (expect (point) :to-equal expected-cursor-pos)))))
-
-(defmacro when-newline-indenting-interface-it (description &rest tests)
-  "Create a Buttercup test asserting empty-line indentation in interface mode.
-DESCRIPTION is the test name.  Each element of TESTS is
-  (CODE EXPECTED-COLUMN)
-where CODE is an OCaml interface source string and EXPECTED-COLUMN is the
-column that `newline-and-indent' should produce after CODE."
-  (declare (indent 1))
-  `(it ,description
-     (dolist (test (quote ,tests))
-       (let ((code (nth 0 test))
-             (expected-col (nth 1 test)))
-         (with-temp-buffer
-           (insert code)
-           (let ((treesit-font-lock-level 4))
-             (neocaml-interface-mode))
-           (goto-char (point-max))
-           (newline-and-indent)
-           (expect (current-column) :to-equal expected-col))))))
+(require 'neocaml-test-helpers)
 
 (describe "neocaml indentation"
   (before-all
@@ -327,8 +195,6 @@ done")
       ("let x = 1 in" 0)))
 
   ;; ---- Single-line TAB indentation with cursor tracking -------------------
-  ;; Inspired by clojure-ts-mode's when-indenting-with-point-it.
-  ;; Uses | to mark cursor position in before/after strings.
 
   (describe "single-line TAB indentation"
     (when-indenting-with-point-it "corrects misindented let body"
