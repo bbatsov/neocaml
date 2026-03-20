@@ -8,6 +8,7 @@
 
 ### New features
 
+- Add `neocaml-dune-mode` for editing dune, dune-project, and dune-workspace files with tree-sitter font-lock, indentation, imenu, and defun navigation. Based on the [tree-sitter-dune](https://github.com/tmcgilchrist/tree-sitter-dune) grammar.
 - Add `neocaml-opam-mode` for editing opam package files with tree-sitter font-lock, indentation, and imenu. Based on the [tree-sitter-opam](https://github.com/tmcgilchrist/tree-sitter-opam) grammar.
 - Add tree-sitter font-locking for REPL input via `comint-fontify-input-mode`. Code typed in the REPL now gets the same syntax highlighting as regular `.ml` buffers. Controlled by `neocaml-repl-fontify-input` (default `t`).
 

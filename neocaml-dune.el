@@ -113,6 +113,17 @@ With prefix argument FORCE, reinstall even if already installed."
 
 ;;; Indentation
 
+;; Known limitation: the grammar flattens field-value pairs into
+;; direct stanza children (no wrapper node for e.g. "(action (run ...))").
+;; This means field values on continuation lines indent at the same
+;; level as the field name rather than one deeper:
+;;   (action
+;;   (run foo))     ; actual — both at stanza indent + 1
+;; instead of the conventional:
+;;   (action
+;;    (run foo))    ; expected — value at stanza indent + 2
+;; See https://github.com/tmcgilchrist/tree-sitter-dune/issues/9
+
 (defvar neocaml-dune--indent-rules
   `((dune
      ((parent-is "source_file") column-0 0)
