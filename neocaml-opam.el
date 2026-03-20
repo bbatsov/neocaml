@@ -46,6 +46,7 @@
   "Number of spaces for each indentation step in `neocaml-opam-mode'."
   :type 'natnum
   :safe 'natnump
+  :group 'neocaml-opam
   :package-version '(neocaml . "0.6.0"))
 
 ;;; Grammar installation
@@ -67,30 +68,7 @@ With prefix argument FORCE, reinstall even if already installed."
     (let ((treesit-language-source-alist neocaml-opam-grammar-recipes))
       (treesit-install-language-grammar 'opam))))
 
-;;; Known field names
-
-(defconst neocaml-opam--known-fields
-  '("opam-version" "name" "version" "maintainer" "authors"
-    "license" "homepage" "doc" "bug-reports" "dev-repo"
-    "tags" "patches" "substs" "build" "install" "run-test"
-    "remove" "depends" "depopts" "conflicts" "conflict-class"
-    "depexts" "messages" "post-messages" "available"
-    "flags" "features" "synopsis" "description" "url" "setenv"
-    "build-env" "extra-files" "pin-depends" "extra-source")
-  "Known opam field names.")
-
-(defconst neocaml-opam--scope-constants
-  '("build" "with-test" "with-doc" "pinned")
-  "Opam filter scope identifiers.")
-
 ;;; Font-lock
-
-(defun neocaml-opam--field-name-p (_node)
-  "Non-nil when NODE is a known opam field name."
-  ;; We use the `variable > name:' query instead of checking against
-  ;; neocaml-opam--known-fields so that user-defined x-fields are also
-  ;; highlighted (they start with "x-").
-  t)
 
 (defvar neocaml-opam--font-lock-settings
   (treesit-font-lock-rules
@@ -210,6 +188,11 @@ See `prettify-symbols-alist' for more information.")
 
   ;; Imenu
   (setq-local treesit-simple-imenu-settings neocaml-opam--imenu-settings)
+
+  ;; Navigation
+  (setq-local treesit-defun-type-regexp
+              "\\`\\(?:variable\\|section\\)\\'")
+  (setq-local add-log-current-defun-function #'treesit-add-log-current-defun)
 
   ;; Prettify symbols
   (setq-local prettify-symbols-alist neocaml-opam-prettify-symbols-alist)

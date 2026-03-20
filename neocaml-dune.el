@@ -48,6 +48,7 @@
 Dune files conventionally use 1-space indentation."
   :type 'natnum
   :safe 'natnump
+  :group 'neocaml-dune
   :package-version '(neocaml . "0.6.0"))
 
 ;;; Grammar installation
@@ -152,34 +153,27 @@ See `treesit-simple-imenu-settings' for the format.")
 (defun neocaml-dune--defun-name (node)
   "Return a name for NODE suitable for imenu and which-func.
 For stanzas, returns the stanza type and its name field if present."
-  (let* ((stanza-name-node (treesit-node-child-by-field-name node "stanza_name"))
-         (stanza-name (if stanza-name-node
-                         (treesit-node-text stanza-name-node t)
-                       ;; Fall back to the first child (stanza_name is aliased)
-                       (let ((first-child (treesit-node-child node 0 t)))
-                         (when (and first-child
-                                    (string= (treesit-node-type first-child) "stanza_name"))
-                           (treesit-node-text first-child t))))))
+  (let* ((first-child (treesit-node-child node 0 t))
+         (stanza-name (when (and first-child
+                                 (string= (treesit-node-type first-child) "stanza_name"))
+                        (treesit-node-text first-child t))))
     (when stanza-name
-      ;; Try to find a name-like field for a more descriptive label
-      (let ((name-value nil))
-        (dolist (field-name '("project_name" "alias_name"))
-          (unless name-value
-            (let ((n (treesit-node-child-by-field-name node field-name)))
-              (when n (setq name-value (treesit-node-text n t))))))
-        ;; Also check for (name ...) fields inside the stanza
-        (unless name-value
-          (let ((child-count (treesit-node-child-count node t)))
-            (dotimes (i child-count)
-              (let* ((child (treesit-node-child node i t))
-                     (child-type (treesit-node-type child)))
-                (when (and (not name-value)
-                           (string= child-type "field_name")
-                           (string= (treesit-node-text child t) "name"))
-                  ;; The value is the next named sibling after field_name
-                  (let ((next (treesit-node-next-sibling child t)))
-                    (when next
-                      (setq name-value (treesit-node-text next t)))))))))
+      ;; Try to find a name-like field for a more descriptive label.
+      ;; First check named fields, then scan for a (name ...) field.
+      (let ((name-value
+             (or (let ((n (treesit-node-child-by-field-name node "project_name")))
+                   (when n (treesit-node-text n t)))
+                 (let ((n (treesit-node-child-by-field-name node "alias_name")))
+                   (when n (treesit-node-text n t)))
+                 (let ((child first-child)
+                       (result nil))
+                   (while (and (not result) (setq child (treesit-node-next-sibling child t)))
+                     (when (and (string= (treesit-node-type child) "field_name")
+                                (string= (treesit-node-text child t) "name"))
+                       (let ((next (treesit-node-next-sibling child t)))
+                         (when next
+                           (setq result (treesit-node-text next t))))))
+                   result))))
         (if name-value
             (format "%s %s" stanza-name name-value)
           stanza-name)))))
