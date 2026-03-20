@@ -40,7 +40,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - OCaml toplevel (REPL) integration (`neocaml-repl`)
 - Comment support: `fill-paragraph` (`M-q`), comment continuation (`M-j`), and `comment-dwim` (`M-;`)
 - Electric indentation on delimiter characters
-- opam file editing (`neocaml-opam-mode`) with font-lock, indentation, and imenu
+- opam file editing (`neocaml-opam-mode`) with font-lock, indentation, imenu, and `opam lint` integration (flymake and [flycheck](https://github.com/flycheck/flycheck))
 - dune file editing (`neocaml-dune-mode`) for dune, dune-project, and dune-workspace files
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
@@ -520,6 +520,26 @@ You can also view a file explicitly with `M-x neocaml-objinfo-view-file`.
 ;; Customize the flags passed to ocamlobjinfo
 (setq neocaml-objinfo-program-args '("-no-approx" "-no-code"))
 ```
+
+## opam and dune Support
+
+neocaml includes dedicated tree-sitter modes for opam and dune files.
+`neocaml-opam-mode` activates automatically for `.opam` and `opam` files;
+`neocaml-dune-mode` activates for `dune`, `dune-project`, and `dune-workspace`
+files. Both provide font-lock, indentation, and imenu.
+
+### opam lint
+
+`neocaml-opam-mode` registers an `opam lint` flymake backend so you get
+inline diagnostics for missing fields, deprecated constructs, and syntax errors.
+To enable it, activate `flymake-mode` in opam buffers:
+
+```emacs-lisp
+(add-hook 'neocaml-opam-mode-hook #'flymake-mode)
+```
+
+[flycheck](https://github.com/flycheck/flycheck) users get `opam lint` support
+out of the box via flycheck's built-in `opam` checker.
 
 ## Comparison with Other Modes
 
