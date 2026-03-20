@@ -25,7 +25,9 @@ jobs:
       - uses: emacs-eldev/setup-eldev@v1
 
       - name: Install tree-sitter grammars
-        run: eldev eval '(neocaml-install-grammars)'
+        run: |
+          eldev eval '(neocaml-install-grammars)'
+          eldev eval '(progn (load "neocaml-opam") (neocaml-opam-install-grammar))'
 
       - run: eldev byte-compile --warnings-as-errors
 
