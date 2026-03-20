@@ -1,0 +1,29 @@
+(lang dune 3.0)
+
+(name myproject)
+
+(version 1.0.0)
+
+(generate_opam_files true)
+
+(source
+ (github user/myproject))
+
+(license MIT)
+
+(authors "Author One" "Author Two")
+
+(maintainers "maintainer@example.com")
+
+(homepage "https://example.com")
+
+(bug_reports "https://example.com/issues")
+
+(package
+ (name mylib)
+ (synopsis "My awesome library")
+ (description "A longer description of mylib")
+ (depends
+ (ocaml (>= 4.14))
+ (dune (>= 3.0))
+ (alcotest :with-test)))

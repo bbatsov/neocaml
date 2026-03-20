@@ -1,0 +1,42 @@
+; A sample dune build file
+
+(library
+ (name mylib)
+ (public_name mylib)
+ (libraries base stdio)
+ (modules mylib helper utils)
+ (enabled_if
+ (>= %{ocaml_version} 4.14)))
+
+(executable
+ (name main)
+ (public_name myapp)
+ (libraries mylib cmdliner))
+
+(test
+ (name test_mylib)
+ (libraries mylib alcotest)
+ (action
+ (run %{test} -e)))
+
+(rule
+ (target config.ml)
+ (deps config.ml.in)
+ (action
+ (bash "sed 's/%%VERSION%%/1.0.0/g' %{deps} > %{target}")))
+
+(alias
+ (name runtest)
+ (deps test_mylib.exe)
+ (action
+ (run %{deps})))
+
+(env
+ (dev
+  (ocamlopt_flags
+   (:standard -O2))))
+
+(install
+ (section bin)
+ (files
+ (main.exe as myapp)))
