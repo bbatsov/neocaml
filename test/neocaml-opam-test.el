@@ -192,4 +192,47 @@ of the example package.
         (expect (get-text-property (match-beginning 0) 'face)
                 :to-equal 'font-lock-comment-face)))))
 
+(describe "neocaml-opam lint parsing"
+  (it "parses error with location"
+    (with-temp-buffer
+      (insert "opam-version: \"2.0\"\nname: \"test\"\ndepends: [\n  bad\n]\n")
+      (let ((diag (neocaml-opam--parse-lint-line
+                   "             error  3: File format error in 'depends' at line 5, column 2: expected pkg-formula"
+                   (current-buffer))))
+        (expect diag :not :to-be nil)
+        (expect (flymake-diagnostic-type diag) :to-be :error)
+        (expect (flymake-diagnostic-text diag) :to-match "opam lint \\[3\\]"))))
+
+  (it "parses error without location"
+    (with-temp-buffer
+      (insert "opam-version: \"2.0\"\n")
+      (let ((diag (neocaml-opam--parse-lint-line
+                   "             error 23: Missing field 'maintainer'"
+                   (current-buffer))))
+        (expect diag :not :to-be nil)
+        (expect (flymake-diagnostic-type diag) :to-be :error)
+        (expect (flymake-diagnostic-text diag) :to-match "Missing field")
+        ;; File-level diagnostic points to position 1
+        (expect (flymake-diagnostic-beg diag) :to-equal 1))))
+
+  (it "parses warning without location"
+    (with-temp-buffer
+      (insert "opam-version: \"2.0\"\n")
+      (let ((diag (neocaml-opam--parse-lint-line
+                   "           warning 25: Missing field 'authors'"
+                   (current-buffer))))
+        (expect diag :not :to-be nil)
+        (expect (flymake-diagnostic-type diag) :to-be :warning)
+        (expect (flymake-diagnostic-text diag) :to-match "Missing field"))))
+
+  (it "returns nil for non-diagnostic lines"
+    (with-temp-buffer
+      (insert "opam-version: \"2.0\"\n")
+      (expect (neocaml-opam--parse-lint-line "Errors." (current-buffer))
+              :to-be nil)
+      (expect (neocaml-opam--parse-lint-line "" (current-buffer))
+              :to-be nil)
+      (expect (neocaml-opam--parse-lint-line "Passed." (current-buffer))
+              :to-be nil))))
+
 ;;; neocaml-opam-test.el ends here

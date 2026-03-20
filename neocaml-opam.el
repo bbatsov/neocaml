@@ -35,6 +35,7 @@
 ;;; Code:
 
 (require 'treesit)
+(require 'flymake)
 
 (defgroup neocaml-opam nil
   "Major mode for editing opam files with tree-sitter."
@@ -155,6 +156,103 @@ See `treesit-simple-imenu-settings' for the format.")
   "Alist of symbol prettifications for opam files.
 See `prettify-symbols-alist' for more information.")
 
+;;; Flymake (opam lint)
+
+(defcustom neocaml-opam-lint-program "opam"
+  "The opam executable used for linting."
+  :type 'string
+  :group 'neocaml-opam
+  :package-version '(neocaml . "0.6.0"))
+
+(defcustom neocaml-opam-flymake-backend t
+  "When non-nil, register the `opam lint' flymake backend.
+The backend is registered in `flymake-diagnostic-functions' but
+`flymake-mode' is not enabled automatically.  Enable it via a hook:
+
+  (add-hook \\='neocaml-opam-mode-hook #\\='flymake-mode)"
+  :type 'boolean
+  :group 'neocaml-opam
+  :package-version '(neocaml . "0.6.0"))
+
+(defvar-local neocaml-opam--flymake-proc nil
+  "The current opam lint process for flymake.")
+
+(defun neocaml-opam--flymake-lint (report-fn &rest _args)
+  "Flymake backend for `opam lint'.
+Calls REPORT-FN with a list of diagnostics.
+Buffer contents are piped to `opam lint -' via stdin."
+  ;; Kill any leftover process
+  (when (process-live-p neocaml-opam--flymake-proc)
+    (kill-process neocaml-opam--flymake-proc))
+  (let ((source (current-buffer)))
+    (setq neocaml-opam--flymake-proc
+          (make-process
+           :name "neocaml-opam-lint"
+           :noquery t
+           :connection-type 'pipe
+           :buffer (generate-new-buffer " *neocaml-opam-lint*")
+           :command (list neocaml-opam-lint-program "lint" "-")
+           :sentinel
+           (lambda (proc _event)
+             (when (memq (process-status proc) '(exit signal))
+               (unwind-protect
+                   (when (and (buffer-live-p source)
+                              (with-current-buffer source
+                                (eq proc neocaml-opam--flymake-proc)))
+                     (with-current-buffer (process-buffer proc)
+                       (goto-char (point-min))
+                       (let ((diags nil))
+                         (while (not (eobp))
+                           (let ((diag (neocaml-opam--parse-lint-line
+                                        (buffer-substring-no-properties
+                                         (line-beginning-position)
+                                         (line-end-position))
+                                        source)))
+                             (when diag (push diag diags)))
+                           (forward-line 1))
+                         (funcall report-fn (nreverse diags)))))
+                 (kill-buffer (process-buffer proc)))))))
+    ;; Send buffer contents via stdin
+    (save-restriction
+      (widen)
+      (process-send-region neocaml-opam--flymake-proc (point-min) (point-max)))
+    (process-send-eof neocaml-opam--flymake-proc)))
+
+(defun neocaml-opam--parse-lint-line (line source-buffer)
+  "Parse a single LINE of opam lint output into a flymake diagnostic.
+SOURCE-BUFFER is the buffer being checked."
+  (cond
+   ;; Error/warning with location: "error  3: ... at line 5, column 2: ..."
+   ((string-match
+     (rx (group (or "error" "warning"))
+         (+ space) (group (+ digit)) ": "
+         (group (+? anything))
+         " at line " (group (+ digit)) ", column " (group (+ digit)) ": "
+         (group (+ anything)))
+     line)
+    (let* ((type (if (string= (match-string 1 line) "error") :error :warning))
+           (code (match-string 2 line))
+           (context (match-string 3 line))
+           (lnum (string-to-number (match-string 4 line)))
+           (col (string-to-number (match-string 5 line)))
+           (detail (match-string 6 line))
+           (msg (format "opam lint [%s]: %s: %s" code context detail))
+           (region (with-current-buffer source-buffer
+                     (flymake-diag-region source-buffer lnum col))))
+      (flymake-make-diagnostic source-buffer
+                               (car region) (cdr region) type msg)))
+   ;; Error/warning without location: "error 23: Missing field 'maintainer'"
+   ((string-match
+     (rx (group (or "error" "warning"))
+         (+ space) (group (+ digit)) ": "
+         (group (+ anything)))
+     line)
+    (let* ((type (if (string= (match-string 1 line) "error") :error :warning))
+           (code (match-string 2 line))
+           (msg (format "opam lint [%s]: %s" code (match-string 3 line))))
+      ;; File-level diagnostic: point to first character
+      (flymake-make-diagnostic source-buffer 1 2 type msg)))))
+
 ;;; Mode definition
 
 ;;;###autoload
@@ -200,7 +298,13 @@ See `prettify-symbols-alist' for more information.")
   ;; Final newline
   (setq-local require-final-newline mode-require-final-newline)
 
-  (treesit-major-mode-setup))
+  (treesit-major-mode-setup)
+
+  ;; Flymake via opam lint (users enable flymake-mode via hook)
+  (when (and neocaml-opam-flymake-backend
+             (executable-find neocaml-opam-lint-program))
+    (add-hook 'flymake-diagnostic-functions
+              #'neocaml-opam--flymake-lint nil t)))
 
 ;;;###autoload
 ;; Matches both bare "opam" files (e.g., repo/opam) and named
