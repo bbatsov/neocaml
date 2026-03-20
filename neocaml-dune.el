@@ -176,14 +176,10 @@ For stanzas, returns the stanza type and its name field if present."
                 (when (and (not name-value)
                            (string= child-type "field_name")
                            (string= (treesit-node-text child t) "name"))
-                  ;; The value follows the field_name in the parent's field list
-                  (let ((val (treesit-node-child-by-field-name
-                              node "value")))
-                    ;; With multiple "value" fields, this gets the first one
-                    ;; which may not be right.  Fall back to next sibling.
-                    (let ((next (treesit-node-next-sibling child t)))
-                      (when next
-                        (setq name-value (treesit-node-text next t))))))))))
+                  ;; The value is the next named sibling after field_name
+                  (let ((next (treesit-node-next-sibling child t)))
+                    (when next
+                      (setq name-value (treesit-node-text next t)))))))))
         (if name-value
             (format "%s %s" stanza-name name-value)
           stanza-name)))))
