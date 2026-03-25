@@ -84,7 +84,7 @@ error if none is found."
   "Find the nearest ancestor of DIR containing a dune project file."
   (cl-some (lambda (marker)
              (when-let* ((found (locate-dominating-file dir marker)))
-               (file-name-as-directory found)))
+               (file-name-as-directory (expand-file-name found))))
            neocaml-dune-project-root-files))
 
 ;;; Running dune commands
