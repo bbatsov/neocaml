@@ -218,7 +218,7 @@ named `dune'."
     (define-key map (kbd "C-c C-d .") #'neocaml-dune-find-dune-file)
     (easy-menu-define neocaml-dune-interaction-menu map
       "Dune interaction menu."
-      '("Dune"
+      '("Dune Interaction"
         ["Build" neocaml-dune-build]
         ["Test" neocaml-dune-test]
         ["Clean" neocaml-dune-clean]
