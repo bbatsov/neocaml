@@ -685,6 +685,23 @@ for them yet. If you work with these files, keep your existing mode for them:
 (add-to-list 'auto-mode-alist '("\\.mly\\'" . tuareg-mode))
 ```
 
+#### Using the legacy dune-mode
+
+neocaml provides its own `neocaml-dune-mode` for editing dune files. If you
+prefer to keep using the `dune-mode` from the
+[dune](https://melpa.org/#/dune) package, override the `auto-mode-alist`
+entries after neocaml loads:
+
+```emacs-lisp
+(with-eval-after-load 'neocaml-dune
+  (add-to-list 'auto-mode-alist '("/dune\\'" . dune-mode))
+  (add-to-list 'auto-mode-alist '("/dune-project\\'" . dune-mode))
+  (add-to-list 'auto-mode-alist '("/dune-workspace\\'" . dune-mode)))
+```
+
+The `neocaml-dune-interaction-mode` (build/test/clean commands) works with
+either major mode -- it doesn't depend on `neocaml-dune-mode`.
+
 ### Keybinding differences
 
 Some keybindings have different meanings across the modes:
