@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.6.0 (2026-03-25)
+
 ### Bug fixes
 
 - [#34](https://github.com/bbatsov/neocaml/issues/34): Fix indentation of continuation lines inside multi-line comments. Lines now align with the body text after the opening delimiter.
@@ -10,7 +12,7 @@
 
 - Add `neocaml-dune-mode` for editing dune, dune-project, and dune-workspace files with tree-sitter font-lock, indentation, imenu, and defun navigation. Based on the [tree-sitter-dune](https://github.com/tmcgilchrist/tree-sitter-dune) grammar.
 - Add `neocaml-opam-mode` for editing opam package files with tree-sitter font-lock, indentation, and imenu. Based on the [tree-sitter-opam](https://github.com/tmcgilchrist/tree-sitter-opam) grammar.
-- Add `neocaml-dune-interaction-mode`, a minor mode for running dune commands (build, test, clean, promote, fmt, exec) from any neocaml buffer via `compile`.
+- Add `neocaml-dune-interaction-mode`, a minor mode for running dune commands (build, test, clean, promote, fmt, utop, exec) from any neocaml buffer via `compile`. Includes watch mode support via prefix argument and a Dune menu.
 - Add flymake backend for `opam lint` in `neocaml-opam-mode`. Enabled by default when the `opam` executable is found.
 - Add tree-sitter font-locking for REPL input via `comint-fontify-input-mode`. Code typed in the REPL now gets the same syntax highlighting as regular `.ml` buffers. Controlled by `neocaml-repl-fontify-input` (default `t`).
 
