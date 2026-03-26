@@ -5,6 +5,7 @@
 ### New features
 
 - [#36](https://github.com/bbatsov/neocaml/issues/36): Add `neocaml-ocamllex-mode` for editing OCamllex (`.mll`) files with tree-sitter font-lock, indentation, imenu, and defun navigation. Embedded OCaml code inside `{ }` blocks gets full syntax highlighting via language injection when the OCaml grammar is installed. Based on the [tree-sitter-ocamllex](https://github.com/314eter/tree-sitter-ocamllex) grammar.
+- [#36](https://github.com/bbatsov/neocaml/issues/36): Add `neocaml-menhir-mode` for editing Menhir (`.mly`) files with tree-sitter font-lock, indentation, imenu, and defun navigation. Embedded OCaml code inside `{ }` and `%{ %}` blocks gets full syntax highlighting via language injection. Based on the [tree-sitter-menhir](https://github.com/Kerl13/tree-sitter-menhir) grammar.
 
 ## 0.6.0 (2026-03-25)
 
