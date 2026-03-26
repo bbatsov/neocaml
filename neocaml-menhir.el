@@ -128,20 +128,27 @@ With prefix argument FORCE, reinstall even if already installed."
    '([":" "," ";"] @font-lock-delimiter-face))
   "Font-lock settings for `neocaml-menhir-mode'.")
 
+(defun neocaml-menhir--injection-available-p ()
+  "Non-nil if OCaml language injection is available.
+Requires Emacs 30+ (for `treesit-range-rules' with `:embed') and
+the OCaml tree-sitter grammar."
+  (and (>= emacs-major-version 30)
+       (treesit-language-available-p 'ocaml)))
+
 (defun neocaml-menhir--font-lock-settings ()
   "Return font-lock settings for `neocaml-menhir-mode'.
-When the OCaml tree-sitter grammar is available, includes font-lock
-rules for embedded OCaml code inside action blocks via language injection."
+When OCaml injection is available, includes font-lock rules for
+embedded OCaml code inside action blocks."
   (append
    neocaml-menhir--font-lock-settings
-   (when (treesit-language-available-p 'ocaml)
+   (when (neocaml-menhir--injection-available-p)
      (require 'neocaml)
      (neocaml-mode--font-lock-settings 'ocaml))))
 
 (defun neocaml-menhir--range-settings ()
   "Return range settings for embedded OCaml code injection.
-Returns nil if the OCaml tree-sitter grammar is not available."
-  (when (treesit-language-available-p 'ocaml)
+Returns nil if injection is not available."
+  (when (neocaml-menhir--injection-available-p)
     (treesit-range-rules
      :embed 'ocaml
      :host 'menhir
