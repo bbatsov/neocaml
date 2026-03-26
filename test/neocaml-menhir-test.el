@@ -105,12 +105,13 @@ DESCRIPTION is the test name.  Uses `neocaml-menhir-mode'."
 expr:
   | EOF { () }"))
 
-(describe "neocaml-menhir language injection"
-  (before-all
-    (unless (treesit-language-available-p 'menhir)
-      (signal 'buttercup-pending "tree-sitter Menhir grammar not available"))
-    (unless (treesit-language-available-p 'ocaml)
-      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+(when (>= emacs-major-version 30)
+  (describe "neocaml-menhir language injection"
+    (before-all
+      (unless (treesit-language-available-p 'menhir)
+        (signal 'buttercup-pending "tree-sitter Menhir grammar not available"))
+      (unless (treesit-language-available-p 'ocaml)
+        (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
 
   (it "highlights OCaml keywords in header blocks"
     (with-temp-buffer
@@ -133,7 +134,7 @@ expr:
       (goto-char (point-min))
       (search-forward "{ Int")
       (let ((face (get-text-property (+ 2 (match-beginning 0)) 'face)))
-        (expect face :not :to-be nil)))))
+        (expect face :not :to-be nil))))))
 
 (describe "neocaml-menhir integration"
   (before-all
