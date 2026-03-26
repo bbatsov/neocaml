@@ -29,6 +29,7 @@ jobs:
           eldev eval '(neocaml-install-grammars)'
           eldev eval '(progn (load "neocaml-opam") (neocaml-opam-install-grammar))'
           eldev eval '(progn (load "neocaml-dune") (neocaml-dune-install-grammar))'
+          eldev eval '(progn (load "neocaml-ocamllex") (neocaml-ocamllex-install-grammar))'
 
       - run: eldev byte-compile --warnings-as-errors
 
