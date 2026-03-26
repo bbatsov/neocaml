@@ -43,8 +43,8 @@ One last thing - we really need more Emacs packages with fun names! :D
 - opam file editing (`neocaml-opam-mode`) with font-lock, indentation, imenu, and `opam lint` integration (flymake and [flycheck](https://github.com/flycheck/flycheck))
 - dune file editing (`neocaml-dune-mode`) for dune, dune-project, and dune-workspace files
 - dune build commands (`neocaml-dune-interaction-mode`) — build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
-- OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection
-- Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection
+- OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
+- Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - `_build` directory awareness (offers to switch to source when opening build artifacts)
@@ -681,7 +681,9 @@ caml-mode and tuareg also handle `.mll` (ocamllex), `.mly` (ocamlyacc/menhir),
 and `.mlp` (camlp4/camlp5) files. neocaml now supports `.mll` files via
 `neocaml-ocamllex-mode` (with full OCaml syntax highlighting inside `{ }`
 blocks via language injection), and `.mly` files via `neocaml-menhir-mode`
-(also with OCaml injection). `.mlp` (camlp4/camlp5) files are not supported.
+(also with OCaml injection). The language injection requires Emacs 30+; on
+Emacs 29 the modes still work but embedded OCaml code is not fontified.
+`.mlp` (camlp4/camlp5) files are not supported.
 
 #### Using the legacy dune-mode
 
