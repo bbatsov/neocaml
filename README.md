@@ -43,6 +43,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - opam file editing (`neocaml-opam-mode`) with font-lock, indentation, imenu, and `opam lint` integration (flymake and [flycheck](https://github.com/flycheck/flycheck))
 - dune file editing (`neocaml-dune-mode`) for dune, dune-project, and dune-workspace files
 - dune build commands (`neocaml-dune-interaction-mode`) — build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
+- OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - `_build` directory awareness (offers to switch to source when opening build artifacts)
@@ -607,6 +608,7 @@ alternatives.
 | `_build` directory aware   | Yes                        | No            | Yes          |
 | opam file support          | Yes                        | No            | Yes          |
 | dune file support          | Yes                        | No            | No           |
+| OCamllex support           | Yes (with OCaml injection) | No            | Yes          |
 | Menhir support             | No                         | No            | Yes          |
 | Code templates / skeletons | No                         | Yes           | Yes          |
 
@@ -675,13 +677,13 @@ make sure neocaml loads last so its `auto-mode-alist` entries win:
 #### Unsupported file types
 
 caml-mode and tuareg also handle `.mll` (ocamllex), `.mly` (ocamlyacc/menhir),
-and `.mlp` (camlp4/camlp5) files. neocaml does not currently support these
-formats -- they are DSLs with embedded OCaml, and no tree-sitter grammars exist
-for them yet. If you work with these files, keep your existing mode for them:
+and `.mlp` (camlp4/camlp5) files. neocaml now supports `.mll` files via
+`neocaml-ocamllex-mode` (with full OCaml syntax highlighting inside `{ }`
+blocks via language injection). `.mly` and `.mlp` are not yet supported. If
+you work with those files, keep your existing mode for them:
 
 ```emacs-lisp
-;; Keep tuareg for lexer/parser definitions
-(add-to-list 'auto-mode-alist '("\\.mll\\'" . tuareg-mode))
+;; Keep tuareg for parser definitions
 (add-to-list 'auto-mode-alist '("\\.mly\\'" . tuareg-mode))
 ```
 
@@ -741,8 +743,7 @@ indentation, you can use it directly -- see the
 ### What you lose
 
 - `ocamldebug` integration (neocaml does not include a debugger frontend)
-- `.mll`, `.mly`, `.mlp` file support (no tree-sitter grammars exist for these)
-- Menhir support
+- `.mly` (Menhir), `.mlp` (camlp4/camlp5) file support
 - Electric comment delimiters (`(` inserting `(* *)` inside comments)
 - Code templates / skeletons
 
