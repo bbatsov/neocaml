@@ -1107,11 +1107,13 @@ The information is also copied to the kill ring."
   (let* ((info (format (concat "Emacs: %s\n"
                                 "System: %s\n"
                                 "neocaml: %s\n"
+                                "Tree-sitter ABI: %s\n"
                                 "Grammars: %s, %s\n"
                                 "Eglot: %s")
                        emacs-version
                        system-type
                        neocaml-version
+                       (treesit-library-abi-version)
                        (neocaml--grammar-info 'ocaml)
                        (neocaml--grammar-info 'ocaml-interface)
                        (if (bound-and-true-p eglot--managed-mode) "active" "inactive"))))

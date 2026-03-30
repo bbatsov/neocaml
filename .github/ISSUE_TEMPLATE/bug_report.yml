@@ -68,6 +68,7 @@ body:
         Emacs: 30.1
         System: darwin
         neocaml: 0.3.0
+        Tree-sitter ABI: 15
         Grammars: ocaml (expected: v0.24.2), ocaml-interface (expected: v0.24.2)
         Eglot: active
       render: text

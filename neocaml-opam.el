@@ -260,6 +260,10 @@ SOURCE-BUFFER is the buffer being checked."
   "Major mode for editing opam package files.
 
 \\{neocaml-opam-mode-map}"
+  (when (< (treesit-library-abi-version) 15)
+    (error "The opam grammar requires tree-sitter ABI version 15+, but \
+your Emacs was built against ABI version %d; rebuild Emacs with \
+tree-sitter >= 0.25.0" (treesit-library-abi-version)))
   (unless (treesit-ready-p 'opam)
     (when (y-or-n-p "Opam tree-sitter grammar is not installed.  Install it now?")
       (neocaml-opam-install-grammar))

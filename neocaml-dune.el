@@ -187,6 +187,10 @@ For stanzas, returns the stanza type and its name field if present."
 Supports dune, dune-project, and dune-workspace files.
 
 \\{neocaml-dune-mode-map}"
+  (when (< (treesit-library-abi-version) 15)
+    (error "The dune grammar requires tree-sitter ABI version 15+, but \
+your Emacs was built against ABI version %d; rebuild Emacs with \
+tree-sitter >= 0.25.0" (treesit-library-abi-version)))
   (unless (treesit-ready-p 'dune)
     (when (y-or-n-p "Dune tree-sitter grammar is not installed.  Install it now?")
       (neocaml-dune-install-grammar))
