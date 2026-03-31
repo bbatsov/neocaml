@@ -1249,8 +1249,9 @@ the language-specific parts of the mode."
   "Register neocaml modes with eglot if loaded."
   (when (boundp 'eglot-server-programs)
     (add-to-list 'eglot-server-programs
-                 '((neocaml-mode :language-id "ocaml")
-                   (neocaml-interface-mode :language-id "ocaml.interface")
+                 '(((neocaml-mode :language-id "ocaml")
+                    (neocaml-interface-mode
+                     :language-id "ocaml.interface"))
                    "ocamllsp"))))
 
 (define-derived-mode neocaml-base-mode prog-mode "OCaml"
