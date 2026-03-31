@@ -1245,6 +1245,14 @@ the language-specific parts of the mode."
       (setq-local transpose-sexps-function
                   #'transpose-sexps-default-function))))
 
+(defun neocaml--register-with-eglot ()
+  "Register neocaml modes with eglot if loaded."
+  (when (boundp 'eglot-server-programs)
+    (add-to-list 'eglot-server-programs
+                 '((neocaml-mode :language-id "ocaml")
+                   (neocaml-interface-mode :language-id "ocaml.interface")
+                   "ocamllsp"))))
+
 (define-derived-mode neocaml-base-mode prog-mode "OCaml"
   "Base major mode for OCaml files, providing shared setup.
 This mode is not intended to be used directly.  Use `neocaml-mode'
@@ -1297,7 +1305,10 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local ff-other-file-alist neocaml-other-file-alist)
 
   ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist)))
+  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist))
+
+  ;; Register neocaml modes with eglot so it knows to start ocamllsp.
+  (neocaml--register-with-eglot))
 
 ;;;###autoload
 (define-derived-mode neocaml-mode neocaml-base-mode "OCaml"
@@ -1335,17 +1346,6 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 ;; derive the correct language-id from the major-mode name.
 (put 'neocaml-mode 'eglot-language-id "ocaml")
 (put 'neocaml-interface-mode 'eglot-language-id "ocaml.interface")
-
-;; Register neocaml modes with eglot so it knows to start ocamllsp.
-;; Without this, eglot-ensure has no server entry for neocaml modes
-;; (the built-in list only covers caml-mode, tuareg-mode, and
-;; ocaml-ts-mode).
-(defvar eglot-server-programs)
-(with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs
-               '((neocaml-mode :language-id "ocaml")
-                 (neocaml-interface-mode :language-id "ocaml.interface")
-                 "ocamllsp")))
 
 (provide 'neocaml)
 
