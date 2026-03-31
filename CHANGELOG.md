@@ -2,10 +2,18 @@
 
 ## main (unreleased)
 
+## 0.7.0 (2026-03-31)
+
 ### New features
 
 - [#36](https://github.com/bbatsov/neocaml/issues/36): Add `neocaml-ocamllex-mode` for editing OCamllex (`.mll`) files with tree-sitter font-lock, indentation, imenu, and defun navigation. Embedded OCaml code inside `{ }` blocks gets full syntax highlighting via language injection when the OCaml grammar is installed. Based on the [tree-sitter-ocamllex](https://github.com/314eter/tree-sitter-ocamllex) grammar.
 - [#36](https://github.com/bbatsov/neocaml/issues/36): Add `neocaml-menhir-mode` for editing Menhir (`.mly`) files with tree-sitter font-lock, indentation, imenu, and defun navigation. Embedded OCaml code inside `{ }` and `%{ %}` blocks gets full syntax highlighting via language injection. Based on the [tree-sitter-menhir](https://github.com/Kerl13/tree-sitter-menhir) grammar.
+- Register `neocaml-mode` and `neocaml-interface-mode` with `eglot-server-programs` so `eglot-ensure` works out of the box with `ocamllsp`.
+
+### Bug fixes
+
+- [#37](https://github.com/bbatsov/neocaml/issues/37): Guard ABI 15 grammars (ocamllex, menhir) on Emacs 30+ and include ABI version in `neocaml-bug-report-info`.
+- Language injection in ocamllex and menhir modes now requires Emacs 30+ (injection queries are not supported on Emacs 29).
 
 ## 0.6.0 (2026-03-25)
 

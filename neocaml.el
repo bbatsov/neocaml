@@ -6,7 +6,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/bbatsov/neocaml
 ;; Keywords: languages ocaml ml
-;; Version: 0.6.0
+;; Version: 0.7.0
 ;; Package-Requires: ((emacs "29.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -114,7 +114,7 @@ Includes extra symbols when `neocaml-prettify-symbols-full' is non-nil."
               neocaml-prettify-symbols-extra-alist)
     neocaml-prettify-symbols-alist))
 
-(defconst neocaml-version "0.6.0")
+(defconst neocaml-version "0.7.0")
 
 (defun neocaml-version ()
   "Display the current package version in the minibuffer.
