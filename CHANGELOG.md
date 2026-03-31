@@ -2,6 +2,12 @@
 
 ## main (unreleased)
 
+## 0.7.1 (2026-03-31)
+
+### Bug fixes
+
+- Fix malformed `eglot-server-programs` entry that prevented `eglot-ensure` from starting `ocamllsp` for neocaml modes.
+
 ## 0.7.0 (2026-03-31)
 
 ### New features
