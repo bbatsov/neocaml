@@ -1340,6 +1340,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 ;; Without this, eglot-ensure has no server entry for neocaml modes
 ;; (the built-in list only covers caml-mode, tuareg-mode, and
 ;; ocaml-ts-mode).
+(defvar eglot-server-programs)
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
                '((neocaml-mode :language-id "ocaml")
