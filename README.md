@@ -587,6 +587,20 @@ mode** (`--watch`), rebuilding automatically when files change. For example,
 The project root is determined by walking up from the current file to find
 `dune-project`.
 
+### dune File Formatting
+
+`neocaml-dune-mode` can format the current buffer using `dune format-dune-file`.
+Use `C-c C-f` (`neocaml-dune-format-buffer`) to format on demand, or enable
+automatic formatting on save:
+
+```emacs-lisp
+(setq neocaml-dune-format-on-save t)
+```
+
+Note: this formats individual dune files via `dune format-dune-file`, which is
+different from `dune fmt` (available via `C-c C-d f`) that formats the entire
+project.
+
 ## Comparison with Other Modes
 
 People love comparisons, so here's a comparison of neocaml with its main historical
