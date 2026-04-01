@@ -203,4 +203,29 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
         (expect (get-text-property (match-beginning 0) 'face)
                 :to-equal 'font-lock-comment-face)))))
 
+(describe "neocaml-dune-format-buffer"
+  (before-all
+    (unless (treesit-language-available-p 'dune)
+      (signal 'buttercup-pending "tree-sitter dune grammar not available")))
+
+  (it "formats an unformatted dune buffer"
+    (unless (executable-find "dune")
+      (signal 'buttercup-pending "dune executable not found"))
+    (with-temp-buffer
+      (insert "(library (name foo) (libraries bar baz))")
+      (neocaml-dune-mode)
+      (neocaml-dune-format-buffer)
+      (expect (string-trim (buffer-string))
+              :to-equal "(library\n (name foo)\n (libraries bar baz))")))
+
+  (it "preserves an already-formatted buffer"
+    (unless (executable-find "dune")
+      (signal 'buttercup-pending "dune executable not found"))
+    (let ((formatted "(library\n (name foo)\n (libraries bar baz))\n"))
+      (with-temp-buffer
+        (insert formatted)
+        (neocaml-dune-mode)
+        (neocaml-dune-format-buffer)
+        (expect (buffer-string) :to-equal formatted)))))
+
 ;;; neocaml-dune-test.el ends here

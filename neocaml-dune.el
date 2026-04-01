@@ -51,6 +51,13 @@ Dune files conventionally use 1-space indentation."
   :group 'neocaml-dune
   :package-version '(neocaml . "0.6.0"))
 
+(defcustom neocaml-dune-format-on-save nil
+  "When non-nil, format the buffer with `dune format-dune-file' before saving."
+  :type 'boolean
+  :safe #'booleanp
+  :group 'neocaml-dune
+  :package-version '(neocaml . "0.8.0"))
+
 ;;; Grammar installation
 
 (defconst neocaml-dune-grammar-recipes
@@ -69,6 +76,36 @@ With prefix argument FORCE, reinstall even if already installed."
     (message "Installing dune tree-sitter grammar...")
     (let ((treesit-language-source-alist neocaml-dune-grammar-recipes))
       (treesit-install-language-grammar 'dune))))
+
+;;; Formatting
+
+(defun neocaml-dune-format-buffer ()
+  "Format the current buffer using `dune format-dune-file'.
+Pipes the buffer content through the command and replaces the
+buffer text with the formatted output, preserving point."
+  (interactive)
+  (let ((outbuf (generate-new-buffer " *neocaml-dune-format*"))
+        (orig-point (point))
+        (orig-window-start (window-start)))
+    (unwind-protect
+        (let ((exit-code (call-process-region (point-min) (point-max)
+                                              "dune" nil outbuf nil
+                                              "format-dune-file")))
+          (if (zerop exit-code)
+              (progn
+                (erase-buffer)
+                (insert-buffer-substring outbuf)
+                (goto-char (min orig-point (point-max)))
+                (set-window-start (selected-window) orig-window-start))
+            (user-error "Dune format-dune-file failed: %s"
+                        (with-current-buffer outbuf
+                          (string-trim (buffer-string))))))
+      (kill-buffer outbuf))))
+
+(defun neocaml-dune--format-before-save ()
+  "Format the buffer before saving if `neocaml-dune-format-on-save' is non-nil."
+  (when neocaml-dune-format-on-save
+    (neocaml-dune-format-buffer)))
 
 ;;; Font-lock
 
@@ -225,10 +262,15 @@ tree-sitter >= 0.25.0" (treesit-library-abi-version)))
   ;; which-func-mode / add-log integration
   (setq-local add-log-current-defun-function #'treesit-add-log-current-defun)
 
+  ;; Format on save
+  (add-hook 'before-save-hook #'neocaml-dune--format-before-save nil t)
+
   ;; Final newline
   (setq-local require-final-newline mode-require-final-newline)
 
   (treesit-major-mode-setup))
+
+(define-key neocaml-dune-mode-map (kbd "C-c C-f") #'neocaml-dune-format-buffer)
 
 ;;;###autoload
 (progn
