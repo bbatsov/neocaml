@@ -45,6 +45,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - dune build commands (`neocaml-dune-interaction-mode`) — build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
 - OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
+- Cram test file editing (`neocaml-cram-mode`) with font-lock for commands, output, modifiers, and prose
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - `_build` directory awareness (offers to switch to source when opening build artifacts)
@@ -601,6 +602,30 @@ Note: this formats individual dune files via `dune format-dune-file`, which is
 different from `dune fmt` (available via `C-c C-d f`) that formats the entire
 project.
 
+### Cram Tests
+
+`neocaml-cram-mode` provides syntax highlighting for cram test (`.t`) files, as
+used by dune's expect-test framework. It highlights shell commands, expected
+output, output modifiers (`(re)`, `(glob)`, `(no-eol)`, `(esc)`), exit codes,
+and prose comments.
+
+The mode activates automatically for `.t` files. Use `dune promote` (available
+via `C-c C-d p` with `neocaml-dune-interaction-mode`) to accept corrected test
+output.
+
+> [!NOTE]
+> The `.t` extension is also used by Perl test files. If you work with
+> both OCaml and Perl, you may need to override the association for Perl
+> projects:
+>
+> ```emacs-lisp
+> ;; Use cperl-mode for .t files in Perl projects
+> (add-to-list 'auto-mode-alist '("/t/.*\\.t\\'" . cperl-mode))
+> ```
+>
+> Entries added later to `auto-mode-alist` take priority, so the more specific
+> pattern above will win for `.t` files under a `t/` directory (Perl convention).
+
 ## Comparison with Other Modes
 
 People love comparisons, so here's a comparison of neocaml with its main historical
@@ -625,6 +650,7 @@ alternatives.
 | dune file support          | Yes                        | No            | No           |
 | OCamllex support           | Yes (with OCaml injection) | No            | Yes          |
 | Menhir support             | Yes (with OCaml injection) | No            | Yes          |
+| Cram test support          | Yes                        | No            | No           |
 | Code templates / skeletons | No                         | Yes           | Yes          |
 
 Keep in mind also that `tuareg` uses `caml-mode` internally for some functionality.
