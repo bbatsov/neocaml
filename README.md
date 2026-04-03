@@ -626,6 +626,13 @@ output.
 > Entries added later to `auto-mode-alist` take priority, so the more specific
 > pattern above will win for `.t` files under a `t/` directory (Perl convention).
 
+### Other OCaml-related Files
+
+neocaml also registers sensible modes for a few other OCaml-related files:
+
+- `.ocamlinit` opens in `neocaml-mode` (it's OCaml toplevel startup code)
+- `.ocamlformat` and `.ocp-indent` open in `conf-unix-mode` (key = value config files with `#` comments)
+
 ## Comparison with Other Modes
 
 People love comparisons, so here's a comparison of neocaml with its main historical

@@ -1329,8 +1329,14 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 
 ;;;###autoload
 (progn
+  ;; OCaml source files
   (add-to-list 'auto-mode-alist '("\\.ml\\'" . neocaml-mode))
-  (add-to-list 'auto-mode-alist '("\\.mli\\'" . neocaml-interface-mode)))
+  (add-to-list 'auto-mode-alist '("\\.mli\\'" . neocaml-interface-mode))
+  ;; OCaml toplevel init file (plain OCaml code)
+  (add-to-list 'auto-mode-alist '("\\.ocamlinit\\'" . neocaml-mode))
+  ;; OCaml config files (key = value format with # comments)
+  (add-to-list 'auto-mode-alist '("/\\.ocamlformat\\'" . conf-unix-mode))
+  (add-to-list 'auto-mode-alist '("/\\.ocp-indent\\'" . conf-unix-mode)))
 
 ;; Hide OCaml build artifacts from find-file completion
 (dolist (ext '(".cmo" ".cmx" ".cma" ".cmxa" ".cmi" ".annot" ".cmt" ".cmti"))
