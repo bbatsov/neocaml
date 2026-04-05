@@ -311,9 +311,10 @@ tree-sitter >= 0.25.0" (treesit-library-abi-version)))
               #'neocaml-opam--flymake-lint nil t)))
 
 ;;;###autoload
-;; Matches both bare "opam" files (e.g., repo/opam) and named
-;; "foo.opam" files — the [./] covers the dot in ".opam".
-(add-to-list 'auto-mode-alist '("[./]opam\\'" . neocaml-opam-mode))
+;; Matches bare "opam" files (e.g., repo/opam), named "foo.opam"
+;; files, — the [./] covers the dot in ".opam".
+;; Optionally matches "foo.opam.template" files.
+(add-to-list 'auto-mode-alist '("[./]opam\\(?:\\.template\\)?\\'" . neocaml-opam-mode))
 
 (provide 'neocaml-opam)
 
