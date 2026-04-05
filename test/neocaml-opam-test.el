@@ -235,4 +235,26 @@ of the example package.
       (expect (neocaml-opam--parse-lint-line "Passed." (current-buffer))
               :to-be nil))))
 
+(describe "neocaml-opam auto-mode"
+  (it "matches foo.opam"
+    (let ((match (assoc "foo.opam" auto-mode-alist #'string-match-p)))
+      (expect match :to-be-truthy)
+      (expect (cdr match) :to-equal 'neocaml-opam-mode)))
+
+  (it "matches bare /opam"
+    (let ((match (assoc "/opam" auto-mode-alist #'string-match-p)))
+      (expect match :to-be-truthy)
+      (expect (cdr match) :to-equal 'neocaml-opam-mode)))
+
+  (it "matches foo.opam.template"
+    (let ((match (assoc "foo.opam.template" auto-mode-alist #'string-match-p)))
+      (expect match :to-be-truthy)
+      (expect (cdr match) :to-equal 'neocaml-opam-mode)))
+
+  (it "does not match foo.opam.lock"
+    (let ((match (assoc "foo.opam.lock" auto-mode-alist #'string-match-p)))
+      (expect (or (null match)
+                  (not (eq (cdr match) 'neocaml-opam-mode)))
+              :to-be-truthy))))
+
 ;;; neocaml-opam-test.el ends here
