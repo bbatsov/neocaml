@@ -1254,6 +1254,16 @@ the language-specific parts of the mode."
                      :language-id "ocaml.interface"))
                    "ocamllsp"))))
 
+(defun neocaml--register-with-dape ()
+  "Register neocaml modes with dape's ocamlearlybird config if loaded."
+  (when (boundp 'dape-configs)
+    (when-let* ((cfg (alist-get 'ocamlearlybird dape-configs)))
+      (let ((modes (plist-get cfg 'modes)))
+        (unless (memq 'neocaml-mode modes)
+          (plist-put cfg 'modes
+                     (append '(neocaml-mode neocaml-interface-mode)
+                             modes)))))))
+
 (define-derived-mode neocaml-base-mode prog-mode "OCaml"
   "Base major mode for OCaml files, providing shared setup.
 This mode is not intended to be used directly.  Use `neocaml-mode'
@@ -1309,7 +1319,10 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist))
 
   ;; Register neocaml modes with eglot so it knows to start ocamllsp.
-  (neocaml--register-with-eglot))
+  (neocaml--register-with-eglot)
+
+  ;; Register neocaml modes with dape's ocamlearlybird config.
+  (neocaml--register-with-dape))
 
 ;;;###autoload
 (define-derived-mode neocaml-mode neocaml-base-mode "OCaml"
