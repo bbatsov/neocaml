@@ -312,7 +312,7 @@ tree-sitter >= 0.25.0" (treesit-library-abi-version)))
 
 ;;;###autoload
 ;; Matches bare "opam" files (e.g., repo/opam), named "foo.opam"
-;; files, — the [./] covers the dot in ".opam".
+;; files — the [./] covers the dot in ".opam".
 ;; Optionally matches "foo.opam.template" files.
 (add-to-list 'auto-mode-alist '("[./]opam\\(?:\\.template\\)?\\'" . neocaml-opam-mode))
 
