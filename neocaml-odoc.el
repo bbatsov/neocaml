@@ -175,14 +175,14 @@ With prefix argument FORCE, reinstall even if already installed."
 Each entry is (TAG . GRAMMAR) where TAG is the string used in
 `{@tag[...]}' blocks and GRAMMAR is the tree-sitter language symbol.")
 
-(defun neocaml-odoc--injection-capable-p ()
+(defun neocaml-odoc--injection-available-p ()
   "Non-nil if language injection is supported.
 Requires Emacs 30+ for `treesit-range-rules' with `:embed'."
   (>= emacs-major-version 30))
 
 (defun neocaml-odoc--available-injections ()
   "Return the subset of `neocaml-odoc--injection-language-alist' with installed grammars."
-  (when (neocaml-odoc--injection-capable-p)
+  (when (neocaml-odoc--injection-available-p)
     (seq-filter (lambda (entry)
                   (treesit-language-available-p (cdr entry)))
                 neocaml-odoc--injection-language-alist)))
@@ -330,6 +330,7 @@ supported languages.
                 (reference escape-sequence)
                 (list bracket
                  ;; Injection-dependent features (active when grammars installed)
+                 ;; TODO Can we trim this list of features?
                  comment definition keyword string type constant
                  attribute builtin number variable operator
                  delimiter property label function)))
