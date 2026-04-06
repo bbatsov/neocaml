@@ -253,8 +253,6 @@ of the example package.
 
   (it "does not match foo.opam.lock"
     (let ((match (assoc "foo.opam.lock" auto-mode-alist #'string-match-p)))
-      (expect (or (null match)
-                  (not (eq (cdr match) 'neocaml-opam-mode)))
-              :to-be-truthy))))
+      (expect match :not :to-be-truthy))))
 
 ;;; neocaml-opam-test.el ends here
