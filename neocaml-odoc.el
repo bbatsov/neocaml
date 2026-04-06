@@ -2,7 +2,8 @@
 
 ;; Copyright © 2025-2026 Bozhidar Batsov
 ;;
-;; Author: Bozhidar Batsov <bozhidar@batsov.dev>
+;; Author: Tim McGilchrist <timmcgil@gmail.com>
+;;         Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/bbatsov/neocaml
 ;; Keywords: languages ocaml odoc
@@ -15,9 +16,10 @@
 ;; files.  Provides font-lock for the odoc markup language including
 ;; headings, inline formatting (bold, italic, emphasis), code spans,
 ;; references, links, tags, lists, tables, and code blocks.  When the
-;; OCaml tree-sitter grammar is installed, embedded OCaml code inside
-;; {@ocaml[...]} blocks gets full syntax highlighting via language
-;; injection.
+;; relevant tree-sitter grammars are installed, embedded code inside
+;; {@lang[...]} blocks gets full syntax highlighting via language
+;; injection.  Supported languages: OCaml, dune, opam, and
+;; sh/bash.
 ;;
 ;; For the tree-sitter grammar this mode is based on,
 ;; see https://github.com/tmcgilchrist/tree-sitter-odoc.
@@ -41,6 +43,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+(require 'map)
 (require 'treesit)
 
 (declare-function neocaml-mode--font-lock-settings "neocaml")
@@ -159,43 +163,84 @@ With prefix argument FORCE, reinstall even if already installed."
      @font-lock-bracket-face))
   "Font-lock settings for `neocaml-odoc-mode'.")
 
-(defun neocaml-odoc--injection-available-p ()
-  "Non-nil if OCaml language injection is available.
-Requires Emacs 30+ (for `treesit-range-rules' with `:embed') and
-the OCaml tree-sitter grammar."
-  (and (>= emacs-major-version 30)
-       (treesit-language-available-p 'ocaml)))
+(defvar neocaml-odoc--injection-language-alist
+  '(("ocaml" . ocaml)
+    ("dune"  . dune)
+    ("opam"  . opam)
+    ("sh"    . bash)
+    ("bash"  . bash))
+  "Alist mapping odoc language tags to tree-sitter grammar symbols.
+Each entry is (TAG . GRAMMAR) where TAG is the string used in
+`{@tag[...]}' blocks and GRAMMAR is the tree-sitter language symbol.")
+
+(defun neocaml-odoc--injection-capable-p ()
+  "Non-nil if language injection is supported.
+Requires Emacs 30+ for `treesit-range-rules' with `:embed'."
+  (>= emacs-major-version 30))
+
+(defun neocaml-odoc--available-injections ()
+  "Return the subset of `neocaml-odoc--injection-language-alist' with installed grammars."
+  (when (neocaml-odoc--injection-capable-p)
+    (seq-filter (lambda (entry)
+                  (treesit-language-available-p (cdr entry)))
+                neocaml-odoc--injection-language-alist)))
+
+(defun neocaml-odoc--font-lock-for-grammar (grammar)
+  "Return font-lock settings for GRAMMAR, or nil if unavailable."
+  (pcase grammar
+    ('ocaml
+     (require 'neocaml)
+     (neocaml-mode--font-lock-settings 'ocaml))
+    ('dune
+     (require 'neocaml-dune)
+     (symbol-value 'neocaml-dune--font-lock-settings))
+    ('opam
+     (require 'neocaml-opam)
+     (symbol-value 'neocaml-opam--font-lock-settings))
+    ('bash
+     ;; Emacs built-in bash-ts-mode font-lock; not easily extractable.
+     nil)))
 
 (defun neocaml-odoc--font-lock-settings ()
   "Return font-lock settings for `neocaml-odoc-mode'.
-When OCaml injection is available, includes font-lock rules for
-embedded OCaml code inside {@ocaml[...]} blocks.  Otherwise,
-code block content gets a plain string face as fallback."
-  (append
-   neocaml-odoc--font-lock-settings
-   (if (neocaml-odoc--injection-available-p)
-       (progn
-         (require 'neocaml)
-         (neocaml-mode--font-lock-settings 'ocaml))
-     ;; No injection: highlight code_block_content as string
-     (treesit-font-lock-rules
-      :language 'odoc
-      :feature 'code
-      '((code_block_with_lang (code_block_content) @font-lock-string-face))))))
+When language injection is available, includes font-lock rules for
+embedded code inside `{@lang[...]}' blocks.  Otherwise, code block
+content gets a plain string face as fallback."
+  (let ((injections (neocaml-odoc--available-injections)))
+    (append
+     neocaml-odoc--font-lock-settings
+     (if injections
+         (cl-loop for grammar in (delete-dups (mapcar #'cdr injections))
+                  append (or (neocaml-odoc--font-lock-for-grammar grammar) nil))
+       ;; No injection: highlight code_block_content as string
+       (treesit-font-lock-rules
+        :language 'odoc
+        :feature 'code
+        '((code_block_with_lang (code_block_content) @font-lock-string-face)))))))
 
 (defun neocaml-odoc--range-settings ()
-  "Return range settings for embedded OCaml code injection.
-Injects the OCaml parser into `{@ocaml[...]}' code blocks.
-Returns nil if injection is not available."
-  (when (neocaml-odoc--injection-available-p)
-    (treesit-range-rules
-     :embed 'ocaml
-     :host 'odoc
-     :local t
-     '((code_block_with_lang
-        (language) @_lang
-        (code_block_content) @capture
-        (:match "\\`ocaml\\'" @_lang))))))
+  "Return range settings for language injection in code blocks.
+Injects parsers into `{@lang[...]}' blocks for each available grammar.
+Returns nil if no injections are available."
+  (let ((injections (neocaml-odoc--available-injections)))
+    (when injections
+      ;; Group tags by grammar, so e.g. sh and bash produce one rule
+      ;; matching either tag.
+      (let ((by-grammar (make-hash-table :test #'eq)))
+        (dolist (entry injections)
+          (push (car entry) (gethash (cdr entry) by-grammar)))
+        (apply #'append
+               (map-apply
+                (lambda (grammar tags)
+                  (treesit-range-rules
+                   :embed grammar
+                   :host 'odoc
+                   :local t
+                   `((code_block_with_lang
+                      (language) @_lang
+                      (code_block_content) @capture
+                      (:match ,(concat "\\`" (regexp-opt tags) "\\'") @_lang)))))
+                by-grammar))))))
 
 ;;; Indentation
 
@@ -249,9 +294,10 @@ See `treesit-simple-imenu-settings' for the format.")
 (define-derived-mode neocaml-odoc-mode text-mode "odoc"
   "Major mode for editing odoc documentation files.
 
-When the OCaml tree-sitter grammar is installed, embedded OCaml
-code inside {@ocaml[...]} blocks gets full syntax highlighting
-via language injection.
+When tree-sitter grammars are installed, embedded code inside
+`{@lang[...]}' blocks gets full syntax highlighting via language
+injection.  See `neocaml-odoc--injection-language-alist' for
+supported languages.
 
 \\{neocaml-odoc-mode-map}"
   (unless (treesit-ready-p 'odoc)
@@ -261,7 +307,7 @@ via language injection.
       (error "Cannot activate neocaml-odoc-mode without the odoc grammar")))
   (treesit-parser-create 'odoc)
 
-  ;; Language injection for embedded OCaml code
+  ;; Language injection for embedded code blocks
   (let ((range-settings (neocaml-odoc--range-settings)))
     (when range-settings
       (setq-local treesit-range-settings range-settings)))
