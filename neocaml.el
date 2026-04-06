@@ -99,6 +99,14 @@ The extra symbols may affect column alignment."
   :group 'neocaml
   :package-version '(neocaml . "0.2.0"))
 
+(defcustom neocaml-redirect-build-files t
+  "When non-nil, offer to switch to the source file when opening a file under `_build/'.
+Set to nil if you work with build artifacts directly, e.g. when debugging."
+  :type 'boolean
+  :safe #'booleanp
+  :group 'neocaml
+  :package-version '(neocaml . "0.8.0"))
+
 (defvar neocaml--debug nil
   "Enable debugging messages and show the current node in the mode-line.
 When set to t, show indentation debug info.
@@ -996,7 +1004,8 @@ does not exist."
   "If the current file is under `_build/', offer to switch to the source.
 Intended for use in `find-file-hook'."
   (when-let* ((file (buffer-file-name)))
-    (when (and (derived-mode-p 'neocaml-base-mode)
+    (when (and neocaml-redirect-build-files
+               (derived-mode-p 'neocaml-base-mode)
                (string-match-p "/_build/" file))
       (if-let* ((source (neocaml--resolve-build-path file)))
           (when (y-or-n-p (format "This file is under _build.  Switch to %s? " source))

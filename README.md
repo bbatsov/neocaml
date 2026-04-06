@@ -48,7 +48,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - Cram test file editing (`neocaml-cram-mode`) with font-lock for commands, output, modifiers, and prose
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
-- `_build` directory awareness (offers to switch to source when opening build artifacts)
+- `_build` directory awareness (offers to switch to source when opening build artifacts, configurable via `neocaml-redirect-build-files`)
 - Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
 - Debugging via [dape](https://github.com/svaante/dape) + [ocamlearlybird](https://github.com/hackwaly/ocamlearlybird) (bytecode)
 - Prettify-symbols for common OCaml operators
@@ -690,6 +690,12 @@ Once the session starts, dape provides the standard debugging commands:
   `dune-project` for breakpoints to resolve correctly.
 - See the [ocamlearlybird documentation](https://github.com/hackwaly/ocamlearlybird)
   for troubleshooting and known limitations.
+- neocaml normally offers to redirect you away from `_build/` files. If this
+  interferes with your debugging workflow, disable it:
+
+  ```emacs-lisp
+  (setq neocaml-redirect-build-files nil)
+  ```
 
 ## Comparison with Other Modes
 
