@@ -50,6 +50,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - `_build` directory awareness (offers to switch to source when opening build artifacts)
 - Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)
+- Debugging via [dape](https://github.com/svaante/dape) + [ocamlearlybird](https://github.com/hackwaly/ocamlearlybird) (bytecode)
 - Prettify-symbols for common OCaml operators
 
 ## Installation
@@ -633,6 +634,63 @@ neocaml also registers sensible modes for a few other OCaml-related files:
 - `.ocamlinit` opens in `neocaml-mode` (it's OCaml toplevel startup code)
 - `.ocamlformat` and `.ocp-indent` open in `conf-unix-mode` (key = value config files with `#` comments)
 
+## Debugging
+
+neocaml integrates with [dape](https://github.com/svaante/dape) (a DAP client,
+available from GNU ELPA) and
+[ocamlearlybird](https://github.com/hackwaly/ocamlearlybird) for OCaml
+debugging. When dape is loaded, neocaml automatically registers its modes with
+dape's built-in `ocamlearlybird` configuration.
+
+### Setup
+
+1. Install ocamlearlybird:
+
+   ```
+   opam install earlybird
+   ```
+
+2. Install dape from GNU ELPA (`M-x package-install RET dape RET`).
+
+3. Compile your program as bytecode. In your `dune` file:
+
+   ```
+   (executable
+    (name main)
+    (modes byte exe))
+   ```
+
+4. Build with `dune build`.
+
+### Usage
+
+Set breakpoints with `M-x dape-breakpoint-toggle` (or `C-x C-a b`) on the
+lines where you want execution to pause. Then start a debug session with `M-x
+dape` — it will offer the `ocamlearlybird` config and guess the program path
+based on your current buffer name (e.g., `_build/default/bin/main.bc`). You can
+edit the path in the minibuffer if needed.
+
+Once the session starts, dape provides the standard debugging commands:
+
+| Command | Keybinding | Description |
+|---|---|---|
+| `dape-next` | `C-x C-a n` | Step over |
+| `dape-step-in` | `C-x C-a i` | Step into |
+| `dape-step-out` | `C-x C-a o` | Step out |
+| `dape-continue` | `C-x C-a c` | Continue execution |
+| `dape-breakpoint-toggle` | `C-x C-a b` | Toggle breakpoint at point |
+| `dape-info` | | Show debugger info (variables, stack, breakpoints) |
+| `dape-repl` | | Open the debug REPL |
+| `dape-quit` | `C-x C-a q` | Stop the debug session |
+
+### Caveats
+
+- ocamlearlybird only works with **bytecode** (`.bc`) executables, not native code.
+- For dune >= 3.0, you may need to add `(map_workspace_root false)` to your
+  `dune-project` for breakpoints to resolve correctly.
+- See the [ocamlearlybird documentation](https://github.com/hackwaly/ocamlearlybird)
+  for troubleshooting and known limitations.
+
 ## Comparison with Other Modes
 
 People love comparisons, so here's a comparison of neocaml with its main historical
@@ -650,7 +708,7 @@ alternatives.
 | Imenu                      | Yes (.ml and .mli)         | Yes           | Yes          |
 | .ml/.mli toggle            | Yes                        | Yes           | Yes          |
 | LSP (Eglot) integration    | Yes (auto-configured)      | Yes (manual)  | Yes (manual) |
-| Debugger (ocamldebug)      | No                         | Yes           | Yes          |
+| Debugger                   | Yes (dape + ocamlearlybird) | Yes (ocamldebug) | Yes (ocamldebug) |
 | Compilation commands       | Error regexp + C-c C-c     | Yes           | Yes          |
 | `_build` directory aware   | Yes                        | No            | Yes          |
 | opam file support          | Yes                        | No            | Yes          |
