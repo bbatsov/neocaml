@@ -108,6 +108,7 @@ With prefix argument FORCE, reinstall even if already installed."
 
    :language 'odoc
    :feature 'tag
+   :override t
    '((param_name) @font-lock-variable-name-face
      (raise_name) @font-lock-variable-name-face
      (before_version) @font-lock-constant-face)
@@ -156,7 +157,7 @@ With prefix argument FORCE, reinstall even if already installed."
 
    :language 'odoc
    :feature 'bracket
-   '(["[" "]" "]}" "{" "}" "{b" "{i" "{e" "{^" "{_"
+   '(["[" "]" "]}" "}" "{b" "{i" "{e" "{^" "{_"
       "{!" "{{!" "{:" "{{:" "{%" "{m" "{math"
       "{[" "{v" "{ul" "{ol" "{li" "{table" "{tr" "{th" "{td" "{t"
       "{L" "{C" "{R" "{!modules:" "%}"]
@@ -199,6 +200,7 @@ Requires Emacs 30+ for `treesit-range-rules' with `:embed'."
      (symbol-value 'neocaml-opam--font-lock-settings))
     ('bash
      ;; Emacs built-in bash-ts-mode font-lock; not easily extractable.
+     ;; TODO Use sh-mode--treesit-settings?
      nil)))
 
 (defun neocaml-odoc--font-lock-settings ()
