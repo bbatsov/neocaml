@@ -43,11 +43,12 @@
 
 ;;; Code:
 
-(require 'cl-lib)
-(require 'map)
 (require 'treesit)
 
-(declare-function neocaml-mode--font-lock-settings "neocaml")
+(declare-function neocaml-mode--font-lock-settings "neocaml" (language))
+
+(defvar neocaml-dune--font-lock-settings)
+(defvar neocaml-opam--font-lock-settings)
 
 (defgroup neocaml-odoc nil
   "Major mode for editing odoc files with tree-sitter."
@@ -115,9 +116,9 @@ With prefix argument FORCE, reinstall even if already installed."
 
    :language 'odoc
    :feature 'markup
-   '((bold) @font-lock-type-face
-     (italic) @font-lock-variable-name-face
-     (emphasis) @font-lock-variable-name-face)
+   '((bold) @bold
+     (italic) @italic
+     (emphasis) @bold-italic)
 
    :language 'odoc
    :feature 'code
@@ -146,8 +147,8 @@ With prefix argument FORCE, reinstall even if already installed."
 
    :language 'odoc
    :feature 'markup
-   '((superscript) @font-lock-type-face
-     (subscript) @font-lock-type-face
+   '((superscript) @font-lock-doc-markup-face
+     (subscript) @font-lock-doc-markup-face
      (raw_markup) @font-lock-preprocessor-face)
 
    :language 'odoc
@@ -194,10 +195,10 @@ Requires Emacs 30+ for `treesit-range-rules' with `:embed'."
      (neocaml-mode--font-lock-settings 'ocaml))
     ('dune
      (require 'neocaml-dune)
-     (symbol-value 'neocaml-dune--font-lock-settings))
+     neocaml-dune--font-lock-settings)
     ('opam
      (require 'neocaml-opam)
-     (symbol-value 'neocaml-opam--font-lock-settings))
+     neocaml-opam--font-lock-settings)
     ('bash
      ;; Emacs built-in bash-ts-mode font-lock; not easily extractable.
      ;; TODO Use sh-mode--treesit-settings?
@@ -212,8 +213,10 @@ content gets a plain string face as fallback."
     (append
      neocaml-odoc--font-lock-settings
      (if injections
-         (cl-loop for grammar in (delete-dups (mapcar #'cdr injections))
-                  append (or (neocaml-odoc--font-lock-for-grammar grammar) nil))
+         (mapcan (lambda (grammar)
+                   (copy-sequence
+                    (neocaml-odoc--font-lock-for-grammar grammar)))
+                 (seq-uniq (mapcar #'cdr injections)))
        ;; No injection: highlight code_block_content as string
        (treesit-font-lock-rules
         :language 'odoc
@@ -231,18 +234,21 @@ Returns nil if no injections are available."
       (let ((by-grammar (make-hash-table :test #'eq)))
         (dolist (entry injections)
           (push (car entry) (gethash (cdr entry) by-grammar)))
-        (apply #'append
-               (map-apply
-                (lambda (grammar tags)
-                  (treesit-range-rules
-                   :embed grammar
-                   :host 'odoc
-                   :local t
-                   `((code_block_with_lang
-                      (language) @_lang
-                      (code_block_content) @capture
-                      (:match ,(concat "\\`" (regexp-opt tags) "\\'") @_lang)))))
-                by-grammar))))))
+        (let ((result nil))
+          (maphash
+           (lambda (grammar tags)
+             (setq result
+                   (nconc result
+                          (treesit-range-rules
+                           :embed grammar
+                           :host 'odoc
+                           :local t
+                           `((code_block_with_lang
+                              (language) @_lang
+                              (code_block_content) @capture
+                              (:match ,(concat "\\`" (regexp-opt tags) "\\'") @_lang)))))))
+           by-grammar)
+          result)))))
 
 ;;; Indentation
 
@@ -267,6 +273,8 @@ Returns nil if no injections are available."
      ;; Headings and tags
      ((parent-is "heading") parent-bol neocaml-odoc-indent-offset)
      ((parent-is "tag") parent-bol neocaml-odoc-indent-offset)
+     ;; Paragraph text stays at column 0
+     ((parent-is "paragraph") column-0 0)
      ;; Catch-all
      (no-node parent-bol neocaml-odoc-indent-offset)))
   "Indentation rules for `neocaml-odoc-mode'.")
@@ -274,8 +282,8 @@ Returns nil if no injections are available."
 ;;; Imenu
 
 (defvar neocaml-odoc--imenu-settings
-  '(("Heading" "\\`heading\\'" nil nil)
-    ("Tag" "\\`tag_\\(?:param\\|return\\|raise\\|deprecated\\|since\\|version\\|author\\)\\'" nil nil))
+  '(("Heading" "\\`heading\\'" nil neocaml-odoc--defun-name)
+    ("Tag" "\\`tag_\\(?:param\\|return\\|raise\\|deprecated\\|since\\|version\\|author\\)\\'" nil neocaml-odoc--defun-name))
   "Imenu settings for `neocaml-odoc-mode'.
 See `treesit-simple-imenu-settings' for the format.")
 
@@ -317,10 +325,14 @@ supported languages.
   ;; Font-lock
   (setq-local treesit-font-lock-settings (neocaml-odoc--font-lock-settings))
   (setq-local treesit-font-lock-feature-list
-              '((comment heading tag definition)
-                (keyword markup code math string type)
-                (constant escape-sequence attribute builtin number reference)
-                (variable operator bracket delimiter list property label function)))
+              '((heading tag)
+                (markup code math)
+                (reference escape-sequence)
+                (list bracket
+                 ;; Injection-dependent features (active when grammars installed)
+                 comment definition keyword string type constant
+                 attribute builtin number variable operator
+                 delimiter property label function)))
 
   ;; Indentation
   (setq-local treesit-simple-indent-rules neocaml-odoc--indent-rules)

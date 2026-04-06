@@ -85,15 +85,15 @@ DESCRIPTION is the test name.  Uses `neocaml-odoc-mode'."
   (describe "markup feature"
     (when-fontifying-odoc-it "fontifies bold markup"
       ("{b bold text}"
-       ("{b bold text}" font-lock-type-face)))
+       ("{b bold text}" bold)))
 
     (when-fontifying-odoc-it "fontifies italic markup"
       ("{i italic text}"
-       ("{i italic text}" font-lock-variable-name-face)))
+       ("{i italic text}" italic)))
 
     (when-fontifying-odoc-it "fontifies emphasis markup"
       ("{e emphasis text}"
-       ("{e emphasis text}" font-lock-variable-name-face))))
+       ("{e emphasis text}" bold-italic))))
 
   (describe "code feature"
     (when-fontifying-odoc-it "fontifies code spans"
@@ -207,7 +207,7 @@ This is some text."))
         (goto-char (point-min))
         (search-forward "{b bold}")
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'font-lock-type-face)
+                :to-equal 'bold)
         ;; Check code span
         (goto-char (point-min))
         (search-forward "[t]")
