@@ -310,6 +310,10 @@ injection.  See `neocaml-odoc--injection-language-alist' for
 supported languages.
 
 \\{neocaml-odoc-mode-map}"
+  (when (< (treesit-library-abi-version) 14)
+    (error "The odoc grammar requires tree-sitter ABI version 14+, but \
+your Emacs was built against ABI version %d; rebuild Emacs with \
+tree-sitter >= 0.22.0" (treesit-library-abi-version)))
   (unless (treesit-ready-p 'odoc)
     (when (y-or-n-p "Odoc tree-sitter grammar is not installed.  Install it now?")
       (neocaml-odoc-install-grammar))
