@@ -824,6 +824,38 @@ ARG is as in `forward-sexp-function'."
           (treesit-forward-sexp arg)
         (neocaml-forward-sexp arg)))))
 
+(defconst neocaml--list-node-types
+  '("parenthesized_expression"
+    "parenthesized_operator"
+    "parenthesized_pattern"
+    "parenthesized_type"
+    "parenthesized_class_expression"
+    "parenthesized_module_expression"
+    "parenthesized_module_type"
+    "list_expression"
+    "list_pattern"
+    "list_binding_pattern"
+    "array_expression"
+    "array_pattern"
+    "array_binding_pattern"
+    "record_expression"
+    "record_pattern"
+    "record_binding_pattern"
+    "record_declaration"
+    "object_expression"
+    "object_type"
+    "object_copy_expression"
+    "polymorphic_variant_type"
+    "package_type"
+    "signature"
+    "structure"
+    "class_body_type")
+  "Tree-sitter node types treated as `list' things for navigation.")
+
+(defconst neocaml--list-node-regex
+  (regexp-opt neocaml--list-node-types 'symbols)
+  "Regex matching `neocaml--list-node-types'.")
+
 (defun neocaml--thing-settings (language)
   "Return `treesit-thing-settings' definitions for LANGUAGE.
 Configures sexp, list, sentence, text, and comment navigation.
@@ -838,32 +870,7 @@ This makes commands like `delete-pair' work correctly."
      (sexp (not ,(rx (or "{" "}" "(" ")" "[" "]" "[|" "|]"
                          "," "." ";" ";;" ":" "::" ":>" "->"
                          "<-" "=" "|" ".."))))
-     (list ,(regexp-opt '("parenthesized_expression"
-                          "parenthesized_operator"
-                          "parenthesized_pattern"
-                          "parenthesized_type"
-                          "parenthesized_class_expression"
-                          "parenthesized_module_expression"
-                          "parenthesized_module_type"
-                          "list_expression"
-                          "list_pattern"
-                          "list_binding_pattern"
-                          "array_expression"
-                          "array_pattern"
-                          "array_binding_pattern"
-                          "record_expression"
-                          "record_pattern"
-                          "record_binding_pattern"
-                          "record_declaration"
-                          "object_expression"
-                          "object_type"
-                          "object_copy_expression"
-                          "polymorphic_variant_type"
-                          "package_type"
-                          "signature"
-                          "structure"
-                          "class_body_type")
-                        'symbols))
+     (list ,neocaml--list-node-regex)
      (sentence ,(regexp-opt '("value_definition"
                               "type_definition"
                               "exception_definition"
@@ -882,6 +889,40 @@ This makes commands like `delete-pair' work correctly."
                               "instance_variable_specification")))
      (text ,(regexp-opt '("comment" "string" "quoted_string" "character")))
      (comment "comment"))))
+
+(defun neocaml-backward-up-list (&optional arg)
+  "Move backward out of one level of OCaml list-like construct.
+With ARG, do this that many times.  A negative ARG means move
+forward but still to a less deep spot.
+
+Unlike the built-in `backward-up-list', this recognises OCaml
+constructs delimited by keywords (`struct'/`end', `sig'/`end',
+`object'/`end') in addition to ordinary parens, brackets and
+braces.  Useful for jumping out to the enclosing module, signature
+or object from somewhere inside its body.
+
+On Emacs 31+, the built-in `backward-up-list' already understands
+these constructs via `treesit-thing-settings', so this command
+simply delegates to it there."
+  (interactive "^p")
+  (if (>= emacs-major-version 31)
+      (backward-up-list arg t t)
+    (let ((arg (or arg 1)))
+      (dotimes (_ (abs arg))
+        (let* ((node (treesit-node-at (point)))
+               (parent (treesit-parent-until
+                        node
+                        (lambda (n)
+                          (and (string-match-p neocaml--list-node-regex
+                                               (treesit-node-type n))
+                               (if (< arg 0)
+                                   (> (treesit-node-end n) (point))
+                                 (< (treesit-node-start n) (point))))))))
+          (unless parent
+            (user-error "At top level"))
+          (goto-char (if (< arg 0)
+                         (treesit-node-end parent)
+                       (treesit-node-start parent))))))))
 
 (defun neocaml-mark-sentence ()
   "Mark the current statement around point.
@@ -1164,6 +1205,7 @@ The information is also copied to the kill ring."
     (define-key map (kbd "C-c C-a") #'ff-find-other-file)
     (define-key map (kbd "C-c 4 C-a") #'ff-find-other-file-other-window)
     (define-key map (kbd "C-c C-c") #'compile)
+    (define-key map (kbd "C-M-u") #'neocaml-backward-up-list)
     (easy-menu-define neocaml-mode-menu map "Neocaml Mode Menu"
       '("OCaml"
         ("Navigate"
@@ -1172,7 +1214,8 @@ The information is also copied to the kill ring."
          ["Forward Expression" forward-sexp]
          ["Backward Expression" backward-sexp]
          ["Forward Statement" forward-sentence]
-         ["Backward Statement" backward-sentence])
+         ["Backward Statement" backward-sentence]
+         ["Up to Enclosing Block" neocaml-backward-up-list])
         ("Find..."
          ["Find Interface/Implementation" ff-find-other-file]
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
