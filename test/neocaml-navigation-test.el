@@ -373,4 +373,44 @@
         (outline-next-heading)
         (expect (looking-at "type t") :to-be-truthy)))))
 
+;;;; backward-up-list
+
+(describe "navigation: neocaml-backward-up-list"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (it "jumps from inside a struct to the enclosing struct keyword"
+    (with-neocaml-buffer "module Foo = struct
+  let bar = 1
+  let baz = 2
+end"
+      (goto-char (point-min))
+      (search-forward "baz")
+      (backward-char 1)
+      (neocaml-backward-up-list)
+      (expect (looking-at "struct") :to-be-truthy)))
+
+  (it "walks out of nested structs one level at a time"
+    (with-neocaml-buffer "module Outer = struct
+  module Inner = struct
+    let x = (1 + 2)
+  end
+end"
+      (goto-char (point-min))
+      (search-forward "1 + 2")
+      (backward-char 3)
+      (neocaml-backward-up-list)
+      (expect (char-after) :to-equal ?\()
+      (neocaml-backward-up-list)
+      (expect (looking-at "struct") :to-be-truthy)
+      (neocaml-backward-up-list)
+      (expect (looking-at "struct") :to-be-truthy)
+      (expect (line-number-at-pos) :to-equal 1)))
+
+  (it "signals an error at the top level"
+    (with-neocaml-buffer "let x = 1"
+      (goto-char (point-min))
+      (expect (neocaml-backward-up-list) :to-throw 'user-error))))
+
 ;;; neocaml-navigation-test.el ends here

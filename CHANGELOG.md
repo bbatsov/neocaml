@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### New features
+
+- [#47](https://github.com/bbatsov/neocaml/issues/47): Add `neocaml-backward-up-list`, bound to `C-M-u`, for jumping out of the enclosing OCaml block (`struct`/`sig`/`object`, records, arrays, etc.). The built-in `backward-up-list` doesn't understand keyword-delimited constructs on Emacs 29/30.
+
 ## 0.7.1 (2026-03-31)
 
 ### Bug fixes
