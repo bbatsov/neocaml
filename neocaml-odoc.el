@@ -82,79 +82,189 @@ With prefix argument FORCE, reinstall even if already installed."
     (let ((treesit-language-source-alist neocaml-odoc-grammar-recipes))
       (treesit-install-language-grammar 'odoc))))
 
+;;; Faces
+
+(defface neocaml-odoc-heading-face
+  '((t :inherit font-lock-function-name-face :weight bold))
+  "Face for odoc section headings."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-bold-face
+  '((t :inherit bold))
+  "Face for bold markup in odoc."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-italic-face
+  '((t :inherit italic))
+  "Face for italic markup in odoc."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-emphasis-face
+  '((t :inherit bold-italic))
+  "Face for emphasis markup in odoc."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-tag-face
+  '((t :inherit font-lock-keyword-face))
+  "Face for documentation tags (@param, @return, etc.)."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-tag-name-face
+  '((t :inherit font-lock-variable-name-face))
+  "Face for parameter and exception names in tags."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-tag-value-face
+  '((t :inherit font-lock-constant-face))
+  "Face for version strings in tags."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-code-face
+  '((t :inherit (fixed-pitch font-lock-constant-face)))
+  "Face for inline code spans and plain code blocks."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-verbatim-face
+  '((t :inherit (fixed-pitch font-lock-string-face)))
+  "Face for verbatim blocks."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-language-face
+  '((t :inherit font-lock-type-face))
+  "Face for the language tag in code blocks ({@ocaml[...]})."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-math-face
+  '((t :inherit font-lock-string-face))
+  "Face for math spans and blocks."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-reference-face
+  '((t :inherit link))
+  "Face for identifier references ({!Module.foo})."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-link-face
+  '((t :inherit link))
+  "Face for URL links ({:https://...})."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-escape-face
+  '((t :inherit font-lock-escape-face))
+  "Face for escape sequences."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-markup-face
+  '((t :inherit shadow))
+  "Face for structural markup (superscript, subscript delimiters)."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-raw-markup-face
+  '((t :inherit font-lock-preprocessor-face))
+  "Face for raw markup (embedded HTML/LaTeX)."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-list-face
+  '((t :inherit neocaml-odoc-markup-face))
+  "Face for list markup."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
+(defface neocaml-odoc-bracket-face
+  '((t :inherit shadow))
+  "Face for odoc bracket delimiters."
+  :group 'neocaml-odoc
+  :package-version '(neocaml . "0.9.0"))
+
 ;;; Font-lock
 
 (defvar neocaml-odoc--font-lock-settings
   (treesit-font-lock-rules
    :language 'odoc
    :feature 'heading
-   '((heading) @font-lock-function-name-face)
+   '((heading) @neocaml-odoc-heading-face)
 
    :language 'odoc
    :feature 'tag
-   '((tag_author) @font-lock-keyword-face
-     (tag_param) @font-lock-keyword-face
-     (tag_raise) @font-lock-keyword-face
-     (tag_return) @font-lock-keyword-face
-     (tag_see) @font-lock-keyword-face
-     (tag_since) @font-lock-keyword-face
-     (tag_before) @font-lock-keyword-face
-     (tag_version) @font-lock-keyword-face
-     (tag_deprecated) @font-lock-keyword-face
-     (tag_canonical) @font-lock-keyword-face
-     (tag_inline) @font-lock-keyword-face
-     (tag_open) @font-lock-keyword-face
-     (tag_closed) @font-lock-keyword-face
-     (tag_hidden) @font-lock-keyword-face)
+   '((tag_author) @neocaml-odoc-tag-face
+     (tag_param) @neocaml-odoc-tag-face
+     (tag_raise) @neocaml-odoc-tag-face
+     (tag_return) @neocaml-odoc-tag-face
+     (tag_see) @neocaml-odoc-tag-face
+     (tag_since) @neocaml-odoc-tag-face
+     (tag_before) @neocaml-odoc-tag-face
+     (tag_version) @neocaml-odoc-tag-face
+     (tag_deprecated) @neocaml-odoc-tag-face
+     (tag_canonical) @neocaml-odoc-tag-face
+     (tag_inline) @neocaml-odoc-tag-face
+     (tag_open) @neocaml-odoc-tag-face
+     (tag_closed) @neocaml-odoc-tag-face
+     (tag_hidden) @neocaml-odoc-tag-face)
 
    :language 'odoc
    :feature 'tag
    :override t
-   '((param_name) @font-lock-variable-name-face
-     (raise_name) @font-lock-variable-name-face
-     (before_version) @font-lock-constant-face)
+   '((param_name) @neocaml-odoc-tag-name-face
+     (raise_name) @neocaml-odoc-tag-name-face
+     (before_version) @neocaml-odoc-tag-value-face)
 
    :language 'odoc
    :feature 'markup
-   '((bold) @bold
-     (italic) @italic
-     (emphasis) @bold-italic)
+   '((bold) @neocaml-odoc-bold-face
+     (italic) @neocaml-odoc-italic-face
+     (emphasis) @neocaml-odoc-emphasis-face)
 
    :language 'odoc
    :feature 'code
-   '((code_span) @font-lock-string-face
-     (code_block) @font-lock-string-face
-     (code_block_with_lang (language) @font-lock-type-face)
-     (verbatim_block) @font-lock-string-face)
+   '((code_span) @neocaml-odoc-code-face
+     (code_block) @neocaml-odoc-code-face
+     (code_block_with_lang (language) @neocaml-odoc-language-face)
+     (verbatim_block) @neocaml-odoc-verbatim-face)
 
    :language 'odoc
    :feature 'math
-   '((math_span) @font-lock-number-face
-     (math_block) @font-lock-number-face)
+   '((math_span) @neocaml-odoc-math-face
+     (math_block) @neocaml-odoc-math-face)
 
    :language 'odoc
    :feature 'reference
-   '((simple_reference) @font-lock-constant-face
-     (reference_with_text (reference_target) @font-lock-constant-face)
-     (simple_link) @font-lock-constant-face
-     (link_with_text (link_target) @font-lock-constant-face)
-     (module_name) @font-lock-constant-face)
+   '((simple_reference) @neocaml-odoc-reference-face
+     (reference_with_text (reference_target) @neocaml-odoc-reference-face)
+     (simple_link) @neocaml-odoc-link-face
+     (link_with_text (link_target) @neocaml-odoc-link-face)
+     (module_name) @neocaml-odoc-reference-face)
 
    :language 'odoc
    :feature 'escape-sequence
    :override t
-   '((escape_sequence) @font-lock-escape-face)
+   '((escape_sequence) @neocaml-odoc-escape-face)
 
    :language 'odoc
    :feature 'markup
-   '((superscript) @font-lock-doc-markup-face
-     (subscript) @font-lock-doc-markup-face
-     (raw_markup) @font-lock-preprocessor-face)
+   '((superscript) @neocaml-odoc-markup-face
+     (subscript) @neocaml-odoc-markup-face
+     (raw_markup) @neocaml-odoc-raw-markup-face)
 
    :language 'odoc
    :feature 'list
-   '((unordered_list) @font-lock-bracket-face
-     (ordered_list) @font-lock-bracket-face)
+   '((unordered_list) @neocaml-odoc-list-face
+     (ordered_list) @neocaml-odoc-list-face)
 
    :language 'odoc
    :feature 'bracket
@@ -162,7 +272,7 @@ With prefix argument FORCE, reinstall even if already installed."
       "{!" "{{!" "{:" "{{:" "{%" "{m" "{math"
       "{[" "{v" "{ul" "{ol" "{li" "{table" "{tr" "{th" "{td" "{t"
       "{L" "{C" "{R" "{!modules:" "%}"]
-     @font-lock-bracket-face))
+     @neocaml-odoc-bracket-face))
   "Font-lock settings for `neocaml-odoc-mode'.")
 
 (defvar neocaml-odoc--injection-language-alist

@@ -55,85 +55,85 @@ DESCRIPTION is the test name.  Uses `neocaml-odoc-mode'."
   (describe "heading feature"
     (when-fontifying-odoc-it "fontifies headings"
       ("{0 My Library}"
-       ("{0 My Library}" font-lock-function-name-face))))
+       ("{0 My Library}" neocaml-odoc-heading-face))))
 
   (describe "tag feature"
     (when-fontifying-odoc-it "fontifies @param tag"
       ("@param name The name to use."
-       ("@param" font-lock-keyword-face)))
+       ("@param" neocaml-odoc-tag-face)))
 
     (when-fontifying-odoc-it "fontifies @return tag"
       ("@return A greeting string."
-       ("@return" font-lock-keyword-face)))
+       ("@return" neocaml-odoc-tag-face)))
 
     (when-fontifying-odoc-it "fontifies @since tag"
       ("@since 1.0.0"
-       ("@since" font-lock-keyword-face)))
+       ("@since" neocaml-odoc-tag-face)))
 
     (when-fontifying-odoc-it "fontifies @deprecated tag"
       ("@deprecated Use something else."
-       ("@deprecated" font-lock-keyword-face)))
+       ("@deprecated" neocaml-odoc-tag-face)))
 
     (when-fontifying-odoc-it "fontifies @author tag"
       ("@author Jane Doe"
-       ("@author" font-lock-keyword-face)))
+       ("@author" neocaml-odoc-tag-face)))
 
     (when-fontifying-odoc-it "fontifies param name"
       ("@param name The name to use."
-       ("name" font-lock-variable-name-face))))
+       ("name" neocaml-odoc-tag-name-face))))
 
   (describe "markup feature"
     (when-fontifying-odoc-it "fontifies bold markup"
       ("{b bold text}"
-       ("{b bold text}" bold)))
+       ("{b bold text}" neocaml-odoc-bold-face)))
 
     (when-fontifying-odoc-it "fontifies italic markup"
       ("{i italic text}"
-       ("{i italic text}" italic)))
+       ("{i italic text}" neocaml-odoc-italic-face)))
 
     (when-fontifying-odoc-it "fontifies emphasis markup"
       ("{e emphasis text}"
-       ("{e emphasis text}" bold-italic))))
+       ("{e emphasis text}" neocaml-odoc-emphasis-face))))
 
   (describe "code feature"
     (when-fontifying-odoc-it "fontifies code spans"
       ("[some_code]"
-       ("[some_code]" font-lock-string-face)))
+       ("[some_code]" neocaml-odoc-code-face)))
 
     (when-fontifying-odoc-it "fontifies plain code blocks"
       ("{[\nlet x = 1\n]}"
-       ("let x = 1" font-lock-string-face)))
+       ("let x = 1" neocaml-odoc-code-face)))
 
     (when-fontifying-odoc-it "fontifies language tag in code blocks"
       ("{@ocaml[\nlet x = 1\n]}"
-       ("ocaml" font-lock-type-face)))
+       ("ocaml" neocaml-odoc-language-face)))
 
     (when-fontifying-odoc-it "fontifies verbatim blocks"
       ("{v some verbatim text v}"
-       ("some verbatim text" font-lock-string-face))))
+       ("some verbatim text" neocaml-odoc-verbatim-face))))
 
   (describe "math feature"
     (when-fontifying-odoc-it "fontifies math spans"
       ("{m x^2}"
-       ("{m x^2}" font-lock-number-face))))
+       ("{m x^2}" neocaml-odoc-math-face))))
 
   (describe "reference feature"
     (when-fontifying-odoc-it "fontifies simple references"
       ("{!Mylib.greet}"
-       ("{!Mylib.greet}" font-lock-constant-face)))
+       ("{!Mylib.greet}" neocaml-odoc-reference-face)))
 
     (when-fontifying-odoc-it "fontifies reference targets in references with text"
       ("{{!Mylib} the module}"
-       ("Mylib" font-lock-constant-face)))
+       ("Mylib" neocaml-odoc-reference-face)))
 
     (when-fontifying-odoc-it "fontifies simple links"
       ("{:https://example.com}"
-       ("{:https://example.com}" font-lock-constant-face))))
+       ("{:https://example.com}" neocaml-odoc-link-face))))
 
   (describe "escape-sequence feature"
     (when-fontifying-odoc-it "fontifies escape sequences"
       ("\\{escaped"
-       ("\\{" font-lock-escape-face)))))
+       ("\\{" neocaml-odoc-escape-face)))))
 
 (describe "neocaml-odoc indentation"
   (before-all
@@ -179,9 +179,9 @@ This is some text."))
         (font-lock-ensure)
         (goto-char (point-min))
         (search-forward "let")
-        ;; Plain code blocks get string face, not keyword face
+        ;; Plain code blocks get code face, not keyword face
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'font-lock-string-face)))
+                :to-equal 'neocaml-odoc-code-face)))
 
     (it "fontifies OCaml keywords inside {@ocaml[...]} blocks"
       (with-temp-buffer
@@ -236,26 +236,26 @@ This is some text."))
         (goto-char (point-min))
         (search-forward "{0 My Library}")
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'font-lock-function-name-face)
+                :to-equal 'neocaml-odoc-heading-face)
         ;; Check bold markup
         (goto-char (point-min))
         (search-forward "{b bold}")
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'bold)
+                :to-equal 'neocaml-odoc-bold-face)
         ;; Check code span
         (goto-char (point-min))
         (search-forward "[t]")
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'font-lock-string-face)
+                :to-equal 'neocaml-odoc-code-face)
         ;; Check @since tag
         (goto-char (point-min))
         (search-forward "@since")
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'font-lock-keyword-face)
+                :to-equal 'neocaml-odoc-tag-face)
         ;; Check simple reference
         (goto-char (point-min))
         (search-forward "{!Mylib.greet}")
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'font-lock-constant-face)))))
+                :to-equal 'neocaml-odoc-reference-face)))))
 
 ;;; neocaml-odoc-test.el ends here
