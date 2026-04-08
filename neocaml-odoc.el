@@ -198,11 +198,7 @@ Requires Emacs 30+ for `treesit-range-rules' with `:embed'."
      neocaml-dune--font-lock-settings)
     ('opam
      (require 'neocaml-opam)
-     neocaml-opam--font-lock-settings)
-    ('bash
-     ;; Emacs built-in bash-ts-mode font-lock; not easily extractable.
-     ;; TODO Use sh-mode--treesit-settings?
-     nil)))
+     neocaml-opam--font-lock-settings)))
 
 (defun neocaml-odoc--font-lock-settings ()
   "Return font-lock settings for `neocaml-odoc-mode'.
@@ -329,15 +325,17 @@ tree-sitter >= 0.22.0" (treesit-library-abi-version)))
   ;; Font-lock
   (setq-local treesit-font-lock-settings (neocaml-odoc--font-lock-settings))
   (setq-local treesit-font-lock-feature-list
-              '((heading tag)
-                (markup code math)
-                (reference escape-sequence)
+              '(( heading tag
+                  ;; Injected grammar features — levels mirror those used
+                  ;; by `neocaml-mode', `neocaml-dune-mode', etc. so that
+                  ;; embedded code gets highlighted at the default level.
+                  comment definition keyword)
+                (markup code math
+                 string type property)
+                (reference escape-sequence
+                 attribute builtin constant number)
                 (list bracket
-                 ;; Injection-dependent features (active when grammars installed)
-                 ;; TODO Can we trim this list of features?
-                 comment definition keyword string type constant
-                 attribute builtin number variable operator
-                 delimiter property label function)))
+                 variable operator delimiter label function)))
 
   ;; Indentation
   (setq-local treesit-simple-indent-rules neocaml-odoc--indent-rules)

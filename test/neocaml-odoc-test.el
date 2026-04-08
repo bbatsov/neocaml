@@ -181,7 +181,41 @@ This is some text."))
         (search-forward "let")
         ;; Plain code blocks get string face, not keyword face
         (expect (get-text-property (match-beginning 0) 'face)
-                :to-equal 'font-lock-string-face)))))
+                :to-equal 'font-lock-string-face)))
+
+    (it "fontifies OCaml keywords inside {@ocaml[...]} blocks"
+      (with-temp-buffer
+        (insert "{@ocaml[\nlet x = 1\n]}")
+        (neocaml-odoc-mode)
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (search-forward "let")
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-keyword-face)))
+
+    (it "fontifies dune keywords inside {@dune[...]} blocks"
+      (unless (treesit-language-available-p 'dune)
+        (signal 'buttercup-pending "tree-sitter dune grammar not available"))
+      (with-temp-buffer
+        (insert "{@dune[\n(library\n (name mylib))\n]}")
+        (neocaml-odoc-mode)
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (search-forward "library")
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-keyword-face)))
+
+    (it "fontifies opam keywords inside {@opam[...]} blocks"
+      (unless (treesit-language-available-p 'opam)
+        (signal 'buttercup-pending "tree-sitter opam grammar not available"))
+      (with-temp-buffer
+        (insert "{@opam[\ndepends: [\n  \"ocaml\"\n]\n]}")
+        (neocaml-odoc-mode)
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (search-forward "depends")
+        (expect (get-text-property (match-beginning 0) 'face)
+                :to-equal 'font-lock-keyword-face)))))
 
 (describe "neocaml-odoc integration"
   (before-all
