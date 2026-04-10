@@ -69,7 +69,7 @@ body:
         System: darwin
         neocaml: 0.3.0
         Tree-sitter ABI: 15
-        Grammars: ocaml (expected: v0.24.2), ocaml-interface (expected: v0.24.2)
+        Grammars: ocaml (ABI 14, expected: v0.24.2), ocaml-interface (ABI 14, expected: v0.24.2)
         Eglot: active
       render: text
     validations:
