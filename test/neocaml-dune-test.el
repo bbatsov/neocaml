@@ -228,4 +228,29 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
         (neocaml-dune-format-buffer)
         (expect (buffer-string) :to-equal formatted)))))
 
+(describe "neocaml-dune auto-mode-alist"
+  (it "activates for dune files"
+    (expect (assoc-default "/project/src/dune" auto-mode-alist 'string-match-p)
+            :to-equal 'neocaml-dune-mode))
+
+  (it "activates for dune-project"
+    (expect (assoc-default "/project/dune-project" auto-mode-alist 'string-match-p)
+            :to-equal 'neocaml-dune-mode))
+
+  (it "activates for dune-workspace"
+    (expect (assoc-default "/project/dune-workspace" auto-mode-alist 'string-match-p)
+            :to-equal 'neocaml-dune-mode))
+
+  (it "activates for dune-workspace.ci"
+    (expect (assoc-default "/project/dune-workspace.ci" auto-mode-alist 'string-match-p)
+            :to-equal 'neocaml-dune-mode))
+
+  (it "activates for dune-workspace.5.3"
+    (expect (assoc-default "/project/dune-workspace.5.3" auto-mode-alist 'string-match-p)
+            :to-equal 'neocaml-dune-mode))
+
+  (it "does not activate for dune-workspace-notes.txt"
+    (expect (assoc-default "/project/dune-workspace-notes.txt" auto-mode-alist 'string-match-p)
+            :not :to-equal 'neocaml-dune-mode)))
+
 ;;; neocaml-dune-test.el ends here

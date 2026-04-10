@@ -276,9 +276,11 @@ tree-sitter >= 0.25.0" (treesit-library-abi-version)))
 (progn
   ;; Matches "dune" files (e.g., src/dune) but not dune-project or dune-workspace
   (add-to-list 'auto-mode-alist '("/dune\\'" . neocaml-dune-mode))
-  ;; dune-project and dune-workspace use the same grammar and mode
+  ;; dune-project and dune-workspace use the same grammar and mode.
+  ;; dune-workspace files may have a dot-suffix (e.g., dune-workspace.ci,
+  ;; dune-workspace.5.3) used by dune-pkg workflows.
   (add-to-list 'auto-mode-alist '("/dune-project\\'" . neocaml-dune-mode))
-  (add-to-list 'auto-mode-alist '("/dune-workspace\\'" . neocaml-dune-mode)))
+  (add-to-list 'auto-mode-alist '("/dune-workspace\\(?:\\..*\\)?\\'" . neocaml-dune-mode)))
 
 (provide 'neocaml-dune)
 
