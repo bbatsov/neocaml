@@ -2,10 +2,22 @@
 
 ## main (unreleased)
 
+## 0.8.0 (2026-04-10)
+
 ### New features
 
-- [#41](https://github.com/bbatsov/neocaml/issues/41): `neocaml-dune-mode` now activates for `dune-workspace` file variants like `dune-workspace.ci` and `dune-workspace.5.3`.
 - [#47](https://github.com/bbatsov/neocaml/issues/47): Add `neocaml-backward-up-list`, bound to `C-M-u`, for jumping out of the enclosing OCaml block (`struct`/`sig`/`object`, records, arrays, etc.). The built-in `backward-up-list` doesn't understand keyword-delimited constructs on Emacs 29/30.
+- [#41](https://github.com/bbatsov/neocaml/issues/41): `neocaml-dune-mode` now activates for `dune-workspace` file variants like `dune-workspace.ci` and `dune-workspace.5.3`.
+- Add `neocaml-cram-mode` for editing cram test (`.t`) files with tree-sitter font-lock, indentation, and imenu.
+- Add `neocaml-dune-format-buffer` for formatting dune files via `dune format-dune-file`.
+- Register neocaml modes with `dape` for `ocamlearlybird` debugging support.
+- Register file associations for `.ocamlinit`, `.ocamlformat`, and `.ocp-indent` files.
+- Extend `neocaml-opam-mode` to activate for `.opam.template` files.
+- Include per-grammar ABI version in `neocaml-bug-report-info` output.
+
+### Changes
+
+- The `_build/` directory redirect in `neocaml-dune-mode` is now optional (controlled by `neocaml-dune-redirect-build-dir`).
 
 ## 0.7.1 (2026-03-31)
 
