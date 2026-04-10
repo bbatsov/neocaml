@@ -1146,8 +1146,9 @@ SOFT works the same as in `comment-indent-new-line'."
 (defun neocaml--grammar-info (language)
   "Return a string describing the status of the LANGUAGE grammar."
   (if (treesit-language-available-p language)
-      (let ((recipe (assq language neocaml-grammar-recipes)))
-        (format "%s (expected: %s)" language (or (nth 2 recipe) "unknown")))
+      (let ((recipe (assq language neocaml-grammar-recipes))
+            (abi (treesit-language-abi-version language)))
+        (format "%s (ABI %s, expected: %s)" language abi (or (nth 2 recipe) "unknown")))
     (format "%s (not installed)" language)))
 
 (defun neocaml-bug-report-info ()
