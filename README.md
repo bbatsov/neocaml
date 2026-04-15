@@ -5,9 +5,19 @@
 [![CI](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml/badge.svg)](https://github.com/bbatsov/neocaml/actions/workflows/ci.yml)
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-red?logo=github)](https://github.com/sponsors/bbatsov)
 
-`neocaml` is a **n**ew **E**macs package for programming in OCaml.  It features
-major modes for OCaml, OCaml Interface, opam, and dune files, using Tree-sitter,
-and integration with an OCaml toplevel (a.k.a. REPL).
+`neocaml` is a **n**ew **E**macs package for programming in
+[OCaml](https://ocaml.org).  Built on
+[Tree-sitter](https://tree-sitter.github.io/tree-sitter/), it provides major
+modes for editing OCaml (`.ml`) and OCaml Interface (`.mli`) files with
+font-locking, indentation, navigation, and toplevel (REPL) integration.
+
+Beyond OCaml source code, neocaml also supports key parts of the OCaml
+ecosystem: [dune](https://dune.build) build files,
+[opam](https://opam.ocaml.org) package definitions,
+[OCamllex](https://v2.ocaml.org/manual/lexyacc.html) lexer definitions (`.mll`),
+[Menhir](http://gallium.inria.fr/~fpottier/menhir/) parser definitions (`.mly`),
+and [cram](https://dune.readthedocs.io/en/stable/tests.html#cram-tests) test
+files (`.t`) -- each with its own tree-sitter-powered major mode.
 
 It's also as cool as Neo from "The Matrix". ;-)
 
