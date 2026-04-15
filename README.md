@@ -21,7 +21,9 @@ files (`.t`) -- each with its own tree-sitter-powered major mode.
 
 It's also as cool as Neo from "The Matrix". ;-)
 
-**Full documentation:** https://bbatsov.github.io/neocaml
+> [!TIP]
+> For detailed configuration, usage guides, and migration help, see the
+> [full documentation](https://bbatsov.github.io/neocaml).
 
 ## Features
 
