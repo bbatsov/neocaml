@@ -1,0 +1,56 @@
+site_name: neocaml
+site_url: https://bbatsov.github.io/neocaml
+site_description: A new Emacs package for programming in OCaml
+repo_url: https://github.com/bbatsov/neocaml
+repo_name: bbatsov/neocaml
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep orange
+      accent: orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep orange
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Usage:
+    - Getting Started: usage.md
+    - Navigation: navigation.md
+    - Configuration: configuration.md
+    - REPL Integration: repl.md
+    - opam & dune: opam_and_dune.md
+    - Compiled Artifacts: objinfo.md
+    - Debugging: debugging.md
+  - Migration: migration.md
+  - FAQ: faq.md
+  - Troubleshooting: troubleshooting.md
+  - Changelog: changelog.md
+  - Contributing: contributing.md

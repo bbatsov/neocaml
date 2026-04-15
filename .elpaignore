@@ -1,5 +1,7 @@
 test/
 doc/
+docs/
+mkdocs.yml
 Eldev
 .eldev/
 .github/

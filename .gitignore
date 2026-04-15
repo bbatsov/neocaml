@@ -2,3 +2,4 @@
 .claude
 *-autoloads.el
 *.elc
+site/
