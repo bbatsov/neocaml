@@ -16,7 +16,10 @@ ecosystem: [dune](https://dune.build) build files,
 [OCamllex](https://v2.ocaml.org/manual/lexyacc.html) lexer definitions (`.mll`),
 [Menhir](http://gallium.inria.fr/~fpottier/menhir/) parser definitions (`.mly`),
 and [cram](https://dune.readthedocs.io/en/stable/tests.html#cram-tests) test
-files (`.t`) -- each with its own tree-sitter-powered major mode.
+files (`.t`) -- each with a dedicated major mode.
+
+You can also view compiled OCaml artifacts (`.cmi`, `.cmo`, `.cmx`, etc.)
+directly in Emacs via `ocamlobjinfo`.
 
 It's also as cool as Neo from "The Matrix". ;-)
 
