@@ -1128,6 +1128,39 @@ was in a comment, nil otherwise to let the default handler run."
           (goto-char (match-end 0))
           (current-column))))))
 
+(defun neocaml--forward-comment (&optional count)
+  "Corrected `forward-comment-function' for OCaml block comments.
+Emacs 31's `treesit-forward-comment' has an off-by-one bug: it
+does (1+ (treesit-node-end ...)) but `treesit-node-end' already
+returns an exclusive position, so point overshoots by one
+character.  This breaks `uncomment-region' for multi-line
+regions.  This function is identical to `treesit-forward-comment'
+with the overshoot removed.
+
+Only installed on Emacs 31+.  COUNT is the same as in
+`forward-comment'; uses `funcall' to avoid a package-lint
+warning about `treesit-thing-at' requiring Emacs 30.1 while the
+package supports 29.1."
+  (let ((res t) thing
+        (thing-at (intern "treesit-thing-at")))
+    (while (> count 0)
+      (skip-chars-forward " \t\n")
+      (setq thing (funcall thing-at (point) 'comment))
+      (if (and thing (eq (point) (treesit-node-start thing)))
+          (progn
+            (goto-char (treesit-node-end thing))
+            (setq count (1- count)))
+        (setq count 0 res nil)))
+    (while (< count 0)
+      (skip-chars-backward " \t\n")
+      (setq thing (funcall thing-at (max (1- (point)) (point-min)) 'comment))
+      (if (and thing (eq (point) (treesit-node-end thing)))
+          (progn
+            (goto-char (treesit-node-start thing))
+            (setq count (1+ count)))
+        (setq count 0 res nil)))
+    res))
+
 (defun neocaml--comment-indent-new-line (&optional soft)
   "Break line at point and indent, continuing comment if within one.
 SOFT works the same as in `comment-indent-new-line'."
@@ -1282,6 +1315,13 @@ the language-specific parts of the mode."
                   (neocaml--thing-settings language)))
 
     (treesit-major-mode-setup)
+
+    ;; Emacs 31's treesit-forward-comment has an off-by-one bug that
+    ;; breaks uncomment-region on multi-line regions.  Override with
+    ;; the corrected version.
+    (when (and (>= emacs-major-version 31)
+               (boundp 'forward-comment-function))
+      (setq-local forward-comment-function #'neocaml--forward-comment))
 
     ;; On Emacs 30, treesit-major-mode-setup sets forward-sexp-function
     ;; to treesit-forward-sexp, which doesn't fall back to scan-sexps
