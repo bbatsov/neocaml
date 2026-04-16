@@ -136,15 +136,36 @@ and find the right node types to match.
 
 ### Prettify Symbols
 
-You can "prettify" certain symbols (see `neocaml-prettify-symbols-alist`) by
-enabling `prettify-symbols-mode` via a hook:
+You can "prettify" certain symbols by enabling `prettify-symbols-mode`
+via a hook:
 
 ```emacs-lisp
 ;; Enable for both .ml and .mli files at once
 (add-hook 'neocaml-base-mode-hook #'prettify-symbols-mode)
 ```
 
+By default, neocaml replaces operators that have obvious Unicode
+equivalents and preserve column width (`<=` to `≤`, `&&` to `∧`,
+etc.). The full set is in `neocaml-prettify-symbols-alist`.
+
+There's also an extra set of replacements (`fun` to `λ`, `->` to `→`,
+`not` to `¬`) that can break column alignment because the replacement
+is a different width. To enable these:
+
+```emacs-lisp
+(setq neocaml-prettify-symbols-full t)
+```
+
+You can customize both `neocaml-prettify-symbols-alist` and
+`neocaml-prettify-symbols-extra-alist` to add or remove replacements.
+
 ## Indentation
+
+The base indentation offset is controlled by `neocaml-indent-offset` (default 2):
+
+```emacs-lisp
+(setq neocaml-indent-offset 4)
+```
 
 When it comes to indentation you've got several options:
 
@@ -235,4 +256,15 @@ bindings, module structures, etc.):
   :ensure t
   :bind (("C-=" . expreg-expand)
          ("C--" . expreg-contract)))
+```
+
+## Build Directory Redirect
+
+When you open a file under `_build/` (dune's build output directory),
+neocaml offers to switch to the corresponding source file instead.
+This is controlled by `neocaml-redirect-build-files` (default `t`):
+
+```emacs-lisp
+;; Disable if you work with build artifacts directly
+(setq neocaml-redirect-build-files nil)
 ```

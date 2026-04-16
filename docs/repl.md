@@ -39,6 +39,14 @@ The following keybindings are available when `neocaml-repl-minor-mode` is active
 | `C-c C-i` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
 | `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
 
+!!! tip
+    In the REPL buffer itself, `C-c C-z` switches back to the source
+    buffer you came from, so you can quickly bounce between source and REPL.
+
+The REPL buffer also enables `compilation-shell-minor-mode`, so
+error locations in REPL output are clickable and navigable with
+`next-error` / `previous-error`.
+
 ## Input Syntax Highlighting
 
 By default, code you type in the REPL is fontified using tree-sitter
@@ -75,12 +83,19 @@ To disable this and use only basic REPL font-lock:
 You can customize the OCaml REPL integration with the following variables:
 
 ```emacs-lisp
-;; Add command-line arguments to the default OCaml toplevel
-(setq neocaml-repl-program-args '("-short-paths" "-color=never"))
+;; Add extra command-line arguments to the default OCaml toplevel.
+;; The default is '("-nopromptcont"), which disables continuation
+;; prompts for cleaner multi-line input in comint.  Make sure to
+;; preserve it when adding your own flags:
+(setq neocaml-repl-program-args '("-nopromptcont" "-short-paths" "-color=never"))
 
-;; Change the REPL buffer name
+;; Change the REPL buffer name (default: "*OCaml*")
 (setq neocaml-repl-buffer-name "*OCaml-REPL*")
 ```
+
+REPL input history is persisted across sessions automatically.
+You can configure this with `neocaml-repl-history-file` (set to
+`nil` to disable) and `neocaml-repl-history-size` (default 1000).
 
 ### Using utop instead of the default OCaml toplevel
 

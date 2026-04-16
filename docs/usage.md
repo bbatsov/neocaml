@@ -6,8 +6,8 @@ when you open the respective type of files.
 
 You can use `C-c C-a` to toggle between implementation and interface files.
 
-To use `neocaml` with Eglot, register the modes with `ocamllsp` as shown
-in the [installation](installation.md) examples.
+neocaml auto-registers both modes with Eglot, so `M-x eglot` will
+start `ocamllsp` with the correct language IDs automatically.
 
 !!! note
     neocaml sets the `eglot-language-id` symbol property on both modes
@@ -42,3 +42,16 @@ neocaml also registers sensible modes for a few other OCaml-related files:
 
 - `.ocamlinit` opens in `neocaml-mode` (it's OCaml toplevel startup code)
 - `.ocamlformat` and `.ocp-indent` open in `conf-unix-mode` (key = value config files with `#` comments)
+- `.eliom` / `.eliomi` (Ocsigen) are handled by `ff-find-other-file` for toggling between implementation and interface
+
+## Useful Commands
+
+| Command | Description |
+|---|---|
+| `M-x neocaml-version` | Show the installed neocaml version |
+| `M-x neocaml-bug-report-info` | Copy debug info (versions, grammar status) to the kill ring |
+| `M-x neocaml-report-bug` | Open the neocaml issue tracker in your browser |
+| `M-x neocaml-browse-ocaml-docs` | Open the OCaml documentation in your browser |
+| `M-x neocaml-cycle-indent-function` | Toggle between tree-sitter and `indent-relative` indentation |
+
+These are also available from the OCaml menu.

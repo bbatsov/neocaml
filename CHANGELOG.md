@@ -17,7 +17,7 @@
 
 ### Changes
 
-- The `_build/` directory redirect in `neocaml-dune-mode` is now optional (controlled by `neocaml-dune-redirect-build-dir`).
+- The `_build/` directory redirect is now optional (controlled by `neocaml-redirect-build-files`).
 
 ## 0.7.1 (2026-03-31)
 

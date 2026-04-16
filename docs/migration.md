@@ -68,11 +68,19 @@ Some keybindings have different meanings across the modes:
 
 | Keybinding | neocaml | tuareg / caml-mode |
 |---|---|---|
-| `C-c C-c` | `compile` | Eval phrase (caml-mode) |
+| `C-c C-c` | `compile` (or `neocaml-repl-send-definition` with REPL minor mode) | Eval phrase (caml-mode) |
 | `C-c C-z` | Switch to REPL | Switch to REPL |
 | `C-c C-a` | Toggle .ml/.mli | Not bound |
 | `C-c C-r` | Send region to REPL | Send region to REPL |
 | `C-c C-b` | Send buffer to REPL | Send buffer to REPL |
+| `C-c C-l` | Load file into REPL | Load file (tuareg) |
+| `C-c C-p` | Send phrase to REPL | Not bound |
+| `C-c C-i` | Interrupt REPL | Not bound |
+| `C-c C-k` | Clear REPL buffer | Not bound |
+
+!!! note
+    REPL keybindings (`C-c C-z`, `C-c C-r`, etc.) require enabling
+    `neocaml-repl-minor-mode`. See [REPL Integration](repl.md).
 
 ## Merlin vs Eglot
 
@@ -100,7 +108,7 @@ indentation, you can use it directly -- see the
 
 ## What you lose
 
-- `ocamldebug` integration (neocaml does not include a debugger frontend)
+- `ocamldebug` integration (neocaml does not include a debugger frontend, but you can use [dape](https://github.com/svaante/dape) with [ocamlearlybird](https://github.com/hackwaly/ocamlearlybird) instead - see [Debugging](debugging.md))
 - `.mlp` (camlp4/camlp5) file support
 - Electric comment delimiters (`(` inserting `(* *)` inside comments)
 - Code templates / skeletons

@@ -44,3 +44,41 @@ sudo ldconfig
 ```
 
 Then recompile Emacs so it picks up the new library.
+
+## No syntax highlighting or "grammar unavailable" errors
+
+If `.ml` files open without any font-lock, the tree-sitter grammars are
+probably not installed. Run `M-x neocaml-install-grammars` to install
+the OCaml and OCaml-interface grammars. For dune, opam, OCamllex, and
+Menhir files, each mode has its own install command (see
+[Installation](installation.md)).
+
+## Conflicting mode from tuareg or caml-mode
+
+If another OCaml major mode is installed, it may claim `.ml`/`.mli`
+files before neocaml. The simplest fix is to remove the other package.
+If you need to keep it around, make sure neocaml's `auto-mode-alist`
+entries take priority by loading neocaml after the other package. See
+[Migration](migration.md) for details.
+
+## `ocamllsp` not found (macOS GUI Emacs)
+
+When Emacs is launched from a desktop shortcut (e.g. Emacs.app) rather
+than a terminal, it may not inherit your shell's `PATH`. This causes
+Eglot to fail with "ocamllsp not found". The
+[exec-path-from-shell](https://github.com/purcell/exec-path-from-shell)
+package fixes this:
+
+```emacs-lisp
+(use-package exec-path-from-shell
+  :ensure t
+  :config (exec-path-from-shell-initialize))
+```
+
+## Stale byte-compiled files after upgrading
+
+If neocaml behaves oddly after an upgrade (old features, missing
+commands), Emacs might be loading stale `.elc` files. Look for the
+warning "Source file newer than byte-compiled file" in `*Messages*`.
+Force a recompile by reinstalling the package or, if you installed from
+source, running `make clean && make compile`.

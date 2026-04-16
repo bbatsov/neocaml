@@ -20,6 +20,10 @@ You can also view a file explicitly with `M-x neocaml-objinfo-view-file`.
 ;; Use a wrapper script (e.g. for opam exec)
 (setq neocaml-objinfo-program "opam exec -- ocamlobjinfo")
 
-;; Customize the flags passed to ocamlobjinfo
+;; Customize the flags passed to ocamlobjinfo.
+;; The default is '("-no-approx" "-no-code" "-shape" "-index" "-decls" "-uid-deps").
+;; The first two suppress verbose output from .cmx files; the rest
+;; request additional metadata from .cmt/.cmti files (silently ignored
+;; for other file types).
 (setq neocaml-objinfo-program-args '("-no-approx" "-no-code"))
 ```

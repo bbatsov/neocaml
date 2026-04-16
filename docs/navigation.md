@@ -12,6 +12,8 @@ standard Emacs keybindings, but backed by the AST rather than heuristics:
 | `M-a` | `backward-sentence` | Move to the beginning of the current statement (Emacs 30+) |
 | `M-e` | `forward-sentence` | Move to the end of the current statement (Emacs 30+) |
 | `C-M-u` | `neocaml-backward-up-list` | Move out to the enclosing `struct`/`sig`/`object`, record, array, or paren group |
+| `C-c C-a` | `ff-find-other-file` | Toggle between `.ml` and `.mli` (also works for `.mll`, `.mly`, `.eliom`/`.eliomi`) |
+| `C-c 4 C-a` | `ff-find-other-file-other-window` | Same, but in another window |
 
 !!! note
     The built-in `backward-up-list` only understands syntax-table parens, so on
@@ -25,4 +27,16 @@ definitions, exceptions, and externals. "Statements" cover the same plus
 `open`, `include`, and expression items -- essentially any top-level or
 block-level construct.
 
-All navigation commands are also available from the OCaml menu under "Navigate".
+### Marking and transposing
+
+Standard Emacs commands for marking and transposing work with
+tree-sitter-aware granularity:
+
+| Keybinding | Command | Description |
+|---|---|---|
+| `C-M-h` | `mark-defun` | Mark the current definition |
+| `C-M-SPC` | `mark-sexp` | Mark the next balanced expression |
+| `M-x neocaml-mark-sentence` | `neocaml-mark-sentence` | Mark the current statement (Emacs 30+) |
+| `C-M-t` | `transpose-sexps` | Transpose two balanced expressions |
+
+All navigation commands are also available from the OCaml menu.
