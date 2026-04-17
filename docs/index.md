@@ -67,18 +67,17 @@ One last thing - we really need more Emacs packages with fun names! :D
 
 ## Comparison with Other Modes
 
+All three modes provide the basics: font-lock, indentation, REPL
+integration, navigation, imenu, `.ml`/`.mli` toggle, and compilation
+support. The table below focuses on where they differ.
+
 | Feature                    | neocaml                    | caml-mode     | tuareg       |
 |----------------------------|----------------------------|---------------|--------------|
 | Required Emacs version     | 29.1+ (30+ recommended)    | 24+           | 26+          |
-| Font-lock                  | Tree-sitter (4 levels)     | Regex         | Regex        |
-| Indentation                | Tree-sitter + cycle-indent | Custom engine | SMIE         |
-| REPL integration           | Yes                        | Yes           | Yes          |
-| Navigation (defun, sexp)   | Yes                        | Yes           | Yes          |
-| Imenu                      | Yes (.ml and .mli)         | Yes           | Yes          |
-| .ml/.mli toggle            | Yes                        | Yes           | Yes          |
-| LSP (Eglot) integration    | Yes (auto-configured)      | Yes (manual)  | Yes (manual) |
-| Debugger                   | Yes (dape + ocamlearlybird) | Yes (ocamldebug) | Yes (ocamldebug) |
-| Compilation commands       | Error regexp + C-c C-c     | Yes           | Yes          |
+| Font-lock engine           | Tree-sitter (4 levels)     | Regex         | Regex        |
+| Indentation engine         | Tree-sitter + cycle-indent | Custom engine | SMIE         |
+| LSP (Eglot) integration    | Auto-configured            | Manual        | Manual       |
+| Debugger                   | dape + ocamlearlybird      | ocamldebug    | ocamldebug   |
 | `_build` directory aware   | Yes                        | No            | Yes          |
 | opam file support          | Yes                        | No            | Yes          |
 | dune file support          | Yes                        | No            | No           |
