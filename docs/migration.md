@@ -64,22 +64,20 @@ either major mode -- it doesn't depend on `neocaml-dune-mode`.
 
 ## Keybinding differences
 
-Some keybindings have different meanings across the modes:
+Most REPL keybindings (`C-c C-z`, `C-c C-r`, `C-c C-b`, `C-c C-l`)
+work the same way across all three modes. The table below lists the
+bindings that actually differ.
 
 | Keybinding | neocaml | tuareg / caml-mode |
 |---|---|---|
 | `C-c C-c` | `compile` (or `neocaml-repl-send-definition` with REPL minor mode) | Eval phrase (caml-mode) |
-| `C-c C-z` | Switch to REPL | Switch to REPL |
 | `C-c C-a` | Toggle .ml/.mli | Not bound |
-| `C-c C-r` | Send region to REPL | Send region to REPL |
-| `C-c C-b` | Send buffer to REPL | Send buffer to REPL |
-| `C-c C-l` | Load file into REPL | Load file (tuareg) |
 | `C-c C-p` | Send phrase to REPL | Not bound |
 | `C-c C-i` | Interrupt REPL | Not bound |
 | `C-c C-k` | Clear REPL buffer | Not bound |
 
 !!! note
-    REPL keybindings (`C-c C-z`, `C-c C-r`, etc.) require enabling
+    neocaml's REPL keybindings require enabling
     `neocaml-repl-minor-mode`. See [REPL Integration](repl.md).
 
 ## Merlin vs Eglot
