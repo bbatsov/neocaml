@@ -1,5 +1,10 @@
 # Configuration
 
+!!! tip
+    You can browse all of neocaml's customization variables interactively
+    with `M-x customize-group RET neocaml`. Sub-groups like `neocaml-repl`
+    and `neocaml-dune-interaction` have their own entries.
+
 ## Font-locking
 
 neocaml provides 4 levels of font-locking, as is the standard for Tree-sitter

@@ -59,6 +59,21 @@ activated. You add them to your Emacs configuration (typically
     file types at once. Use `neocaml-mode-hook` or
     `neocaml-interface-mode-hook` if you want something only for one.
 
+## Typical Workflow
+
+A typical session looks something like this: open an OCaml file and
+you get syntax highlighting and indentation right away. Start Eglot
+with `M-x eglot` for completion, type information, and
+jump-to-definition. Navigate between definitions with `C-M-a` /
+`C-M-e`, jump to a specific one with `M-x imenu`, and switch between
+`.ml` and `.mli` with `C-c C-a`. Run `C-c C-c` to compile and
+`M-g n` to jump to the first error.
+
+For interactive development, enable the REPL minor mode and press
+`C-c C-z` to start a toplevel. Evaluate the current definition with
+`C-c C-c` or a region with `C-c C-r`, and switch back to your source
+with `C-c C-z` again.
+
 ## Eglot (LSP)
 
 neocaml auto-registers both modes with Eglot, so `M-x eglot` will
@@ -118,3 +133,20 @@ neocaml also registers sensible modes for a few other OCaml-related files:
 | `M-x neocaml-cycle-indent-function` | Toggle between tree-sitter and `indent-relative` indentation |
 
 These are also available from the OCaml menu.
+
+## Companion Packages
+
+These packages work well with neocaml:
+
+- [ocaml-eglot](https://github.com/tarides/ocaml-eglot) - OCaml-specific LSP extensions (type enclosing, case analysis, etc.)
+- [exec-path-from-shell](https://github.com/purcell/exec-path-from-shell) - inherit shell PATH in GUI Emacs (needed on macOS)
+- [expreg](https://github.com/casouri/expreg) - tree-sitter-aware expand-region (see [Configuration](configuration.md#structural-selection))
+- [treesit-fold](https://github.com/emacs-tree-sitter/treesit-fold) - tree-sitter-aware code folding
+- [dape](https://github.com/svaante/dape) - debugging via Debug Adapter Protocol (see [Debugging](debugging.md))
+
+## What's Next?
+
+- [Navigation](navigation.md) - learn the structural navigation commands
+- [Configuration](configuration.md) - customize font-lock levels, indentation, prettify-symbols, and more
+- [REPL Integration](repl.md) - evaluate OCaml code interactively
+- [opam, dune & Cram](opam_and_dune.md) - build commands, opam lint, dune formatting

@@ -46,3 +46,10 @@ Or with `use-package` on Emacs 30+:
     consider removing it to avoid conflicts over `.ml` and `.mli` file
     associations. See [Migrating from tuareg / caml-mode](migration.md)
     for details.
+
+## What's Next?
+
+Head to [Getting Started](usage.md) to see what works out of the box,
+set up Eglot, and learn the basic workflow. Then check
+[Configuration](configuration.md) to customize font-lock levels,
+indentation, and more.

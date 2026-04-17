@@ -5,6 +5,15 @@ information (Emacs version, neocaml version, grammar status, Eglot status) and
 copies it to the kill ring. Paste this into your bug report to help us
 diagnose the problem faster.
 
+## General debugging techniques
+
+A few Emacs built-ins that help diagnose problems:
+
+- **`*Messages*` buffer** - check for warnings and errors (`C-h e` to open it)
+- **`M-x toggle-debug-on-error`** - get a backtrace when something goes wrong
+- **`M-x treesit-explore-mode`** - inspect the syntax tree at point (useful for font-lock and indentation issues)
+- **`M-x treesit-inspect-mode`** - show the node at point in the mode line
+
 ## Tree-sitter ABI version mismatch
 
 If you see an error like:

@@ -1,12 +1,18 @@
 # Toplevel (REPL) Integration
 
 neocaml provides integration with the OCaml toplevel (REPL), allowing
-you to evaluate OCaml code directly from your source buffer.
+you to evaluate OCaml code directly from your source buffer. The REPL
+features:
+
+- Tree-sitter syntax highlighting for input (via `comint-fontify-input-mode`)
+- Persistent input history across sessions
+- Clickable error locations (via `compilation-shell-minor-mode`)
+- Quick switching between source and REPL with `C-c C-z`
+- Support for both the standard `ocaml` toplevel and [utop](#using-utop-instead-of-the-default-ocaml-toplevel)
 
 To get started, enable `neocaml-repl-minor-mode` (which adds REPL
 keybindings to your OCaml buffers), then press `C-c C-z` to start
 a REPL session:
-
 
 ```emacs-lisp
 ;; Enable for both .ml and .mli files at once

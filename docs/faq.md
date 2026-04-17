@@ -74,3 +74,21 @@ neocaml does not implement electric comment delimiters (tuareg does, but the
 logic is quite complex). Instead, use `M-;` (`comment-dwim`) to insert comment
 delimiters -- it will insert `(* *)` with point positioned between them,
 properly indented. This is simpler and more predictable.
+
+## Is the name a Matrix reference?
+
+Yes. It's also a **n**ew **E**macs package for **OCaml**.
+
+## What's the relationship between neocaml and tuareg?
+
+They're independent projects. tuareg uses a handwritten parser and
+SMIE for indentation; neocaml uses tree-sitter for everything. You can
+use tuareg's indentation engine with neocaml if you prefer it (see
+[Configuration](configuration.md#indentation)). See
+[Migration](migration.md) for a detailed comparison.
+
+## Where can I get help?
+
+Open an issue on [GitHub](https://github.com/bbatsov/neocaml/issues).
+You can also run `M-x neocaml-bug-report-info` to collect debug
+information for your report.
