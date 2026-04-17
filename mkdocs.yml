@@ -46,7 +46,7 @@ nav:
     - Navigation: navigation.md
     - Configuration: configuration.md
     - REPL Integration: repl.md
-    - opam & dune: opam_and_dune.md
+    - opam, dune & Cram: opam_and_dune.md
     - OCamllex & Menhir: ocamllex_and_menhir.md
     - Compiled Artifacts: objinfo.md
     - Debugging: debugging.md

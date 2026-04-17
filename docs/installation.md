@@ -30,7 +30,8 @@ Or with `use-package` on Emacs 30+:
 !!! note
     If the required tree-sitter grammars are not installed, run
     `M-x neocaml-install-grammars` to install the OCaml and
-    OCaml-interface grammars.
+    OCaml-interface grammars. If grammar installation fails, see
+    [Troubleshooting](troubleshooting.md#tree-sitter-abi-version-mismatch).
 
     The modes for dune, opam, OCamllex, and Menhir files each use
     their own grammar. These are installed automatically when you

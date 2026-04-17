@@ -34,6 +34,31 @@ enable it via a hook:
 Merlin provides its own completion, type display, and error checking
 independently of Eglot.
 
+## How do I change the indentation width?
+
+Set `neocaml-indent-offset` (default 2):
+
+```emacs-lisp
+(setq neocaml-indent-offset 4)
+```
+
+See [Configuration](configuration.md#indentation) for alternative
+indentation engines (ocp-indent, tuareg SMIE, indent-relative).
+
+## Do I need to remove tuareg or caml-mode?
+
+Not strictly, but it's the simplest path. If both are installed, they
+may fight over `.ml`/`.mli` file associations. See
+[Migration](migration.md) for details on running them side by side.
+
+## Can I use lsp-mode instead of Eglot?
+
+neocaml auto-configures Eglot, but it doesn't depend on it. If you
+prefer [lsp-mode](https://emacs-lsp.github.io/lsp-mode/), install it
+and configure it for `ocamllsp` as you would for any language. neocaml's
+font-lock, indentation, and navigation all work independently of which
+LSP client you use.
+
 ## Why doesn't `(` automatically insert `(* *)` inside comments?
 
 neocaml does not implement electric comment delimiters (tuareg does, but the

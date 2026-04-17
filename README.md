@@ -57,16 +57,13 @@ It's also as cool as Neo from "The Matrix". ;-)
 
 ```emacs-lisp
 (use-package neocaml
-  :ensure t
-  :config
-  ;; Register neocaml modes with Eglot
-  (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs
-                 '((neocaml-mode neocaml-interface-mode) . ("ocamllsp")))))
+  :ensure t)
 ```
 
 If the required tree-sitter grammars are not installed, run
-`M-x neocaml-install-grammars`.
+`M-x neocaml-install-grammars`. Eglot is auto-configured - just run
+`M-x eglot` in an OCaml buffer (requires
+[ocaml-lsp-server](https://github.com/ocaml/ocaml-lsp)).
 
 See the [documentation](https://bbatsov.github.io/neocaml/installation/) for
 alternative installation methods and detailed configuration.

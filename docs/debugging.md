@@ -16,7 +16,8 @@ dape's built-in `ocamlearlybird` configuration.
 
 2. Install dape from GNU ELPA (`M-x package-install RET dape RET`).
 
-3. Compile your program as bytecode. In your `dune` file:
+3. Compile your program as bytecode. In your
+   [`dune` file](https://dune.readthedocs.io/en/stable/reference/dune/executable.html):
 
    ```
    (executable
@@ -55,8 +56,6 @@ Once the session starts, dape provides the standard debugging commands:
 - See the [ocamlearlybird documentation](https://github.com/hackwaly/ocamlearlybird)
   for troubleshooting and known limitations.
 - neocaml normally offers to redirect you away from `_build/` files. If this
-  interferes with your debugging workflow, disable it:
-
-  ```emacs-lisp
-  (setq neocaml-redirect-build-files nil)
-  ```
+  interferes with your debugging workflow, disable it with
+  `(setq neocaml-redirect-build-files nil)`.
+  See [Configuration](configuration.md#build-directory-redirect) for details.

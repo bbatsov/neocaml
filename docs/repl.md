@@ -1,9 +1,12 @@
 # Toplevel (REPL) Integration
 
-`neocaml` provides integration with the OCaml toplevel (REPL). This allows you to evaluate OCaml code directly from your source buffer and see the results.
+neocaml provides integration with the OCaml toplevel (REPL), allowing
+you to evaluate OCaml code directly from your source buffer.
 
-You can also start an OCaml REPL (toplevel) and interact with it using
-`neocaml-repl-minor-mode`. You can enable the mode like this:
+To get started, enable `neocaml-repl-minor-mode` (which adds REPL
+keybindings to your OCaml buffers), then press `C-c C-z` to start
+a REPL session:
+
 
 ```emacs-lisp
 ;; Enable for both .ml and .mli files at once
@@ -107,8 +110,7 @@ You can configure this with `neocaml-repl-history-file` (set to
 ```
 
 !!! note
-    If you launch Emacs from a desktop shortcut (e.g. Emacs.app on macOS) rather
-    than a terminal, your shell's `PATH` may not be inherited. This can cause
-    `utop` or `ocaml` to not be found. The
-    [exec-path-from-shell](https://github.com/purcell/exec-path-from-shell)
-    package is the usual fix for this.
+    If Emacs can't find `utop` or `ocaml`, your shell `PATH` may not be
+    inherited. See
+    [Troubleshooting](troubleshooting.md#ocamllsp-not-found-macos-gui-emacs)
+    for the fix.

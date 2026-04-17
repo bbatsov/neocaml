@@ -1,6 +1,7 @@
-# opam & dune Support
+# opam, dune & Cram Support
 
-neocaml includes dedicated tree-sitter modes for opam and dune files.
+neocaml includes dedicated tree-sitter modes for opam and dune files,
+plus a mode for dune's cram test files.
 `neocaml-opam-mode` activates automatically for `.opam` and `opam` files;
 `neocaml-dune-mode` activates for `dune`, `dune-project`, and `dune-workspace`
 files (including variants like `dune-workspace.ci`). Both provide font-lock,
