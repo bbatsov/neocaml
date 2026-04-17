@@ -230,6 +230,16 @@ the box:
 These commands respect both regular comments (`(* ... *)`) and doc comments
 (`(** ... *)`), and work correctly for indented comments.
 
+## Current Definition in Mode Line
+
+`which-func-mode` displays the name of the current definition (let
+binding, type, module, etc.) in the mode line. neocaml supports it out
+of the box:
+
+```emacs-lisp
+(add-hook 'neocaml-base-mode-hook #'which-function-mode)
+```
+
 ## Code Folding
 
 On Emacs 30+, `outline-minor-mode` works out of the box with neocaml -- it
@@ -257,6 +267,13 @@ bindings, module structures, etc.):
   :bind (("C-=" . expreg-expand)
          ("C--" . expreg-contract)))
 ```
+
+## Eglot (LSP)
+
+Eglot is auto-configured - neocaml registers both modes with the correct
+language IDs so `M-x eglot` just works. See
+[Getting Started](usage.md#eglot-lsp) for setup details and
+[ocaml-eglot](usage.md#ocaml-eglot) for OCaml-specific extensions.
 
 ## Build Directory Redirect
 

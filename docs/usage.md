@@ -51,6 +51,14 @@ All of these use Emacs hooks - a way to run code when a mode is
 activated. You add them to your Emacs configuration (typically
 `init.el`).
 
+!!! note
+    The examples use `neocaml-base-mode-hook` rather than
+    `neocaml-mode-hook`. That's because `neocaml-base-mode` is the
+    shared parent of both `neocaml-mode` (`.ml`) and
+    `neocaml-interface-mode` (`.mli`), so hooks on it apply to both
+    file types at once. Use `neocaml-mode-hook` or
+    `neocaml-interface-mode-hook` if you want something only for one.
+
 ## Eglot (LSP)
 
 neocaml auto-registers both modes with Eglot, so `M-x eglot` will

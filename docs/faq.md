@@ -6,10 +6,12 @@ neocaml requires Emacs 29.1+ but Emacs 30+ is recommended. Some features
 are only available on newer versions:
 
 - **Emacs 30+**: language injection for OCamllex/Menhir, sentence
-  navigation (`M-a`/`M-e`), `outline-minor-mode` integration, list
-  navigation (`C-M-u`, `C-M-d`, `C-M-n`, `C-M-p`)
-- **Emacs 31+**: improved `backward-up-list` support via the native
-  `list` thing
+  navigation (`M-a`/`M-e`), `outline-minor-mode` integration,
+  tree-sitter-aware list navigation (`forward-list`, `backward-list`,
+  `down-list`)
+- **Emacs 31+**: native `backward-up-list` support via the `list`
+  thing (on earlier versions, neocaml provides `neocaml-backward-up-list`
+  as a workaround)
 
 ## How do I install grammars for dune, opam, OCamllex, or Menhir?
 
@@ -55,9 +57,16 @@ may fight over `.ml`/`.mli` file associations. See
 
 neocaml auto-configures Eglot, but it doesn't depend on it. If you
 prefer [lsp-mode](https://emacs-lsp.github.io/lsp-mode/), install it
-and configure it for `ocamllsp` as you would for any language. neocaml's
-font-lock, indentation, and navigation all work independently of which
-LSP client you use.
+and register neocaml's modes:
+
+```emacs-lisp
+(use-package lsp-mode
+  :ensure t
+  :hook (neocaml-base-mode . lsp))
+```
+
+neocaml's font-lock, indentation, and navigation all work independently
+of which LSP client (or none) you use.
 
 ## Why doesn't `(` automatically insert `(* *)` inside comments?
 

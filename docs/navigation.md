@@ -12,6 +12,9 @@ standard Emacs keybindings, but backed by the AST rather than heuristics:
 | `M-a` | `backward-sentence` | Move to the beginning of the current statement (Emacs 30+) |
 | `M-e` | `forward-sentence` | Move to the end of the current statement (Emacs 30+) |
 | `C-M-u` | `neocaml-backward-up-list` | Move out to the enclosing `struct`/`sig`/`object`, record, array, or paren group |
+| `C-M-d` | `down-list` | Move into a parenthesized/bracketed expression (Emacs 30+) |
+| `C-M-n` | `forward-list` | Move forward over a parenthesized/bracketed group (Emacs 30+) |
+| `C-M-p` | `backward-list` | Move backward over a parenthesized/bracketed group (Emacs 30+) |
 | `C-c C-a` | `ff-find-other-file` | Toggle between `.ml` and `.mli` (also works for `.mll`, `.mly`, `.eliom`/`.eliomi`) |
 | `C-c 4 C-a` | `ff-find-other-file-other-window` | Same, but in another window |
 

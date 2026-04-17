@@ -2,7 +2,8 @@
 
 neocaml includes dedicated tree-sitter modes for opam and dune files,
 plus a mode for dune's cram test files.
-`neocaml-opam-mode` activates automatically for `.opam` and `opam` files;
+`neocaml-opam-mode` activates automatically for `.opam`, `.opam.template`,
+and bare `opam` files;
 `neocaml-dune-mode` activates for `dune`, `dune-project`, and `dune-workspace`
 files (including variants like `dune-workspace.ci`). Both provide font-lock,
 indentation, and imenu.
@@ -62,6 +63,14 @@ mode** (`--watch`), rebuilding automatically when files change. For example,
 
 The project root is determined by walking up from the current file to find
 `dune-project`.
+
+If Emacs doesn't inherit your opam environment (common when launching
+from a desktop shortcut), you can prefix all dune commands with
+`opam exec --`:
+
+```emacs-lisp
+(setq neocaml-dune-use-opam-exec t)
+```
 
 ## dune File Formatting
 

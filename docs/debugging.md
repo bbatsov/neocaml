@@ -1,7 +1,7 @@
 # Debugging
 
-neocaml integrates with [dape](https://github.com/svaante/dape) (a DAP client,
-available from GNU ELPA) and
+neocaml integrates with [dape](https://github.com/svaante/dape) (a
+Debug Adapter Protocol client, available from GNU ELPA) and
 [ocamlearlybird](https://github.com/hackwaly/ocamlearlybird) for OCaml
 debugging. When dape is loaded, neocaml automatically registers its modes with
 dape's built-in `ocamlearlybird` configuration.
