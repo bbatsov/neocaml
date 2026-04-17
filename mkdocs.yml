@@ -43,7 +43,7 @@ nav:
   - Installation: installation.md
   - Usage:
     - Getting Started: usage.md
-    - Navigation: navigation.md
+    - Code Navigation: navigation.md
     - Configuration: configuration.md
     - REPL Integration: repl.md
     - opam, dune & Cram: opam_and_dune.md

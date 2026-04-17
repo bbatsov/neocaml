@@ -1,4 +1,4 @@
-# Navigation
+# Code Navigation
 
 neocaml uses tree-sitter to power all structural navigation commands. These are
 standard Emacs keybindings, but backed by the AST rather than heuristics:

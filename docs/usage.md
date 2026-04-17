@@ -25,7 +25,7 @@ automatically with no configuration:
   with 4 configurable levels
 - **Indentation** via tree-sitter
 - **Navigation** - `beginning-of-defun`, `end-of-defun`, `forward-sexp`,
-  and more (see [Navigation](navigation.md))
+  and more (see [Code Navigation](navigation.md))
 - **Imenu** - jump to definitions with `M-x imenu`
 - **File toggle** - switch between `.ml` and `.mli` with `C-c C-a`
 - **Comment commands** - `M-;`, `M-j`, `M-q` all work with OCaml's
@@ -146,7 +146,7 @@ These packages work well with neocaml:
 
 ## What's Next?
 
-- [Navigation](navigation.md) - learn the structural navigation commands
+- [Code Navigation](navigation.md) - learn the structural navigation commands
 - [Configuration](configuration.md) - customize font-lock levels, indentation, prettify-symbols, and more
 - [REPL Integration](repl.md) - evaluate OCaml code interactively
 - [opam, dune & Cram](opam_and_dune.md) - build commands, opam lint, dune formatting
