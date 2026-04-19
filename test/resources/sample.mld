@@ -1,0 +1,73 @@
+{0 My Library}
+
+This is the documentation for my library.
+It supports {b bold}, {i italic}, and {e emphasis} text.
+
+{1 Getting Started}
+
+Install the package with opam:
+
+{@opam[
+depends: [
+  "ocaml" {>= "4.14.0"}
+  "dune" {>= "3.0"}
+]
+]}
+
+Add it to your dune file:
+
+{@dune[
+(library
+ (name mylib)
+ (libraries base))
+]}
+
+{1 Examples}
+
+Here is a simple example:
+
+{@ocaml[
+open Mylib
+
+let greet name =
+  Printf.printf "Hello, %s!\n" name
+
+let () = greet "world"
+]}
+
+You can also run shell commands:
+
+{@sh[
+opam install mylib
+dune build
+]}
+
+{2 API Reference}
+
+The main entry point is {!Mylib.greet}.
+See {{!Mylib} the module documentation} for details.
+
+{3 Types}
+
+The core type is [t]:
+
+{[
+type t = {
+  name : string;
+  value : int;
+}
+]}
+
+{1 Mathematical Background}
+
+The complexity is {m O(n \log n)} for the general case.
+
+{math \sum_{i=0}^{n} x_i^2}
+
+{1 Version History}
+
+@since 1.0.0
+@author Jane Doe
+@deprecated Use {!Mylib.greet_v2} instead.
+@param name The name to greet.
+@return A greeting string.
