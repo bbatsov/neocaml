@@ -85,29 +85,29 @@ Pipes the buffer content through the command and replaces the
 buffer text with the formatted output, preserving point."
   (interactive)
   (let ((outbuf (generate-new-buffer " *neocaml-dune-format*"))
+        ;; Send stderr to its own file so dune's `Entering directory' /
+        ;; `Leaving directory' markers (emitted on stderr from dune 3.21+
+        ;; when invoked inside a project) don't wrap the formatted output.
+        (errfile (make-temp-file "neocaml-dune-format-err"))
         (orig-point (point))
         (orig-window-start (window-start)))
     (unwind-protect
         (let ((exit-code (call-process-region (point-min) (point-max)
-                                              "dune" nil outbuf nil
+                                              "dune" nil
+                                              (list outbuf errfile) nil
                                               "format-dune-file")))
           (if (zerop exit-code)
               (progn
-                (with-current-buffer outbuf
-                  ;; Strip the "Entering directory" / "Leaving directory"
-                  ;; markers dune emits when invoked from a sub-directory of a
-                  ;; project, so they don't end up wrapping the formatted
-                  ;; content (issue #53).
-                  (goto-char (point-min))
-                  (flush-lines "^\\(?:Entering\\|Leaving\\) directory '"))
                 (erase-buffer)
                 (insert-buffer-substring outbuf)
                 (goto-char (min orig-point (point-max)))
                 (set-window-start (selected-window) orig-window-start))
             (user-error "Dune format-dune-file failed: %s"
-                        (with-current-buffer outbuf
+                        (with-temp-buffer
+                          (insert-file-contents errfile)
                           (string-trim (buffer-string))))))
-      (kill-buffer outbuf))))
+      (kill-buffer outbuf)
+      (delete-file errfile))))
 
 (defun neocaml-dune--format-before-save ()
   "Format the buffer before saving if `neocaml-dune-format-on-save' is non-nil."

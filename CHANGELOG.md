@@ -4,7 +4,7 @@
 
 ### Bug fixes
 
-- [#53](https://github.com/bbatsov/neocaml/issues/53): Strip `Entering directory` / `Leaving directory` markers that newer dune versions emit around `dune format-dune-file` output, so they no longer end up wrapping the formatted buffer.
+- [#53](https://github.com/bbatsov/neocaml/issues/53): Capture stderr separately when running `dune format-dune-file`, so the `Entering directory` / `Leaving directory` markers newer dune versions emit on stderr no longer wrap the formatted buffer.
 
 ## 0.8.0 (2026-04-10)
 
