@@ -93,6 +93,13 @@ buffer text with the formatted output, preserving point."
                                               "format-dune-file")))
           (if (zerop exit-code)
               (progn
+                (with-current-buffer outbuf
+                  ;; Strip the "Entering directory" / "Leaving directory"
+                  ;; markers dune emits when invoked from a sub-directory of a
+                  ;; project, so they don't end up wrapping the formatted
+                  ;; content (issue #53).
+                  (goto-char (point-min))
+                  (flush-lines "^\\(?:Entering\\|Leaving\\) directory '"))
                 (erase-buffer)
                 (insert-buffer-substring outbuf)
                 (goto-char (min orig-point (point-max)))

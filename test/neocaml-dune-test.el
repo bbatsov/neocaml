@@ -226,7 +226,27 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
         (insert formatted)
         (neocaml-dune-mode)
         (neocaml-dune-format-buffer)
-        (expect (buffer-string) :to-equal formatted)))))
+        (expect (buffer-string) :to-equal formatted))))
+
+  (it "strips Entering/Leaving directory markers from dune's output"
+    ;; Newer dune versions wrap the formatted output in `Entering directory'
+    ;; and `Leaving directory' messages when invoked from a sub-directory of a
+    ;; project (issue #53).  Mock `call-process-region' to inject those lines
+    ;; deterministically rather than relying on a specific dune version.
+    (cl-letf (((symbol-function 'call-process-region)
+               (lambda (_start _end _program &optional _delete buffer
+                               _display &rest _args)
+                 (with-current-buffer buffer
+                   (insert "Entering directory '/some/proj'\n"
+                           "(library\n (name foo))\n"
+                           "Leaving directory '/some/proj'\n"))
+                 0)))
+      (with-temp-buffer
+        (insert "(library (name foo))")
+        (neocaml-dune-mode)
+        (neocaml-dune-format-buffer)
+        (expect (buffer-string)
+                :to-equal "(library\n (name foo))\n")))))
 
 (describe "neocaml-dune auto-mode-alist"
   (it "activates for dune files"
