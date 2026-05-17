@@ -17,7 +17,7 @@ ecosystem: [dune](https://dune.build) build files,
 [OCamllex](https://v2.ocaml.org/manual/lexyacc.html) lexer definitions (`.mll`),
 [Menhir](http://gallium.inria.fr/~fpottier/menhir/) parser definitions (`.mly`),
 and [cram](https://dune.readthedocs.io/en/stable/tests.html#cram-tests) test
-files (`.t`) -- each with a dedicated major mode.
+files (`.t`), each with a dedicated major mode.
 
 You can also view compiled OCaml artifacts (`.cmi`, `.cmo`, `.cmx`, etc.)
 directly in Emacs via `ocamlobjinfo`.
@@ -40,7 +40,7 @@ It's also as cool as Neo from "The Matrix". ;-)
 - Electric indentation on delimiter characters
 - opam file editing (`neocaml-opam-mode`) with font-lock, indentation, imenu, and `opam lint` integration (flymake and [flycheck](https://github.com/flycheck/flycheck))
 - dune file editing (`neocaml-dune-mode`) for dune, dune-project, and dune-workspace files
-- dune build commands (`neocaml-dune-interaction-mode`) -- build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
+- dune build commands (`neocaml-dune-interaction-mode`): build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
 - OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Cram test file editing (`neocaml-cram-mode`) with font-lock for commands, output, modifiers, and prose
