@@ -202,7 +202,8 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
     (if (comint-check-proc neocaml-repl-buffer-name)
         (pop-to-buffer neocaml-repl-buffer-name)
       (neocaml-repl-start))
-    (setq neocaml-repl--source-buffer source)))
+    (with-current-buffer neocaml-repl-buffer-name
+      (setq neocaml-repl--source-buffer source))))
 
 ;;;###autoload
 (defun neocaml-repl-send-region (start end)
