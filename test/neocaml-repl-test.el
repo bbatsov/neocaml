@@ -106,6 +106,35 @@
         ;; Backward search returns the position before the delimiter.
         (expect (buffer-substring-no-properties pos (+ pos 2)) :to-equal ";;")))))
 
+(describe "neocaml-repl source-to-repl switch"
+  (it "pops to an existing REPL buffer and records the source"
+    (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
+          (repl (get-buffer-create neocaml-repl-buffer-name)))
+      (unwind-protect
+          (with-current-buffer source
+            (spy-on 'comint-check-proc :and-return-value t)
+            (spy-on 'pop-to-buffer)
+            (neocaml-repl-switch-to-repl)
+            (expect 'pop-to-buffer :to-have-been-called-with neocaml-repl-buffer-name)
+            (expect (buffer-local-value 'neocaml-repl--source-buffer repl)
+                    :to-equal source))
+        (kill-buffer source)
+        (when (buffer-live-p repl) (kill-buffer repl)))))
+
+  (it "starts a new REPL when none is running and records the source"
+    (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
+          (repl (get-buffer-create neocaml-repl-buffer-name)))
+      (unwind-protect
+          (with-current-buffer source
+            (spy-on 'comint-check-proc :and-return-value nil)
+            (spy-on 'neocaml-repl-start)
+            (neocaml-repl-switch-to-repl)
+            (expect 'neocaml-repl-start :to-have-been-called)
+            (expect (buffer-local-value 'neocaml-repl--source-buffer repl)
+                    :to-equal source))
+        (kill-buffer source)
+        (when (buffer-live-p repl) (kill-buffer repl))))))
+
 (describe "neocaml-repl buffer switching"
   (it "pops to the saved source buffer"
     (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
