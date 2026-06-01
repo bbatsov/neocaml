@@ -80,7 +80,23 @@ DESCRIPTION is the test name.  Uses `neocaml-odoc-mode'."
 
     (when-fontifying-odoc-it "fontifies param name"
       ("@param name The name to use."
-       ("name" neocaml-odoc-tag-name-face))))
+       ("name" neocaml-odoc-tag-name-face)))
+
+    (when-fontifying-odoc-it "fontifies @children_order tag"
+      ("@children_order intro.mld api.mld"
+       ("@children_order" neocaml-odoc-tag-face)))
+
+    (when-fontifying-odoc-it "fontifies @short_title tag"
+      ("@short_title My Page"
+       ("@short_title" neocaml-odoc-tag-face)))
+
+    (when-fontifying-odoc-it "fontifies @toc_status tag"
+      ("@toc_status open"
+       ("@toc_status" neocaml-odoc-tag-face)))
+
+    (when-fontifying-odoc-it "fontifies @order_category tag"
+      ("@order_category basics"
+       ("@order_category" neocaml-odoc-tag-face))))
 
   (describe "markup feature"
     (when-fontifying-odoc-it "fontifies bold markup"
@@ -128,7 +144,15 @@ DESCRIPTION is the test name.  Uses `neocaml-odoc-mode'."
 
     (when-fontifying-odoc-it "fontifies simple links"
       ("{:https://example.com}"
-       ("{:https://example.com}" neocaml-odoc-link-face))))
+       ("{:https://example.com}" neocaml-odoc-link-face)))
+
+    (when-fontifying-odoc-it "fontifies image media target"
+      ("{image!media/diagram.png}"
+       ("media/diagram.png" neocaml-odoc-link-face)))
+
+    (when-fontifying-odoc-it "fontifies media target in media with replacement text"
+      ("{{audio!sound.mp3} listen here}"
+       ("sound.mp3" neocaml-odoc-link-face))))
 
   (describe "escape-sequence feature"
     (when-fontifying-odoc-it "fontifies escape sequences"

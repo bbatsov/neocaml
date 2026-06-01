@@ -215,7 +215,11 @@ With prefix argument FORCE, reinstall even if already installed."
      (tag_inline) @neocaml-odoc-tag-face
      (tag_open) @neocaml-odoc-tag-face
      (tag_closed) @neocaml-odoc-tag-face
-     (tag_hidden) @neocaml-odoc-tag-face)
+     (tag_hidden) @neocaml-odoc-tag-face
+     (tag_children_order) @neocaml-odoc-tag-face
+     (tag_toc_status) @neocaml-odoc-tag-face
+     (tag_order_category) @neocaml-odoc-tag-face
+     (tag_short_title) @neocaml-odoc-tag-face)
 
    :language 'odoc
    :feature 'tag
@@ -248,7 +252,9 @@ With prefix argument FORCE, reinstall even if already installed."
      (reference_with_text (reference_target) @neocaml-odoc-reference-face)
      (simple_link) @neocaml-odoc-link-face
      (link_with_text (link_target) @neocaml-odoc-link-face)
-     (module_name) @neocaml-odoc-reference-face)
+     (module_name) @neocaml-odoc-reference-face
+     (simple_media (media_target) @neocaml-odoc-link-face)
+     (media_with_text (media_target) @neocaml-odoc-link-face))
 
    :language 'odoc
    :feature 'escape-sequence
@@ -269,9 +275,11 @@ With prefix argument FORCE, reinstall even if already installed."
    :language 'odoc
    :feature 'bracket
    '(["[" "]" "]}" "}" "{b" "{i" "{e" "{^" "{_"
-      "{!" "{{!" "{:" "{{:" "{%" "{m" "{math"
+      "{!" "{{!" "{:" "{{:" "{%" "{m" "{math" "{@"
       "{[" "{v" "{ul" "{ol" "{li" "{table" "{tr" "{th" "{td" "{t"
-      "{L" "{C" "{R" "{!modules:" "%}"]
+      "{L" "{C" "{R" "{!modules:" "%}"
+      "{image!" "{image:" "{video!" "{video:" "{audio!" "{audio:"
+      "{{image!" "{{image:" "{{video!" "{{video:" "{{audio!" "{{audio:"]
      @neocaml-odoc-bracket-face))
   "Font-lock settings for `neocaml-odoc-mode'.")
 
