@@ -67,7 +67,7 @@
 
 (defconst neocaml-odoc-grammar-recipes
   '((odoc "https://github.com/tmcgilchrist/tree-sitter-odoc"
-          "master"
+          "0.1.1"
           "src"))
   "Tree-sitter grammar recipe for odoc files.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
