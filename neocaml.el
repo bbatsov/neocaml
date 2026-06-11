@@ -300,6 +300,16 @@ The return value is suitable for `treesit-font-lock-settings'."
      (field_expression ["="] @font-lock-keyword-face)
      (for_expression ["="] @font-lock-keyword-face))
 
+   ;; Upgrade function-typed `val' specifications (in .mli files) to the
+   ;; function face, mirroring how function `let' bindings are highlighted
+   ;; in implementations.  This overrides the generic `value_specification'
+   ;; rule above, so it lives in its own `:override' block under the same
+   ;; `definition' feature.
+   :language language
+   :feature 'definition
+   :override t
+   '((value_specification (value_name) @font-lock-function-name-face (function_type)))
+
    :language language
    :feature 'keyword
    `([,@neocaml-mode--keywords] @font-lock-keyword-face
