@@ -467,6 +467,18 @@
       ("val x : int"
        ("x" font-lock-variable-name-face)))
 
+    (when-fontifying-interface-it "fontifies function-typed val as a function"
+      ("val f : int -> int"
+       ("f" font-lock-function-name-face)))
+
+    (when-fontifying-interface-it "fontifies higher-order function-typed val as a function"
+      ("val f : (int -> int) -> int"
+       ("f" font-lock-function-name-face)))
+
+    (when-fontifying-interface-it "fontifies non-function val as a variable"
+      ("val x : int list"
+       ("x" font-lock-variable-name-face)))
+
     (when-fontifying-interface-it "fontifies : in val specification as keyword"
       ("val x : int"
        (7 7 font-lock-keyword-face)))

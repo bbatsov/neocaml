@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### Changes
+
+- [#60](https://github.com/bbatsov/neocaml/issues/60): Highlight function-typed `val` specifications in `.mli` files with the function face, matching how function `let` bindings are highlighted in implementations.
+
 ## 0.8.1 (2026-05-13)
 
 ### Bug fixes
