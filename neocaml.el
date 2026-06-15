@@ -153,12 +153,17 @@ displaying it."
       (or pkg-version neocaml-version))))
 
 (defconst neocaml-grammar-recipes
+  ;; We pin to the `v0.25.0-abi14' tag: tree-sitter-ocaml v0.25.0 itself
+  ;; generates an ABI 15 parser, which most Emacs builds can't yet load,
+  ;; so upstream provides this ABI-14 regeneration of the same grammar.
+  ;; Move to a plain `v0.25.x' tag once ABI 15 is broadly supported by the
+  ;; libtree-sitter Emacs links against.
   '((ocaml "https://github.com/tree-sitter/tree-sitter-ocaml"
-           "v0.24.2"
+           "v0.25.0-abi14"
            "grammars/ocaml/src")
     ;; that's the grammar for mli code
     (ocaml-interface "https://github.com/tree-sitter/tree-sitter-ocaml"
-                     "v0.24.2"
+                     "v0.25.0-abi14"
                      "grammars/interface/src"))
   "Tree-sitter grammar recipes for OCaml and OCaml Interface.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
@@ -190,22 +195,21 @@ Emit a warning if an outdated grammar is detected."
   (unless neocaml--grammar-compatibility-checked
     (setq neocaml--grammar-compatibility-checked t)
     (when (treesit-language-available-p 'ocaml)
-      (let ((expected (nth 2 (assq 'ocaml neocaml-grammar-recipes))))
-        ;; In v0.24.2, module_binding lost its "name" field.
-        ;; We parse a snippet and check whether that field still exists.
-        ;; treesit-query-compile doesn't validate field names, so we
-        ;; must check against an actual parse tree.
-        (with-temp-buffer
-          (insert "module M = struct end")
-          (let* ((parser (treesit-parser-create 'ocaml))
-                 (root (treesit-parser-root-node parser))
-                 (node (treesit-search-subtree root "module_binding")))
-            (when (and node (treesit-node-child-by-field-name node "name"))
-              (display-warning
-               'neocaml
-               (format "The installed tree-sitter OCaml grammar appears older \
-than %s.  Run C-u M-x neocaml-install-grammars to reinstall."
-                       expected)))))))))
+      ;; In v0.25.0, the type_binding "equation" field was renamed to
+      ;; "body".  We parse a snippet and check whether the old field name
+      ;; still exists.  treesit-query-compile doesn't validate field
+      ;; names, so we must check against an actual parse tree.
+      (with-temp-buffer
+        (insert "type t = int")
+        (let* ((parser (treesit-parser-create 'ocaml))
+               (root (treesit-parser-root-node parser))
+               (node (treesit-search-subtree root "type_binding")))
+          (when (and node (treesit-node-child-by-field-name node "equation"))
+            (display-warning
+             'neocaml
+             "The installed tree-sitter OCaml grammar appears older than the \
+version required by neocaml.  Run C-u M-x neocaml-install-grammars to \
+reinstall.")))))))
 
 ;; adapted from tuareg-mode
 (defvar neocaml-base-mode-syntax-table
@@ -889,7 +893,7 @@ Joins ancestor defun names with `treesit-add-log-defun-delimiter'."
                 ;; "fun_expression"
                 ;; "match_expression"
                 "local_open_expression"
-                "coercion_expression"
+                "typed_expression"
                 "array_expression"
                 "list_expression"
                 "parenthesized_expression"
