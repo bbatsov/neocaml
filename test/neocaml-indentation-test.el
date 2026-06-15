@@ -145,6 +145,10 @@ done")
   (when-indenting-it "indents an external declaration"
     "external foo : int -> int = \"c_foo\"")
 
+  (when-indenting-it "indents an external type declaration"
+    "type t =
+  external \"caml_foo\"")
+
   ;; ---- Empty-line indentation (no-node) -----------------------------------
 
   (describe "empty-line indentation"
@@ -302,6 +306,10 @@ end")
 
   (when-indenting-interface-it "indents external declarations"
     "external foo : int -> int = \"c_foo\"")
+
+  (when-indenting-interface-it "indents an external type declaration"
+    "type t =
+  external \"caml_foo\"")
 
   (when-indenting-interface-it "indents multiple top-level declarations"
     "type t = int

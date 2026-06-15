@@ -102,7 +102,16 @@
     (with-neocaml-buffer "let x = \"hello\""
       (search-forward "= ")
       (forward-sexp)
-      (expect (looking-back "\"hello\"" (line-beginning-position)) :to-be-truthy))))
+      (expect (looking-back "\"hello\"" (line-beginning-position)) :to-be-truthy)))
+
+  ;; OCaml 5.5 external types: the whole `external "caml_foo"' body is a
+  ;; single `external_declaration' node.
+  (it "moves over an external type body"
+    (with-neocaml-buffer "type t = external \"caml_foo\""
+      (search-forward "= ")
+      (forward-sexp)
+      (expect (looking-back "external \"caml_foo\"" (line-beginning-position))
+              :to-be-truthy))))
 
 
 ;;;; defun-name
@@ -128,6 +137,14 @@
         (while (and node (not (string= (treesit-node-type node) "type_binding")))
           (setq node (treesit-node-parent node)))
         (expect (neocaml--defun-name node) :to-equal "shape"))))
+
+  (it "returns the name of an external type binding"
+    (with-neocaml-buffer "type ext_t = external \"caml_foo\""
+      (search-forward "ext_t")
+      (let ((node (treesit-node-at (1- (point)))))
+        (while (and node (not (string= (treesit-node-type node) "type_binding")))
+          (setq node (treesit-node-parent node)))
+        (expect (neocaml--defun-name node) :to-equal "ext_t"))))
 
   (it "returns the name of a module binding"
     (with-neocaml-buffer "module Foo = struct end"
