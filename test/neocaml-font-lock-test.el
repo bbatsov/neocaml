@@ -67,6 +67,13 @@
       ("external foo : int -> int = \"c_foo\""
        ("foo" font-lock-variable-name-face)))
 
+    ;; OCaml 5.5 external types: `type t = external "caml_foo"'.
+    (when-fontifying-it "fontifies external type declarations"
+      ("type t = external \"caml_foo\""
+       ("t" font-lock-type-face)
+       ("external" font-lock-keyword-face)
+       ("\"caml_foo\"" font-lock-string-face)))
+
     (when-fontifying-it "fontifies type-annotated let binding"
       ("let x : int = 42"
        ("x" font-lock-variable-name-face)))
@@ -486,6 +493,13 @@
     (when-fontifying-interface-it "fontifies external value_name"
       ("external foo : int -> int = \"c_foo\""
        ("foo" font-lock-variable-name-face)))
+
+    ;; OCaml 5.5 external types are valid in signatures too.
+    (when-fontifying-interface-it "fontifies external type declarations"
+      ("type t = external \"caml_foo\""
+       ("t" font-lock-type-face)
+       ("external" font-lock-keyword-face)
+       ("\"caml_foo\"" font-lock-string-face)))
 
     (when-fontifying-interface-it "fontifies method_specification"
       ("class type c = object method m : int end"
