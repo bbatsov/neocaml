@@ -1272,39 +1272,66 @@ The information is also copied to the kill ring."
     (easy-menu-define neocaml-mode-menu map "Neocaml Mode Menu"
       '("OCaml"
         ("Navigate"
-         ["Beginning of Definition" beginning-of-defun]
-         ["End of Definition" end-of-defun]
-         ["Forward Expression" forward-sexp]
-         ["Backward Expression" backward-sexp]
-         ["Forward Statement" forward-sentence]
-         ["Backward Statement" backward-sentence]
-         ["Up to Enclosing Block" neocaml-backward-up-list])
+         ["Beginning of Definition" beginning-of-defun
+          :help "Move to the beginning of the current definition"]
+         ["End of Definition" end-of-defun
+          :help "Move to the end of the current definition"]
+         ["Forward Expression" forward-sexp
+          :help "Move forward across one balanced expression"]
+         ["Backward Expression" backward-sexp
+          :help "Move backward across one balanced expression"]
+         ["Forward Statement" forward-sentence
+          :help "Move forward to the next top-level statement"]
+         ["Backward Statement" backward-sentence
+          :help "Move backward to the previous top-level statement"]
+         ["Up to Enclosing Block" neocaml-backward-up-list
+          :help "Move out of the enclosing block"])
         ("Find..."
-         ["Find Interface/Implementation" ff-find-other-file]
-         ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
+         ["Find Interface/Implementation" ff-find-other-file
+          :help "Switch between the .ml and .mli file"]
+         ["Find Interface/Implementation in other window" ff-find-other-file-other-window
+          :help "Switch between the .ml and .mli file in another window"])
         ("Edit"
-         ["Comment Out Region" comment-region (use-region-p)]
-         ["Uncomment Region" uncomment-region (use-region-p)]
-         ["Fill Comment Paragraph" fill-paragraph t]
+         ["Comment Out Region" comment-region (use-region-p)
+          :help "Comment out the lines in the region"]
+         ["Uncomment Region" uncomment-region (use-region-p)
+          :help "Uncomment the lines in the region"]
+         ["Fill Comment Paragraph" fill-paragraph t
+          :help "Fill the comment paragraph at point"]
          "--"
-         ["Indent Region" indent-region (use-region-p)])
+         ["Indent Region" indent-region (use-region-p)
+          :help "Reindent the lines in the region"])
         "--"
-        ["Mark Definition" mark-defun]
-        ["Mark Expression" mark-sexp]
-        ["Mark Statement" neocaml-mark-sentence]
+        ["Mark Definition" mark-defun
+         :help "Mark the current definition"]
+        ["Mark Expression" mark-sexp
+         :help "Mark the expression after point"]
+        ["Mark Statement" neocaml-mark-sentence
+         :help "Mark the current statement"]
         "--"
-        ["Transpose Expression" transpose-sexps]
-        ["Transpose Statement" transpose-sentences]
+        ["Transpose Expression" transpose-sexps
+         :help "Transpose the expressions around point"]
+        ["Transpose Statement" transpose-sentences
+         :help "Transpose the statements around point"]
         "--"
-        ["Compile..." compile]
-        ["Cycle indent function" neocaml-cycle-indent-function]
-        ["Install tree-sitter grammars" neocaml-install-grammars]
+        ["Compile..." compile
+         :help "Compile the project"]
+        ["Cycle indent function" neocaml-cycle-indent-function
+         :help "Switch between tree-sitter and relative indentation"]
+        ["Install tree-sitter grammars" neocaml-install-grammars
+         :help "Install the OCaml tree-sitter grammars"]
         ("Documentation"
-         ["Browse OCaml Docs" neocaml-browse-ocaml-docs])
+         ["Browse OCaml Docs" neocaml-browse-ocaml-docs
+          :help "Browse the OCaml documentation in a web browser"])
         "--"
-        ["Report a neocaml bug" neocaml-report-bug]
-        ["Show bug report info" neocaml-bug-report-info]
-        ["neocaml version" neocaml-version]))
+        ["Customize neocaml..." (customize-group 'neocaml)
+         :help "Customize neocaml settings"]
+        ["Report a neocaml bug" neocaml-report-bug
+         :help "Report a bug to the neocaml issue tracker"]
+        ["Show bug report info" neocaml-bug-report-info
+         :help "Show environment info useful for bug reports"]
+        ["neocaml version" neocaml-version
+         :help "Display the neocaml version"]))
     map)
   "Keymap shared by `neocaml-mode' and `neocaml-interface-mode'.")
 

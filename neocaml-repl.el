@@ -315,16 +315,27 @@ Skips `;;' that appear inside strings or comments."
 
     (easy-menu-define neocaml-repl-minor-mode-menu map "OCaml REPL Menu"
       '("OCaml REPL"
-        ["Start/Switch to REPL" neocaml-repl-switch-to-repl]
+        ["Start/Switch to REPL" neocaml-repl-switch-to-repl
+         :help "Start the OCaml REPL or switch to a running one"]
         "--"
-        ["Send Definition" neocaml-repl-send-definition]
-        ["Send Region" neocaml-repl-send-region]
-        ["Send Buffer" neocaml-repl-send-buffer]
-        ["Send Phrase" neocaml-repl-send-phrase]
-        ["Load File" neocaml-repl-load-file]
+        ["Send Definition" neocaml-repl-send-definition
+         :help "Send the definition at point to the REPL"]
+        ["Send Region" neocaml-repl-send-region
+         :enable (use-region-p)
+         :help "Send the active region to the REPL"]
+        ["Send Buffer" neocaml-repl-send-buffer
+         :help "Send the whole buffer to the REPL"]
+        ["Send Phrase" neocaml-repl-send-phrase
+         :help "Send the phrase at point to the REPL"]
+        ["Load File" neocaml-repl-load-file
+         :help "Load a file into the REPL with #use"]
         "--"
-        ["Interrupt REPL" neocaml-repl-interrupt]
-        ["Clear REPL Buffer" neocaml-repl-clear-buffer]))
+        ["Interrupt REPL" neocaml-repl-interrupt
+         :enable (comint-check-proc neocaml-repl-buffer-name)
+         :help "Interrupt the OCaml toplevel process"]
+        ["Clear REPL Buffer" neocaml-repl-clear-buffer
+         :enable (comint-check-proc neocaml-repl-buffer-name)
+         :help "Erase the REPL buffer contents"]))
     map)
   "Keymap for OCaml toplevel integration.")
 
