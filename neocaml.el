@@ -615,6 +615,17 @@ The return value is suitable for `treesit-simple-indent-rules'."
     (setq indent-line-function #'treesit-indent)
     (message "[neocaml] Switched indentation to treesit-indent")))
 
+(defun neocaml-set-font-lock-level (level)
+  "Set `treesit-font-lock-level' to LEVEL in the current buffer and refontify.
+LEVEL ranges from 1 (comments and definitions only) to 4 (maximum
+fontification).  The change is buffer-local; use \\[customize-variable] on
+`treesit-font-lock-level' to set the default for new buffers."
+  (interactive (list (read-number "Font-lock level (1-4): " treesit-font-lock-level)))
+  (setq-local treesit-font-lock-level level)
+  (treesit-font-lock-recompute-features)
+  (font-lock-flush)
+  (message "[neocaml] Font-lock level set to %d" level))
+
 ;;;; Find the definition at point (some Emacs commands use this internally)
 
 (defvar neocaml--defun-type-regexp
@@ -1311,6 +1322,22 @@ The information is also copied to the kill ring."
          ["Outline Minor Mode" outline-minor-mode
           :style toggle :selected (bound-and-true-p outline-minor-mode)
           :help "Fold and navigate top-level definitions"])
+        ("Font-Lock Level"
+         ["1 - Comments & definitions" (neocaml-set-font-lock-level 1)
+          :style radio :selected (= treesit-font-lock-level 1)
+          :help "Fontify only comments and definitions"]
+         ["2 - + keywords, strings, types" (neocaml-set-font-lock-level 2)
+          :style radio :selected (= treesit-font-lock-level 2)
+          :help "Also fontify keywords, strings, and data types"]
+         ["3 - + constants, numbers, etc." (neocaml-set-font-lock-level 3)
+          :style radio :selected (= treesit-font-lock-level 3)
+          :help "Full fontification: constants, numbers, literals, etc."]
+         ["4 - Everything" (neocaml-set-font-lock-level 4)
+          :style radio :selected (= treesit-font-lock-level 4)
+          :help "Also fontify delimiters, operators, variables, etc."]
+         "--"
+         ["Customize (persist)..." (customize-variable 'treesit-font-lock-level)
+          :help "Set the default font-lock level for new buffers"])
         "--"
         ["Mark Definition" mark-defun
          :help "Mark the current definition"]

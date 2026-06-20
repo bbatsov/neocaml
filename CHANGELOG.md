@@ -9,6 +9,7 @@
   - Add an "OCaml REPL" menu to the REPL buffer (`neocaml-repl-mode`) for switching back to the source, interrupting, and clearing the buffer.
   - Add a "Toggle" submenu (prettify symbols, subword mode, outline minor mode) and a "Start/Switch to REPL" entry to the mode menu.
   - Add help strings (tooltips) and "Customize" entries to the menus, and disable REPL commands that need an active region or a running process when those aren't available.
+- Add `neocaml-set-font-lock-level` and a "Font-Lock Level" submenu for switching the tree-sitter fontification level (1-4) in the current buffer.
 
 ### Changes
 
