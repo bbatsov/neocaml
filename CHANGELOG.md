@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### New features
+
+- Add an "Edit" submenu to the mode menu with commands for commenting/uncommenting the region, filling comment paragraphs, and indenting the region.
+
 ### Changes
 
 - [#60](https://github.com/bbatsov/neocaml/issues/60): Highlight function-typed `val` specifications in `.mli` files with the function face, matching how function `let` bindings are highlighted in implementations.
