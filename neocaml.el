@@ -1301,6 +1301,16 @@ The information is also copied to the kill ring."
          "--"
          ["Indent Region" indent-region (use-region-p)
           :help "Reindent the lines in the region"])
+        ("Toggle"
+         ["Prettify Symbols" prettify-symbols-mode
+          :style toggle :selected (bound-and-true-p prettify-symbols-mode)
+          :help "Display keywords and operators using Unicode symbols"]
+         ["Subword Mode" subword-mode
+          :style toggle :selected (bound-and-true-p subword-mode)
+          :help "Treat CamelCase subwords as separate words when moving"]
+         ["Outline Minor Mode" outline-minor-mode
+          :style toggle :selected (bound-and-true-p outline-minor-mode)
+          :help "Fold and navigate top-level definitions"])
         "--"
         ["Mark Definition" mark-defun
          :help "Mark the current definition"]
@@ -1314,6 +1324,8 @@ The information is also copied to the kill ring."
         ["Transpose Statement" transpose-sentences
          :help "Transpose the statements around point"]
         "--"
+        ["Start/Switch to REPL" neocaml-repl-switch-to-repl
+         :help "Start the OCaml REPL or switch to a running one"]
         ["Compile..." compile
          :help "Compile the project"]
         ["Cycle indent function" neocaml-cycle-indent-function
