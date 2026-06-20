@@ -4,7 +4,11 @@
 
 ### New features
 
-- Add an "Edit" submenu to the mode menu with commands for commenting/uncommenting the region, filling comment paragraphs, and indenting the region.
+- [#63](https://github.com/bbatsov/neocaml/pull/63): Flesh out the mode and REPL menus:
+  - Add an "Edit" submenu (comment/uncomment region, fill comment paragraph, indent region).
+  - Add an "OCaml REPL" menu to the REPL buffer (`neocaml-repl-mode`) for switching back to the source, interrupting, and clearing the buffer.
+  - Add a "Toggle" submenu (prettify symbols, subword mode, outline minor mode) and a "Start/Switch to REPL" entry to the mode menu.
+  - Add help strings (tooltips) and "Customize" entries to the menus, and disable REPL commands that need an active region or a running process when those aren't available.
 
 ### Changes
 
