@@ -1282,6 +1282,12 @@ The information is also copied to the kill ring."
         ("Find..."
          ["Find Interface/Implementation" ff-find-other-file]
          ["Find Interface/Implementation in other window" ff-find-other-file-other-window])
+        ("Edit"
+         ["Comment Out Region" comment-region (use-region-p)]
+         ["Uncomment Region" uncomment-region (use-region-p)]
+         ["Fill Comment Paragraph" fill-paragraph t]
+         "--"
+         ["Indent Region" indent-region (use-region-p)])
         "--"
         ["Mark Definition" mark-defun]
         ["Mark Expression" mark-sexp]
