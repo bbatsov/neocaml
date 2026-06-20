@@ -106,6 +106,18 @@ Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map comint-mode-map)
     (define-key map (kbd "C-c C-z") #'neocaml-repl-switch-to-source)
+    (easy-menu-define neocaml-repl-mode-menu map "OCaml REPL Menu"
+      '("OCaml REPL"
+        ["Switch to Source" neocaml-repl-switch-to-source
+         :help "Switch back to the source buffer that last invoked the REPL"]
+        "--"
+        ["Interrupt" neocaml-repl-interrupt
+         :help "Interrupt the OCaml toplevel process"]
+        ["Clear Buffer" neocaml-repl-clear-buffer
+         :help "Erase the REPL buffer contents"]
+        "--"
+        ["Customize OCaml REPL..." (customize-group 'neocaml-repl)
+         :help "Customize the OCaml REPL settings"]))
     map)
   "Keymap for `neocaml-repl-mode'.")
 
