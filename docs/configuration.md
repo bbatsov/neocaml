@@ -215,6 +215,30 @@ To use tuareg's SMIE-based indentation:
 (add-hook 'neocaml-base-mode-hook #'my-neocaml-mode-setup)
 ```
 
+## Formatting
+
+neocaml can format OCaml source with
+[ocamlformat](https://github.com/ocaml-ppx/ocamlformat). `C-c C-f`
+(`neocaml-format-buffer`) pipes the buffer through `ocamlformat` and
+replaces it with the result, preserving point. The buffer's file name is
+passed to ocamlformat, so it picks up the right `.ocamlformat` profile and
+applies the correct implementation vs. interface rules.
+
+To format automatically on save:
+
+```emacs-lisp
+(setq neocaml-format-on-save t)
+```
+
+The program is configurable via `neocaml-ocamlformat-program` (default
+`"ocamlformat"`). ocamlformat formats whole compilation units, so there is
+no region- or definition-level variant.
+
+!!! note
+    ocamlformat only formats files inside a project that has a
+    `.ocamlformat` file; outside such a project it reports an error, which
+    neocaml surfaces in the echo area.
+
 ## Comments
 
 OCaml uses block comments `(* ... *)` exclusively (no line comments), which
@@ -234,6 +258,22 @@ the box:
 
 These commands respect both regular comments (`(* ... *)`) and doc comments
 (`(** ... *)`), and work correctly for indented comments.
+
+## Clickable Links in Comments
+
+neocaml enables `goto-address-prog-mode` and `bug-reference-prog-mode` in
+the OCaml source modes (and in the dune, opam, OCamllex, and Menhir modes).
+URLs in comments and strings become clickable out of the box.
+
+Issue references (like `#123`) become clickable once you tell Emacs how to
+resolve them by setting `bug-reference-url-format`, usually per-project via
+a `.dir-locals.el` at the project root:
+
+```emacs-lisp
+((prog-mode
+  . ((bug-reference-url-format
+      . "https://github.com/me/myproject/issues/%s"))))
+```
 
 ## Current Definition in Mode Line
 

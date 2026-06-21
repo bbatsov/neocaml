@@ -10,9 +10,9 @@
   - Add a "Toggle" submenu (prettify symbols, subword mode, outline minor mode) and a "Start/Switch to REPL" entry to the mode menu.
   - Add help strings (tooltips) and "Customize" entries to the menus, and disable REPL commands that need an active region or a running process when those aren't available.
 - Add `neocaml-set-font-lock-level` and a "Font-Lock Level" submenu for switching the tree-sitter fontification level (1-4) in the current buffer.
-- Add `neocaml-format-buffer` (bound to `C-c C-f`) to format OCaml source with `ocamlformat`, plus an opt-in `neocaml-format-on-save`.
-- Make URLs and bug references in comments clickable across the OCaml source and tool modes via `goto-address-prog-mode` and `bug-reference-prog-mode`. Set `bug-reference-url-format` (e.g. via `.dir-locals.el`) to resolve issue references.
-- Add `neocaml-repl-restart` to kill and restart the OCaml toplevel, with a matching entry in the REPL menu.
+- [#65](https://github.com/bbatsov/neocaml/pull/65): Add `neocaml-format-buffer` (bound to `C-c C-f`) to format OCaml source with `ocamlformat`, plus an opt-in `neocaml-format-on-save`.
+- [#65](https://github.com/bbatsov/neocaml/pull/65): Make URLs and bug references in comments clickable across the OCaml source and tool modes via `goto-address-prog-mode` and `bug-reference-prog-mode`. Set `bug-reference-url-format` (e.g. via `.dir-locals.el`) to resolve issue references.
+- [#65](https://github.com/bbatsov/neocaml/pull/65): Add `neocaml-repl-restart` to kill and restart the OCaml toplevel, with a matching entry in the REPL menu.
 
 ### Changes
 

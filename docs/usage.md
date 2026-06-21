@@ -30,6 +30,9 @@ automatically with no configuration:
 - **File toggle** - switch between `.ml` and `.mli` with `C-c C-a`
 - **Comment commands** - `M-;`, `M-j`, `M-q` all work with OCaml's
   `(* ... *)` comments
+- **Clickable comments** - URLs in comments are clickable, and issue
+  references become clickable once `bug-reference-url-format` is set
+  (see [Configuration](configuration.md#clickable-links-in-comments))
 - **Eglot registration** - `M-x eglot` starts `ocamllsp` automatically
 - **Compilation** - `C-c C-c` runs `compile` with OCaml error navigation
 - **Additional file types** - opam, dune, OCamllex, Menhir, and cram
@@ -46,6 +49,7 @@ Some features require a line or two of configuration to enable:
 | Prettify symbols | `(add-hook 'neocaml-base-mode-hook #'prettify-symbols-mode)` - see [Configuration](configuration.md#prettify-symbols) |
 | Code folding | `(add-hook 'neocaml-base-mode-hook #'outline-minor-mode)` (Emacs 30+) |
 | opam lint | `(add-hook 'neocaml-opam-mode-hook #'flymake-mode)` - see [opam](opam_and_dune.md#opam-lint) |
+| Format on save | `(setq neocaml-format-on-save t)` - see [Configuration](configuration.md#formatting) |
 
 All of these use Emacs hooks - a way to run code when a mode is
 activated. You add them to your Emacs configuration (typically
@@ -131,6 +135,7 @@ neocaml also registers sensible modes for a few other OCaml-related files:
 | `M-x neocaml-report-bug` | Open the neocaml issue tracker in your browser |
 | `M-x neocaml-browse-ocaml-docs` | Open the OCaml documentation in your browser |
 | `M-x neocaml-cycle-indent-function` | Toggle between tree-sitter and `indent-relative` indentation |
+| `C-c C-f` (`neocaml-format-buffer`) | Format the buffer with `ocamlformat` (see [Configuration](configuration.md#formatting)) |
 
 These are also available from the OCaml menu.
 

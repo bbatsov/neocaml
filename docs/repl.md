@@ -52,6 +52,10 @@ The following keybindings are available when `neocaml-repl-minor-mode` is active
     In the REPL buffer itself, `C-c C-z` switches back to the source
     buffer you came from, so you can quickly bounce between source and REPL.
 
+`M-x neocaml-repl-restart` kills the running toplevel and starts a fresh
+one in the same buffer. It, along with the commands above, is also
+available from the "OCaml REPL" menu in the REPL buffer.
+
 The REPL buffer also enables `compilation-shell-minor-mode`, so
 error locations in REPL output are clickable and navigable with
 `next-error` / `previous-error`.
