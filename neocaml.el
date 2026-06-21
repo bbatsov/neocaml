@@ -107,6 +107,20 @@ Set to nil if you work with build artifacts directly, e.g. when debugging."
   :group 'neocaml
   :package-version '(neocaml . "0.8.0"))
 
+(defcustom neocaml-ocamlformat-program "ocamlformat"
+  "Program used to format OCaml source via `neocaml-format-buffer'."
+  :type 'string
+  :group 'neocaml
+  :package-version '(neocaml . "0.9.0"))
+
+(defcustom neocaml-format-on-save nil
+  "When non-nil, format the buffer with `ocamlformat' before saving.
+Only applies in `neocaml-mode' and `neocaml-interface-mode' buffers."
+  :type 'boolean
+  :safe #'booleanp
+  :group 'neocaml
+  :package-version '(neocaml . "0.9.0"))
+
 (defvar neocaml--debug nil
   "Enable debugging messages and show the current node in the mode-line.
 When set to t, show indentation debug info.
@@ -625,6 +639,55 @@ fontification).  The change is buffer-local; use \\[customize-variable] on
   (treesit-font-lock-recompute-features)
   (font-lock-flush)
   (message "[neocaml] Font-lock level set to %d" level))
+
+;;;; Formatting
+
+(defun neocaml--ocamlformat-args ()
+  "Return the argument list for invoking `ocamlformat' on the current buffer.
+When the buffer is visiting a file, pass its name via `--name' so
+ocamlformat picks up the right `.ocamlformat' profile and infers
+implementation vs. interface from the extension.  Otherwise fall back
+to `--impl'/`--intf' based on the major mode.  ocamlformat reads the
+source from stdin (the trailing \"-\")."
+  (append
+   (if buffer-file-name
+       (list "--name" buffer-file-name)
+     (list (if (derived-mode-p 'neocaml-interface-mode) "--intf" "--impl")))
+   (list "-")))
+
+(defun neocaml-format-buffer ()
+  "Format the current buffer using `ocamlformat'.
+Pipes the buffer through `neocaml-ocamlformat-program' and replaces the
+buffer text with the formatted output, preserving point.  ocamlformat
+formats whole compilation units, so there is no region/defun variant."
+  (interactive)
+  (let ((outbuf (generate-new-buffer " *neocaml-ocamlformat*"))
+        (errfile (make-temp-file "neocaml-ocamlformat-err"))
+        (orig-point (point))
+        (orig-window-start (window-start)))
+    (unwind-protect
+        (let ((exit-code (apply #'call-process-region
+                                (point-min) (point-max)
+                                neocaml-ocamlformat-program nil
+                                (list outbuf errfile) nil
+                                (neocaml--ocamlformat-args))))
+          (if (zerop exit-code)
+              (progn
+                (erase-buffer)
+                (insert-buffer-substring outbuf)
+                (goto-char (min orig-point (point-max)))
+                (set-window-start (selected-window) orig-window-start))
+            (user-error "Running ocamlformat failed: %s"
+                        (with-temp-buffer
+                          (insert-file-contents errfile)
+                          (string-trim (buffer-string))))))
+      (kill-buffer outbuf)
+      (delete-file errfile))))
+
+(defun neocaml--format-before-save ()
+  "Format the buffer before saving when `neocaml-format-on-save' is non-nil."
+  (when neocaml-format-on-save
+    (neocaml-format-buffer)))
 
 ;;;; Find the definition at point (some Emacs commands use this internally)
 
@@ -1279,6 +1342,7 @@ The information is also copied to the kill ring."
     (define-key map (kbd "C-c C-a") #'ff-find-other-file)
     (define-key map (kbd "C-c 4 C-a") #'ff-find-other-file-other-window)
     (define-key map (kbd "C-c C-c") #'compile)
+    (define-key map (kbd "C-c C-f") #'neocaml-format-buffer)
     (define-key map (kbd "C-M-u") #'neocaml-backward-up-list)
     (easy-menu-define neocaml-mode-menu map "Neocaml Mode Menu"
       '("OCaml"
@@ -1311,7 +1375,10 @@ The information is also copied to the kill ring."
           :help "Fill the comment paragraph at point"]
          "--"
          ["Indent Region" indent-region (use-region-p)
-          :help "Reindent the lines in the region"])
+          :help "Reindent the lines in the region"]
+         "--"
+         ["Format Buffer (ocamlformat)" neocaml-format-buffer
+          :help "Format the whole buffer with ocamlformat"])
         ("Toggle"
          ["Prettify Symbols" prettify-symbols-mode
           :style toggle :selected (bound-and-true-p prettify-symbols-mode)
@@ -1478,6 +1545,9 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   ;; Fill paragraph
   (setq-local fill-paragraph-function #'neocaml--fill-paragraph)
   (setq-local adaptive-fill-mode t)
+
+  ;; Optional format-on-save via ocamlformat
+  (add-hook 'before-save-hook #'neocaml--format-before-save nil t)
 
   ;; TODO: Make this configurable?
   (setq-local treesit-font-lock-feature-list
