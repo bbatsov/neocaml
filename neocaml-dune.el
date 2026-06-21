@@ -275,6 +275,10 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
   ;; Final newline
   (setq-local require-final-newline mode-require-final-newline)
 
+  ;; Make URLs and bug references in comments clickable
+  (goto-address-prog-mode)
+  (bug-reference-prog-mode)
+
   (treesit-major-mode-setup))
 
 (define-key neocaml-dune-mode-map (kbd "C-c C-f") #'neocaml-dune-format-buffer)

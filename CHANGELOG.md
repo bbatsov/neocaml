@@ -11,6 +11,7 @@
   - Add help strings (tooltips) and "Customize" entries to the menus, and disable REPL commands that need an active region or a running process when those aren't available.
 - Add `neocaml-set-font-lock-level` and a "Font-Lock Level" submenu for switching the tree-sitter fontification level (1-4) in the current buffer.
 - Add `neocaml-format-buffer` (bound to `C-c C-f`) to format OCaml source with `ocamlformat`, plus an opt-in `neocaml-format-on-save`.
+- Make URLs and bug references in comments clickable across the OCaml source and tool modes via `goto-address-prog-mode` and `bug-reference-prog-mode`. Set `bug-reference-url-format` (e.g. via `.dir-locals.el`) to resolve issue references.
 
 ### Changes
 

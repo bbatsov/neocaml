@@ -1549,6 +1549,11 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   ;; Optional format-on-save via ocamlformat
   (add-hook 'before-save-hook #'neocaml--format-before-save nil t)
 
+  ;; Make URLs and bug references in comments clickable.  Set
+  ;; `bug-reference-url-format' (e.g. via .dir-locals.el) to resolve refs.
+  (goto-address-prog-mode)
+  (bug-reference-prog-mode)
+
   ;; TODO: Make this configurable?
   (setq-local treesit-font-lock-feature-list
               '((comment definition)
