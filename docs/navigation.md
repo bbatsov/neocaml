@@ -188,6 +188,13 @@ let result = process █(find_opt key tbl)
     it errors with "Unbalanced parentheses". Reach for it inside a call, list, or
     parenthesized expression.
 
+!!! tip
+    These commands stay correct around OCaml's trickier lexemes. Character
+    literals like `'"'`, `'('`, and `')'`, and the contents of `{|...|}` /
+    `{id|...|id}` quoted strings, used to confuse the syntax table (a `"`
+    opening a string, a `(` opening a list); neocaml now propertizes them so
+    sexp motion, `delete-pair`, and `electric-pair-mode` behave.
+
 ## The commands worth memorizing
 
 There are a lot of structural commands; in day-to-day OCaml editing you'll keep
