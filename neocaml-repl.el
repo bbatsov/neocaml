@@ -113,6 +113,8 @@ Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
         "--"
         ["Interrupt" neocaml-repl-interrupt
          :help "Interrupt the OCaml toplevel process"]
+        ["Restart" neocaml-repl-restart
+         :help "Kill and restart the OCaml toplevel"]
         ["Clear Buffer" neocaml-repl-clear-buffer
          :help "Erase the REPL buffer contents"]
         "--"
@@ -297,6 +299,19 @@ Skips `;;' that appear inside strings or comments."
   (interactive)
   (when (comint-check-proc neocaml-repl-buffer-name)
     (interrupt-process (neocaml-repl--process))))
+
+;;;###autoload
+(defun neocaml-repl-restart ()
+  "Restart the OCaml toplevel.
+Kill the running process, if any, and start a fresh one in the same
+buffer."
+  (interactive)
+  (when (comint-check-proc neocaml-repl-buffer-name)
+    (let ((proc (neocaml-repl--process)))
+      (when proc
+        (set-process-query-on-exit-flag proc nil)
+        (delete-process proc))))
+  (neocaml-repl-start))
 
 ;; Installation of the toplevel integration
 (defvar neocaml-repl-mode-hook nil

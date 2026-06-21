@@ -170,4 +170,23 @@
             (expect 'message :to-have-been-called-with "No source buffer to return to"))
         (when (buffer-live-p repl) (kill-buffer repl))))))
 
+(describe "neocaml-repl restart"
+  (it "kills the running process and starts a fresh REPL"
+    (spy-on 'comint-check-proc :and-return-value t)
+    (spy-on 'neocaml-repl--process :and-return-value 'fake-proc)
+    (spy-on 'set-process-query-on-exit-flag)
+    (spy-on 'delete-process)
+    (spy-on 'neocaml-repl-start)
+    (neocaml-repl-restart)
+    (expect 'delete-process :to-have-been-called-with 'fake-proc)
+    (expect 'neocaml-repl-start :to-have-been-called))
+
+  (it "just starts a REPL when none is running"
+    (spy-on 'comint-check-proc :and-return-value nil)
+    (spy-on 'delete-process)
+    (spy-on 'neocaml-repl-start)
+    (neocaml-repl-restart)
+    (expect 'delete-process :not :to-have-been-called)
+    (expect 'neocaml-repl-start :to-have-been-called)))
+
 ;;; neocaml-repl-test.el ends here
