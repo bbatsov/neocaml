@@ -258,14 +258,31 @@ after the delimiter (forward) or before it (backward), or nil."
             (setq found (if (> direction 0) (point) (match-beginning 0)))))))
     found))
 
+(defun neocaml-repl--phrase-bounds ()
+  "Return (START . END) of the phrase at point, bounded by `;;'.
+START falls back to `point-min' and END to `point-max'."
+  (cons (or (neocaml-repl--search-phrase-delimiter -1) (point-min))
+        (or (neocaml-repl--search-phrase-delimiter 1) (point-max))))
+
 ;;;###autoload
 (defun neocaml-repl-send-phrase ()
   "Send the current phrase (code between `;;' delimiters) to the OCaml REPL.
 Skips `;;' that appear inside strings or comments."
   (interactive)
-  (let ((end (or (neocaml-repl--search-phrase-delimiter 1) (point-max)))
-        (start (or (neocaml-repl--search-phrase-delimiter -1) (point-min))))
-    (neocaml-repl-send-region start end)))
+  (let ((bounds (neocaml-repl--phrase-bounds)))
+    (neocaml-repl-send-region (car bounds) (cdr bounds))))
+
+;;;###autoload
+(defun neocaml-repl-send-phrase-and-step ()
+  "Send the phrase at point to the OCaml REPL, then move to the next phrase.
+Like `neocaml-repl-send-phrase', but advances point past the closing
+`;;' to the start of the following phrase, so repeated invocations walk
+through the buffer."
+  (interactive)
+  (let ((bounds (neocaml-repl--phrase-bounds)))
+    (neocaml-repl-send-region (car bounds) (cdr bounds))
+    (goto-char (cdr bounds))
+    (skip-chars-forward " \t\n")))
 
 (defun neocaml-repl--process ()
   "Return the REPL process, or nil if not running."
@@ -285,6 +302,15 @@ Skips `;;' that appear inside strings or comments."
   (neocaml-repl--ensure-repl-running)
   (neocaml-repl--input-sender (neocaml-repl--process)
                                (format "#use %S" file)))
+
+;;;###autoload
+(defun neocaml-repl-require (package)
+  "Load the findlib PACKAGE into the OCaml REPL via the `#require' directive.
+This needs the toplevel to have findlib loaded (e.g. via topfind or utop)."
+  (interactive (list (read-string "Require package: ")))
+  (neocaml-repl--ensure-repl-running)
+  (neocaml-repl--input-sender (neocaml-repl--process)
+                               (format "#require %S" package)))
 
 (defun neocaml-repl-clear-buffer ()
   "Clear the OCaml REPL buffer."
@@ -324,6 +350,7 @@ buffer."
     (define-key map (kbd "C-c C-r") #'neocaml-repl-send-region)
     (define-key map (kbd "C-c C-b") #'neocaml-repl-send-buffer)
     (define-key map (kbd "C-c C-p") #'neocaml-repl-send-phrase)
+    (define-key map (kbd "C-c C-n") #'neocaml-repl-send-phrase-and-step)
     (define-key map (kbd "C-c C-l") #'neocaml-repl-load-file)
     (define-key map (kbd "C-c C-i") #'neocaml-repl-interrupt)
     (define-key map (kbd "C-c C-k") #'neocaml-repl-clear-buffer)
@@ -342,8 +369,12 @@ buffer."
          :help "Send the whole buffer to the REPL"]
         ["Send Phrase" neocaml-repl-send-phrase
          :help "Send the phrase at point to the REPL"]
+        ["Send Phrase and Step" neocaml-repl-send-phrase-and-step
+         :help "Send the phrase at point, then move to the next phrase"]
         ["Load File" neocaml-repl-load-file
          :help "Load a file into the REPL with #use"]
+        ["Require Package..." neocaml-repl-require
+         :help "Load a findlib package into the REPL with #require"]
         "--"
         ["Interrupt REPL" neocaml-repl-interrupt
          :enable (comint-check-proc neocaml-repl-buffer-name)

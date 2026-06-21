@@ -45,6 +45,7 @@ The following keybindings are available when `neocaml-repl-minor-mode` is active
 | `C-c C-b` | `neocaml-repl-send-buffer` | Send the entire buffer to the REPL |
 | `C-c C-l` | `neocaml-repl-load-file` | Load the current file into the REPL via `#use` |
 | `C-c C-p` | `neocaml-repl-send-phrase` | Send the current phrase (code up to next `;;`) to the REPL |
+| `C-c C-n` | `neocaml-repl-send-phrase-and-step` | Send the current phrase, then move to the next one |
 | `C-c C-i` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
 | `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
 
@@ -52,9 +53,17 @@ The following keybindings are available when `neocaml-repl-minor-mode` is active
     In the REPL buffer itself, `C-c C-z` switches back to the source
     buffer you came from, so you can quickly bounce between source and REPL.
 
+`C-c C-n` (`neocaml-repl-send-phrase-and-step`) is handy for working
+through a buffer: it sends the phrase at point and then advances to the
+start of the next one, so you can evaluate a file phrase by phrase with
+repeated presses.
+
+`M-x neocaml-repl-require` loads a findlib package into the REPL via
+`#require` (the toplevel needs findlib, e.g. via `topfind` or utop).
+
 `M-x neocaml-repl-restart` kills the running toplevel and starts a fresh
-one in the same buffer. It, along with the commands above, is also
-available from the "OCaml REPL" menu in the REPL buffer.
+one in the same buffer. These, along with the commands above, are also
+available from the "OCaml REPL" menu.
 
 The REPL buffer also enables `compilation-shell-minor-mode`, so
 error locations in REPL output are clickable and navigable with

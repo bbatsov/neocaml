@@ -189,4 +189,31 @@
     (expect 'delete-process :not :to-have-been-called)
     (expect 'neocaml-repl-start :to-have-been-called)))
 
+(describe "neocaml-repl send-phrase-and-step"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (it "sends the current phrase and moves to the next one"
+    (with-neocaml-buffer "let x = 1;;\nlet y = 2;;\n"
+      (goto-char (point-min))
+      (let (sent)
+        (spy-on 'neocaml-repl-send-region :and-call-fake
+                (lambda (s e) (setq sent (string-trim
+                                          (buffer-substring-no-properties s e)))))
+        (neocaml-repl-send-phrase-and-step)
+        (expect sent :to-match "let x = 1")
+        ;; point should now sit at the start of the second phrase
+        (expect (looking-at "let y") :to-be-truthy)))))
+
+(describe "neocaml-repl require"
+  (it "sends a #require directive for the given package"
+    (let (sent)
+      (spy-on 'neocaml-repl--ensure-repl-running)
+      (spy-on 'neocaml-repl--process :and-return-value 'proc)
+      (spy-on 'neocaml-repl--input-sender :and-call-fake
+              (lambda (_proc input) (setq sent input)))
+      (neocaml-repl-require "lwt")
+      (expect sent :to-equal "#require \"lwt\""))))
+
 ;;; neocaml-repl-test.el ends here
