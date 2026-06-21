@@ -9,7 +9,14 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    # The snapshot (Emacs master) job is allowed to fail: it currently hits an
+    # upstream Emacs-master regression where a `syntax-propertize-function' in a
+    # tree-sitter mode crashes `treesit-query-capture' during font-lock. All
+    # released Emacs versions are unaffected. Remove this once the regression is
+    # fixed upstream.
+    continue-on-error: ${{ matrix.emacs-version == 'snapshot' }}
     strategy:
+      fail-fast: false
       matrix:
         emacs-version:
           - 29.4
