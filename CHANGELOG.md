@@ -14,6 +14,10 @@
 - [#65](https://github.com/bbatsov/neocaml/pull/65): Make URLs and bug references in comments clickable across the OCaml source and tool modes via `goto-address-prog-mode` and `bug-reference-prog-mode`. Set `bug-reference-url-format` (e.g. via `.dir-locals.el`) to resolve issue references.
 - [#65](https://github.com/bbatsov/neocaml/pull/65): Add `neocaml-repl-restart` to kill and restart the OCaml toplevel, with a matching entry in the REPL menu.
 
+### Bug fixes
+
+- [#66](https://github.com/bbatsov/neocaml/pull/66): Correctly handle character literals and quoted strings at the syntactic layer via a `syntax-propertize-function`. Characters like `'"'`, `'('`, and `')'`, and the contents of `{|...|}` / `{id|...|id}` quoted strings, no longer confuse sexp motion, `electric-pair-mode`, `delete-pair`, or `syntax-ppss`.
+
 ### Changes
 
 - [#60](https://github.com/bbatsov/neocaml/issues/60): Highlight function-typed `val` specifications in `.mli` files with the function face, matching how function `let` bindings are highlighted in implementations.

@@ -227,6 +227,44 @@ than %s.  Run C-u M-x neocaml-install-grammars to reinstall."
     st)
   "Syntax table in use in neocaml mode buffers.")
 
+;;;; Syntax propertization
+;;
+;; A static syntax table can't classify OCaml's character literals and
+;; quoted strings correctly, because they may contain characters that the
+;; table would otherwise read as a string quote (`"'), a paren (`(' / `)'),
+;; or a comment opener (`(*').  We fix this with a `syntax-propertize-function'
+;; that marks those lexemes so the syntactic layer (sexp motion,
+;; `electric-pair-mode', `delete-pair', `syntax-ppss') agrees with the parse
+;; tree.  Font-lock is handled by tree-sitter and is unaffected.
+
+(defun neocaml--syntax-propertize (start end)
+  "Apply syntax properties to OCaml char literals and quoted strings.
+Operates between START and END.  See the commentary above for why this
+is needed.  This avoids calling `syntax-ppss' (which would be re-entrant,
+since `syntax-propertize' runs from within it); quoted strings are
+matched whole from their opening delimiter."
+  (goto-char start)
+  (funcall
+   (syntax-propertize-rules
+    ;; Character literals: 'a', '\\n', '\\xFF', '"', '(', etc.  Mark both
+    ;; quotes as string delimiters so the contents are inert.  A closing
+    ;; quote is required, so type variables (e.g. 'a) are left untouched.
+    ("\\_<\\('\\)\\(?:[^'\\\n]\\|\\\\.[^\\'\n \")]*\\)\\('\\)"
+     (1 "\"") (2 "\""))
+    ;; Quoted strings {tag|...|tag}.  Mark the opening brace as a generic
+    ;; string fence and, if the matching |tag} is found, the closing brace
+    ;; too, so the contents are inert.
+    ("\\({\\)\\([[:lower:]_]*\\)|"
+     (1 (let* ((tag (match-string 2))
+               (close-pos (save-excursion
+                            (when (search-forward (concat "|" tag "}") end t)
+                              (point)))))
+          (when close-pos
+            (put-text-property (1- close-pos) close-pos
+                               'syntax-table (string-to-syntax "|")))
+          (string-to-syntax "|")))))
+   (point) end))
+
 ;;;; Font-locking
 ;;
 ;;
@@ -1530,6 +1568,10 @@ the language-specific parts of the mode."
 This mode is not intended to be used directly.  Use `neocaml-mode'
 for .ml files and `neocaml-interface-mode' for .mli files."
   :syntax-table neocaml-base-mode-syntax-table
+
+  ;; Syntax propertization for char literals and quoted strings, so the
+  ;; syntactic layer agrees with the parse tree (see commentary above).
+  (setq-local syntax-propertize-function #'neocaml--syntax-propertize)
 
   ;; comment settings
   (setq-local comment-start "(* ")
