@@ -80,6 +80,11 @@ You can support the development of neocaml via:
 - [Patreon](https://www.patreon.com/bbatsov)
 - [PayPal](https://www.paypal.me/bbatsov)
 
+## Roadmap
+
+Curious where neocaml is headed? See [ROADMAP.md](ROADMAP.md) for ideas and
+planned improvements. Feedback and contributions on any of them are welcome.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, debugging, and
