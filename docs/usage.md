@@ -118,6 +118,21 @@ errors, warnings, alerts, and exception backtraces.
 For a richer build workflow with dune (build, test, clean, fmt, watch mode),
 see [dune commands](opam_and_dune.md#dune-commands).
 
+In a dune project, `compile-command` defaults to `dune build`, so `C-c C-c`
+and `M-x project-compile` build the project out of the box.
+
+## Project Integration
+
+neocaml teaches the built-in `project.el` that a directory containing a
+`dune-project` file is a project root. That makes the project-wide commands
+work for OCaml projects - `project-find-file` (`C-x p f`),
+`project-find-regexp` (`C-x p g`), `project-compile` (`C-x p c`), and the
+rest - rooted at the dune project, with `_build/` and `_opam/` ignored.
+
+Version-control detection still takes precedence, so a project under git
+roots at the repository as usual; the dune-project detection mainly helps
+projects that aren't under version control.
+
 ## Other OCaml-related Files
 
 neocaml also registers sensible modes for a few other OCaml-related files:
