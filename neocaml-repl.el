@@ -62,10 +62,27 @@ the command-line interface of the selected REPL."
   :package-version '(neocaml . "0.1.0"))
 
 (defcustom neocaml-repl-buffer-name "*OCaml*"
-  "Name of the OCaml toplevel buffer."
+  "Base name of the OCaml toplevel buffer.
+Per-project REPLs derive their name from this (e.g. \"*OCaml: proj*\")."
   :type 'string
   :group 'neocaml-repl
   :package-version '(neocaml . "0.1.0"))
+
+(defcustom neocaml-repl-flavor 'ocaml
+  "Which OCaml toplevel `neocaml-repl' launches.
+- `ocaml': the standard ocaml toplevel, using `neocaml-repl-program-name'
+  and `neocaml-repl-program-args'.
+- `utop': the utop toplevel.
+- `dune-utop': `dune utop' for the current project (see `neocaml-dune-utop').
+
+Set this globally or per project via a `.dir-locals.el' file; the REPL
+reads it when it starts."
+  :type '(choice (const :tag "Standard ocaml toplevel" ocaml)
+                 (const :tag "utop" utop)
+                 (const :tag "dune utop" dune-utop))
+  :safe (lambda (v) (memq v '(ocaml utop dune-utop)))
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.9.0"))
 
 (defcustom neocaml-repl-history-file
   (expand-file-name "neocaml-repl-history" user-emacs-directory)
@@ -132,6 +149,46 @@ project identifier (or the base name when there is no project)."
                   neocaml-repl-buffer-name)))
       (format "%s: %s*" base (neocaml-repl--project-id))))
    (t neocaml-repl-buffer-name)))
+
+(defvar-local neocaml-repl--flavor nil
+  "The flavor (toplevel kind) of this REPL buffer.
+One of the symbols accepted by `neocaml-repl-flavor'.")
+
+(defvar-local neocaml-repl--command-line nil
+  "The (PROGRAM . ARGS) this REPL buffer was started with.
+Recorded so `neocaml-repl-restart' can relaunch the same toplevel,
+including the `dune-utop' command, which isn't reconstructible from the
+global configuration.")
+
+(defun neocaml-repl--command ()
+  "Return (PROGRAM . ARGS) for the current `neocaml-repl-flavor'.
+The `ocaml' and `dune-utop' flavors use `neocaml-repl-program-name' and
+`neocaml-repl-program-args' (the latter is configured by
+`neocaml-dune-utop'); `utop' uses the utop toplevel."
+  (pcase neocaml-repl-flavor
+    ('utop (cons "utop" nil))
+    (_ (cons neocaml-repl-program-name neocaml-repl-program-args))))
+
+(defun neocaml-repl--start-command (bufname command flavor)
+  "Start a REPL in BUFNAME running COMMAND for FLAVOR, and return the buffer.
+COMMAND is a (PROGRAM . ARGS) pair.  Records FLAVOR and COMMAND
+buffer-locally so the REPL can be restarted as the same toplevel."
+  (let ((buffer (apply #'make-comint-in-buffer "OCaml" bufname
+                       (car command) nil (cdr command))))
+    (with-current-buffer buffer
+      (neocaml-repl-mode)
+      (setq neocaml-repl--flavor flavor)
+      (setq neocaml-repl--command-line command)
+      (setq mode-name (format "OCaml-REPL[%s]" flavor)))
+    buffer))
+
+(defun neocaml-repl--kill (bufname)
+  "Kill the REPL process running in BUFNAME, if any."
+  (when (comint-check-proc bufname)
+    (let ((proc (get-buffer-process bufname)))
+      (when proc
+        (set-process-query-on-exit-flag proc nil)
+        (delete-process proc)))))
 
 (defvar neocaml-repl-mode-map
   (let ((map (make-sparse-keymap)))
@@ -223,12 +280,9 @@ If a REPL for the project is already running, switch to its buffer."
   (let ((bufname (neocaml-repl--buffer)))
     (if (comint-check-proc bufname)
         (pop-to-buffer bufname)
-      (let* ((cmdlist (append (list neocaml-repl-program-name) neocaml-repl-program-args))
-             (buffer (apply #'make-comint-in-buffer "OCaml" bufname
-                            (car cmdlist) nil (cdr cmdlist))))
-        (with-current-buffer buffer
-          (neocaml-repl-mode))
-        (pop-to-buffer buffer)))))
+      (pop-to-buffer
+       (neocaml-repl--start-command bufname (neocaml-repl--command)
+                                    neocaml-repl-flavor)))))
 
 (defun neocaml-repl-switch-to-source ()
   "Switch from the REPL back to the source buffer that last invoked it."
@@ -244,11 +298,23 @@ If a REPL for the project is already running, switch to its buffer."
 If a REPL is already running, switch to it; otherwise start a new one.
 Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   (interactive)
-  (let ((source (current-buffer))
-        (bufname (neocaml-repl--buffer)))
-    (if (comint-check-proc bufname)
-        (pop-to-buffer bufname)
+  (let* ((source (current-buffer))
+         (bufname (neocaml-repl--buffer))
+         (running (comint-check-proc bufname))
+         (running-flavor (and running
+                              (buffer-local-value 'neocaml-repl--flavor
+                                                  (get-buffer bufname)))))
+    (cond
+     ;; A REPL with a different toplevel is running; offer to restart it
+     ;; with the requested flavor (this is how `neocaml-dune-utop' and a
+     ;; changed `neocaml-repl-flavor' take effect).
+     ((and running (not (eq running-flavor neocaml-repl-flavor))
+           (y-or-n-p (format "An existing %s REPL is running for this project; \
+restart it as %s? " running-flavor neocaml-repl-flavor)))
+      (neocaml-repl--kill bufname)
       (neocaml-repl-start))
+     (running (pop-to-buffer bufname))
+     (t (neocaml-repl-start)))
     (with-current-buffer bufname
       (setq neocaml-repl--source-buffer source))))
 
@@ -363,14 +429,17 @@ This needs the toplevel to have findlib loaded (e.g. via topfind or utop)."
 (defun neocaml-repl-restart ()
   "Restart the OCaml toplevel for the current buffer's project.
 Kill the running process, if any, and start a fresh one in the same
-buffer."
+buffer, preserving the toplevel flavor it was launched with (so e.g. a
+`dune-utop' REPL comes back as `dune-utop', not the default toplevel)."
   (interactive)
-  (when (comint-check-proc (neocaml-repl--buffer))
-    (let ((proc (neocaml-repl--process)))
-      (when proc
-        (set-process-query-on-exit-flag proc nil)
-        (delete-process proc))))
-  (neocaml-repl-start))
+  (let* ((bufname (neocaml-repl--buffer))
+         (buf (get-buffer bufname))
+         (flavor (and buf (buffer-local-value 'neocaml-repl--flavor buf)))
+         (command (and buf (buffer-local-value 'neocaml-repl--command-line buf))))
+    (neocaml-repl--kill bufname)
+    (if (and command flavor)
+        (pop-to-buffer (neocaml-repl--start-command bufname command flavor))
+      (neocaml-repl-start))))
 
 ;; Installation of the toplevel integration
 (defvar neocaml-repl-mode-hook nil

@@ -15,6 +15,7 @@
 - [#65](https://github.com/bbatsov/neocaml/pull/65): Add `neocaml-repl-restart` to kill and restart the OCaml toplevel, with a matching entry in the REPL menu.
 - [#68](https://github.com/bbatsov/neocaml/pull/68): Add `neocaml-repl-send-phrase-and-step` (bound to `C-c C-n`), which sends the phrase at point to the REPL and advances to the next one, and `neocaml-repl-require` for loading a findlib package via `#require`.
 - [#69](https://github.com/bbatsov/neocaml/pull/69): Give each project its own dedicated REPL. The REPL buffer is now named per project (e.g. `*OCaml: myproject*`, derived from `neocaml-repl-buffer-name`), and the send commands route to the current buffer's project REPL, so multiple projects can run side by side. This also fixes `neocaml-dune-utop` so the send commands reach its toplevel.
+- [#70](https://github.com/bbatsov/neocaml/pull/70): Add `neocaml-repl-flavor` for choosing which toplevel the REPL runs (`ocaml`, `utop`, or `dune-utop`); set it globally or per project via `.dir-locals.el`. The active flavor is shown in the REPL's mode line.
 
 ### Bug fixes
 
