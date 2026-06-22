@@ -164,14 +164,15 @@ Launches utop with the project's libraries loaded, using the full
 REPL interaction (send region, send definition, etc.)."
   (interactive)
   (require 'neocaml-repl)
+  ;; Bind `default-directory' to the project root so the REPL is named (and
+  ;; routed) per project, and source files in the project send to it.
   (let* ((default-directory (neocaml-dune--project-root))
          (program (if neocaml-dune-use-opam-exec "opam" neocaml-dune-program))
          (args (if neocaml-dune-use-opam-exec
                    (list "exec" "--" neocaml-dune-program "utop" ".")
                  (list "utop" ".")))
          (neocaml-repl-program-name program)
-         (neocaml-repl-program-args args)
-         (neocaml-repl-buffer-name "*OCaml-dune-utop*"))
+         (neocaml-repl-program-args args))
     (neocaml-repl-switch-to-repl)))
 
 (defvar neocaml-dune--command-history nil

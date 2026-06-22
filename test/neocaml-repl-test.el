@@ -112,6 +112,7 @@
           (repl (get-buffer-create neocaml-repl-buffer-name)))
       (unwind-protect
           (with-current-buffer source
+            (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
             (spy-on 'comint-check-proc :and-return-value t)
             (spy-on 'pop-to-buffer)
             (neocaml-repl-switch-to-repl)
@@ -126,6 +127,7 @@
           (repl (get-buffer-create neocaml-repl-buffer-name)))
       (unwind-protect
           (with-current-buffer source
+            (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
             (spy-on 'comint-check-proc :and-return-value nil)
             (spy-on 'neocaml-repl-start)
             (neocaml-repl-switch-to-repl)
@@ -205,6 +207,31 @@
         (expect sent :to-match "let x = 1")
         ;; point should now sit at the start of the second phrase
         (expect (looking-at "let y") :to-be-truthy)))))
+
+(describe "neocaml-repl per-project buffer name"
+  (it "derives a per-project name from the base name"
+    (spy-on 'neocaml-repl--project-id :and-return-value "myproj")
+    (let ((neocaml-repl-buffer-name "*OCaml*"))
+      (with-temp-buffer
+        (expect (neocaml-repl--buffer) :to-equal "*OCaml: myproj*"))))
+
+  (it "falls back to the base name outside a project"
+    (spy-on 'neocaml-repl--project-id :and-return-value nil)
+    (let ((neocaml-repl-buffer-name "*OCaml*"))
+      (with-temp-buffer
+        (expect (neocaml-repl--buffer) :to-equal "*OCaml*"))))
+
+  (it "honors a customized base name"
+    (spy-on 'neocaml-repl--project-id :and-return-value "p")
+    (let ((neocaml-repl-buffer-name "*ocaml-repl*"))
+      (with-temp-buffer
+        (expect (neocaml-repl--buffer) :to-equal "*ocaml-repl: p*"))))
+
+  (it "targets the current buffer when inside a REPL buffer"
+    (with-temp-buffer
+      (rename-buffer "*OCaml: other*" t)
+      (setq major-mode 'neocaml-repl-mode)
+      (expect (neocaml-repl--buffer) :to-equal (buffer-name)))))
 
 (describe "neocaml-repl require"
   (it "sends a #require directive for the given package"

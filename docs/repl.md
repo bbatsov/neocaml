@@ -69,6 +69,20 @@ The REPL buffer also enables `compilation-shell-minor-mode`, so
 error locations in REPL output are clickable and navigable with
 `next-error` / `previous-error`.
 
+## Per-project REPLs
+
+Each project gets its own dedicated REPL. When you start or send to a
+REPL from a source file, neocaml derives the project (via `project.el`,
+falling back to the directory containing a `dune-project`) and routes to
+a per-project buffer named after `neocaml-repl-buffer-name` plus the
+project, e.g. `*OCaml: myproject*`. Files outside any project share the
+base `*OCaml*` buffer.
+
+This means you can have several OCaml projects open at once, each with
+its own toplevel, and the send commands always reach the right one. It
+also means `M-x neocaml-dune-utop` (see below) and the regular send
+commands target the same per-project REPL.
+
 ## Input Syntax Highlighting
 
 By default, code you type in the REPL is fontified using tree-sitter
@@ -111,7 +125,8 @@ You can customize the OCaml REPL integration with the following variables:
 ;; preserve it when adding your own flags:
 (setq neocaml-repl-program-args '("-nopromptcont" "-short-paths" "-color=never"))
 
-;; Change the REPL buffer name (default: "*OCaml*")
+;; Change the base REPL buffer name (default: "*OCaml*").  Per-project
+;; REPLs derive their name from this, e.g. "*OCaml: myproject*".
 (setq neocaml-repl-buffer-name "*OCaml-REPL*")
 ```
 

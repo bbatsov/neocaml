@@ -102,6 +102,37 @@ Matches both the standard \"# \" prompt and utop's \"utop # \" / \"utop[0] # \".
   "Source buffer from which the REPL was last invoked.
 Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
 
+;;;; Per-project REPL buffers
+;;
+;; Each project gets its own dedicated REPL, so source files send to the
+;; toplevel for their project.  The buffer name is derived from
+;; `neocaml-repl-buffer-name' plus the project identifier; buffers outside
+;; any project share the base name.
+
+(defun neocaml-repl--project-id ()
+  "Return a short identifier for the current buffer's project, or nil.
+Uses `project.el' when available, falling back to the directory that
+contains a `dune-project' file."
+  (when-let* ((root (or (and (fboundp 'project-current)
+                             (when-let* ((proj (project-current)))
+                               (project-root proj)))
+                        (locate-dominating-file default-directory "dune-project"))))
+    (file-name-nondirectory (directory-file-name root))))
+
+(defun neocaml-repl--buffer ()
+  "Return the name of the REPL buffer for the current context.
+In a REPL buffer, that is the buffer itself.  In a source buffer, it is
+the per-project REPL derived from `neocaml-repl-buffer-name' and the
+project identifier (or the base name when there is no project)."
+  (cond
+   ((derived-mode-p 'neocaml-repl-mode) (buffer-name))
+   ((neocaml-repl--project-id)
+    (let ((base (if (string-suffix-p "*" neocaml-repl-buffer-name)
+                    (substring neocaml-repl-buffer-name 0 -1)
+                  neocaml-repl-buffer-name)))
+      (format "%s: %s*" base (neocaml-repl--project-id))))
+   (t neocaml-repl-buffer-name)))
+
 (defvar neocaml-repl-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map comint-mode-map)
@@ -186,17 +217,18 @@ to avoid false positives from `;;' inside strings or comments."
 
 ;;;###autoload
 (defun neocaml-repl-start ()
-  "Start an OCaml toplevel process in a new buffer.
-If a process is already running, switch to its buffer."
+  "Start an OCaml toplevel for the current buffer's project.
+If a REPL for the project is already running, switch to its buffer."
   (interactive)
-  (if (comint-check-proc neocaml-repl-buffer-name)
-      (pop-to-buffer neocaml-repl-buffer-name)
-    (let* ((cmdlist (append (list neocaml-repl-program-name) neocaml-repl-program-args))
-           (buffer (apply #'make-comint-in-buffer "OCaml" neocaml-repl-buffer-name
-                         (car cmdlist) nil (cdr cmdlist))))
-      (with-current-buffer buffer
-        (neocaml-repl-mode))
-      (pop-to-buffer buffer))))
+  (let ((bufname (neocaml-repl--buffer)))
+    (if (comint-check-proc bufname)
+        (pop-to-buffer bufname)
+      (let* ((cmdlist (append (list neocaml-repl-program-name) neocaml-repl-program-args))
+             (buffer (apply #'make-comint-in-buffer "OCaml" bufname
+                            (car cmdlist) nil (cdr cmdlist))))
+        (with-current-buffer buffer
+          (neocaml-repl-mode))
+        (pop-to-buffer buffer)))))
 
 (defun neocaml-repl-switch-to-source ()
   "Switch from the REPL back to the source buffer that last invoked it."
@@ -212,11 +244,12 @@ If a process is already running, switch to its buffer."
 If a REPL is already running, switch to it; otherwise start a new one.
 Use \\[neocaml-repl-switch-to-source] in the REPL to return."
   (interactive)
-  (let ((source (current-buffer)))
-    (if (comint-check-proc neocaml-repl-buffer-name)
-        (pop-to-buffer neocaml-repl-buffer-name)
+  (let ((source (current-buffer))
+        (bufname (neocaml-repl--buffer)))
+    (if (comint-check-proc bufname)
+        (pop-to-buffer bufname)
       (neocaml-repl-start))
-    (with-current-buffer neocaml-repl-buffer-name
+    (with-current-buffer bufname
       (setq neocaml-repl--source-buffer source))))
 
 ;;;###autoload
@@ -285,12 +318,12 @@ through the buffer."
     (skip-chars-forward " \t\n")))
 
 (defun neocaml-repl--process ()
-  "Return the REPL process, or nil if not running."
-  (get-buffer-process neocaml-repl-buffer-name))
+  "Return the REPL process for the current context, or nil if not running."
+  (get-buffer-process (neocaml-repl--buffer)))
 
 (defun neocaml-repl--ensure-repl-running ()
-  "Start an OCaml REPL if one is not already running."
-  (unless (comint-check-proc neocaml-repl-buffer-name)
+  "Start a REPL for the current buffer's project if one is not running."
+  (unless (comint-check-proc (neocaml-repl--buffer))
     (neocaml-repl-start)))
 
 ;;;###autoload
@@ -313,26 +346,26 @@ This needs the toplevel to have findlib loaded (e.g. via topfind or utop)."
                                (format "#require %S" package)))
 
 (defun neocaml-repl-clear-buffer ()
-  "Clear the OCaml REPL buffer."
+  "Clear the OCaml REPL buffer for the current context."
   (interactive)
-  (with-current-buffer neocaml-repl-buffer-name
+  (with-current-buffer (neocaml-repl--buffer)
     (let ((inhibit-read-only t))
       (erase-buffer)
       (comint-send-input))))
 
 (defun neocaml-repl-interrupt ()
-  "Interrupt the OCaml REPL process."
+  "Interrupt the OCaml REPL process for the current context."
   (interactive)
-  (when (comint-check-proc neocaml-repl-buffer-name)
+  (when (comint-check-proc (neocaml-repl--buffer))
     (interrupt-process (neocaml-repl--process))))
 
 ;;;###autoload
 (defun neocaml-repl-restart ()
-  "Restart the OCaml toplevel.
+  "Restart the OCaml toplevel for the current buffer's project.
 Kill the running process, if any, and start a fresh one in the same
 buffer."
   (interactive)
-  (when (comint-check-proc neocaml-repl-buffer-name)
+  (when (comint-check-proc (neocaml-repl--buffer))
     (let ((proc (neocaml-repl--process)))
       (when proc
         (set-process-query-on-exit-flag proc nil)
@@ -377,10 +410,10 @@ buffer."
          :help "Load a findlib package into the REPL with #require"]
         "--"
         ["Interrupt REPL" neocaml-repl-interrupt
-         :enable (comint-check-proc neocaml-repl-buffer-name)
+         :enable (comint-check-proc (neocaml-repl--buffer))
          :help "Interrupt the OCaml toplevel process"]
         ["Clear REPL Buffer" neocaml-repl-clear-buffer
-         :enable (comint-check-proc neocaml-repl-buffer-name)
+         :enable (comint-check-proc (neocaml-repl--buffer))
          :help "Erase the REPL buffer contents"]))
     map)
   "Keymap for OCaml toplevel integration.")
