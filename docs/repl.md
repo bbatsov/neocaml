@@ -134,12 +134,24 @@ REPL input history is persisted across sessions automatically.
 You can configure this with `neocaml-repl-history-file` (set to
 `nil` to disable) and `neocaml-repl-history-size` (default 1000).
 
-### Using utop instead of the default OCaml toplevel
+### Choosing a toplevel
 
-[utop](https://github.com/ocaml-community/utop) is an improved toplevel for OCaml with many features like auto-completion, syntax highlighting, and a rich history. To use utop with neocaml-repl:
+`neocaml-repl-flavor` selects which toplevel to launch:
+
+- `ocaml` (the default) - the standard ocaml toplevel, using
+  `neocaml-repl-program-name` and `neocaml-repl-program-args`.
+- `utop` - [utop](https://github.com/ocaml-community/utop), an improved
+  toplevel with auto-completion, syntax highlighting, and a rich history.
+- `dune-utop` - `dune utop` for the current project, launched via
+  `M-x neocaml-dune-utop`, so the project's libraries are available.
+
+Set it globally or per project via `.dir-locals.el`; the REPL reads it
+when it starts (restart an existing one with `M-x neocaml-repl-restart`
+to apply a change). The active flavor is shown in the REPL's mode line,
+e.g. `OCaml-REPL[utop]`.
 
 ```emacs-lisp
-(setq neocaml-repl-program-name "utop")
+(setq neocaml-repl-flavor 'utop)
 ```
 
 !!! note

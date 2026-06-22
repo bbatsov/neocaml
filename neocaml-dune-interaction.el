@@ -40,6 +40,7 @@
 (defvar neocaml-repl-program-name)
 (defvar neocaml-repl-program-args)
 (defvar neocaml-repl-buffer-name)
+(defvar neocaml-repl-flavor)
 
 (defgroup neocaml-dune-interaction nil
   "Dune build system interaction for neocaml."
@@ -172,7 +173,8 @@ REPL interaction (send region, send definition, etc.)."
                    (list "exec" "--" neocaml-dune-program "utop" ".")
                  (list "utop" ".")))
          (neocaml-repl-program-name program)
-         (neocaml-repl-program-args args))
+         (neocaml-repl-program-args args)
+         (neocaml-repl-flavor 'dune-utop))
     (neocaml-repl-switch-to-repl)))
 
 (defvar neocaml-dune--command-history nil
