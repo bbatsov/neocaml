@@ -40,6 +40,7 @@
 
 (require 'treesit)
 (require 'seq)
+(require 'project)
 
 (defgroup neocaml nil
   "Major mode for editing OCaml code with tree-sitter."
@@ -726,6 +727,30 @@ formats whole compilation units, so there is no region/defun variant."
   "Format the buffer before saving when `neocaml-format-on-save' is non-nil."
   (when neocaml-format-on-save
     (neocaml-format-buffer)))
+
+;;;; Project integration
+;;
+;; Teach `project.el' that a directory containing a `dune-project' file is a
+;; project root, so project-wide commands (find-file, search, compile, ...)
+;; work for OCaml/dune projects.  Registered with APPEND so version-control
+;; detection still takes precedence when a project is under git/hg/etc.; this
+;; mainly fills the gap for dune projects that aren't under version control.
+
+(defun neocaml-project-find (dir)
+  "Return the dune project containing DIR, or nil.
+The project root is the closest directory at or above DIR that contains
+a `dune-project' file."
+  (when-let* ((root (locate-dominating-file dir "dune-project")))
+    (list 'neocaml (expand-file-name root))))
+
+(cl-defmethod project-root ((project (head neocaml)))
+  (cadr project))
+
+(cl-defmethod project-ignores ((_project (head neocaml)) _dir)
+  "Ignore OCaml build/switch artifacts in addition to the defaults."
+  (append '("_build/" "_opam/") (cl-call-next-method)))
+
+(add-hook 'project-find-functions #'neocaml-project-find t)
 
 ;;;; Find the definition at point (some Emacs commands use this internally)
 
@@ -1590,6 +1615,10 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 
   ;; Optional format-on-save via ocamlformat
   (add-hook 'before-save-hook #'neocaml--format-before-save nil t)
+
+  ;; Default to `dune build' for `compile'/`project-compile' in dune projects.
+  (when (locate-dominating-file default-directory "dune-project")
+    (setq-local compile-command "dune build"))
 
   ;; Make URLs and bug references in comments clickable.  Set
   ;; `bug-reference-url-format' (e.g. via .dir-locals.el) to resolve refs.
