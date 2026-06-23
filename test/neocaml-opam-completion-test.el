@@ -60,40 +60,48 @@ Resolves both plain lists and dynamic completion tables."
       (expect (neocaml-opam-test--capf "version: 1|") :to-be nil)))
 
   (describe "package-name completion"
+    ;; Stub the candidate source so these tests don't shell out to opam.
+    (before-each
+      (spy-on 'neocaml-opam--package-candidates
+              :and-return-value '("dune" "ppxlib" "cmdliner")))
+
     (it "offers packages inside a depends list"
-      (let ((neocaml-opam--package-cache '("dune" "ppxlib" "cmdliner")))
-        (let ((cands (neocaml-opam-test--candidates "depends: [ \"du|")))
-          (expect (member "dune" cands) :to-be-truthy)
-          (expect (member "cmdliner" cands) :to-be-truthy))))
+      (let ((cands (neocaml-opam-test--candidates "depends: [ \"du|")))
+        (expect (member "dune" cands) :to-be-truthy)
+        (expect (member "cmdliner" cands) :to-be-truthy)))
 
     (it "offers packages inside conflicts and depopts"
-      (let ((neocaml-opam--package-cache '("dune" "ppxlib")))
-        (expect (member "ppxlib"
-                        (neocaml-opam-test--candidates "conflicts: [ \"pp|"))
-                :to-be-truthy)
-        (expect (member "dune"
-                        (neocaml-opam-test--candidates "depopts: [ \"du|"))
-                :to-be-truthy)))
+      (expect (member "ppxlib"
+                      (neocaml-opam-test--candidates "conflicts: [ \"pp|"))
+              :to-be-truthy)
+      (expect (member "dune"
+                      (neocaml-opam-test--candidates "depopts: [ \"du|"))
+              :to-be-truthy))
 
     (it "spans only the string contents"
-      (let* ((neocaml-opam--package-cache '("dune"))
-             (result (neocaml-opam-test--capf "depends: [ \"du|")))
+      (let ((result (neocaml-opam-test--capf "depends: [ \"du|")))
         ;; the opening quote is at position 12, so the span starts at 13
         (expect (nth 0 result) :to-equal 13)))
 
     (it "does not offer packages inside a version constraint"
-      (let ((neocaml-opam--package-cache '("dune")))
-        (expect (neocaml-opam-test--capf "depends: [ \"dune\" {>= \"3|")
-                :to-be nil)))
+      (expect (neocaml-opam-test--capf "depends: [ \"dune\" {>= \"3|")
+              :to-be nil))
 
     (it "does not offer packages in a non-dependency string"
-      (let ((neocaml-opam--package-cache '("dune")))
-        (expect (neocaml-opam-test--capf "maintainer: \"du|") :to-be nil)))
+      (expect (neocaml-opam-test--capf "maintainer: \"du|") :to-be nil))
 
     (it "offers nothing for packages when disabled"
-      (let ((neocaml-opam-complete-packages nil)
-            (neocaml-opam--package-cache '("dune")))
+      (let ((neocaml-opam-complete-packages nil))
         (expect (neocaml-opam-test--capf "depends: [ \"du|") :to-be nil))))
+
+  (describe "package candidate source"
+    (it "builds an opam-exec command when so configured"
+      (let ((neocaml-opam-use-opam-exec t))
+        (expect (neocaml-opam--list-command)
+                :to-equal '("opam" "exec" "--" "opam" "list" "--all" "--short")))
+      (let ((neocaml-opam-use-opam-exec nil))
+        (expect (neocaml-opam--list-command)
+                :to-equal '("opam" "list" "--all" "--short")))))
 
   (describe "context boundaries"
     (it "offers nothing inside a comment"

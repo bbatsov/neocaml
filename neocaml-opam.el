@@ -66,6 +66,16 @@ fields."
   :group 'neocaml-opam
   :package-version '(neocaml . "0.9.0"))
 
+(defcustom neocaml-opam-use-opam-exec nil
+  "When non-nil, list packages via `opam exec --'.
+This is useful when Emacs does not inherit the opam environment,
+e.g. when launched from a desktop shortcut on macOS, so the
+project's switch is consulted."
+  :type 'boolean
+  :safe #'booleanp
+  :group 'neocaml-opam
+  :package-version '(neocaml . "0.9.0"))
+
 ;;; Grammar installation
 
 (defconst neocaml-opam-grammar-recipes
@@ -197,8 +207,8 @@ See `prettify-symbols-alist' for more information.")
 (defconst neocaml-opam--ident-chars "[:alnum:]_-"
   "Characters that make up an opam field or package identifier.")
 
-(defvar neocaml-opam--package-cache nil
-  "Cached list of opam package names, or nil when not yet fetched.")
+(defvar neocaml-opam--package-cache (make-hash-table :test 'equal)
+  "Per-project cache of opam package names, keyed by project root.")
 
 (defun neocaml-opam--ident-bounds ()
   "Return the bounds of the opam identifier at point as (START . END)."
@@ -216,26 +226,51 @@ See `prettify-symbols-alist' for more information.")
         (skip-chars-backward neocaml-opam--ident-chars)
         (buffer-substring-no-properties (point) end)))))
 
-(defun neocaml-opam--opam-packages ()
-  "Return the list of available opam packages via opam.
+(defun neocaml-opam--project-root ()
+  "Return the project root for opam completion.
+Uses the nearest ancestor with a `dune-project', else
+`default-directory'."
+  (if-let* ((root (locate-dominating-file default-directory "dune-project")))
+      (expand-file-name root)
+    (expand-file-name default-directory)))
+
+(defun neocaml-opam--list-command ()
+  "Return the argv used to list available opam packages.
+Prefixes with `opam exec --' when `neocaml-opam-use-opam-exec' is set."
+  (if neocaml-opam-use-opam-exec
+      (list "opam" "exec" "--"
+            neocaml-opam-list-program "list" "--all" "--short")
+    (list neocaml-opam-list-program "list" "--all" "--short")))
+
+(defun neocaml-opam--opam-packages (root)
+  "Return the opam packages available in ROOT's switch.
+Run the listing from ROOT so a project-local switch is picked up.
 Return nil when opam is unavailable or fails."
-  (when (executable-find neocaml-opam-list-program)
-    (with-temp-buffer
-      (when (zerop (call-process neocaml-opam-list-program nil t nil
-                                 "list" "--all" "--short"))
-        (split-string (buffer-string) "[ \t\n]+" t)))))
+  (let* ((command (neocaml-opam--list-command))
+         (program (car command)))
+    (when (executable-find program)
+      (let ((default-directory (or root default-directory)))
+        (with-temp-buffer
+          (when (zerop (apply #'call-process program nil t nil (cdr command)))
+            (split-string (buffer-string) "[ \t\n]+" t)))))))
 
 (defun neocaml-opam--package-candidates ()
-  "Return opam package names for completion, caching the result."
-  (or neocaml-opam--package-cache
-      (setq neocaml-opam--package-cache (neocaml-opam--opam-packages))))
+  "Return opam package names for completion in the current project.
+Caches the result per project root."
+  (when neocaml-opam-complete-packages
+    (let* ((root (neocaml-opam--project-root))
+           (cached (gethash root neocaml-opam--package-cache 'missing)))
+      (if (eq cached 'missing)
+          (puthash root (neocaml-opam--opam-packages root)
+                   neocaml-opam--package-cache)
+        cached))))
 
 (defun neocaml-opam-refresh-packages ()
   "Clear the cached opam package names used for completion.
 Call this after the set of available packages changes (e.g. a new
 switch or `opam update')."
   (interactive)
-  (setq neocaml-opam--package-cache nil)
+  (clrhash neocaml-opam--package-cache)
   (message "neocaml-opam: package cache cleared"))
 
 (defun neocaml-opam--capf (start end candidates annotation kind)
