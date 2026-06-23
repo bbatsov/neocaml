@@ -156,6 +156,59 @@ See `treesit-simple-imenu-settings' for the format.")
   "Alist of symbol prettifications for opam files.
 See `prettify-symbols-alist' for more information.")
 
+;;; Completion
+
+;; Field and section names follow the opam manual's package definition
+;; reference (https://opam.ocaml.org/doc/Manual.html).
+
+(defvar neocaml-opam--field-names
+  '("opam-version" "name" "version" "synopsis" "description" "maintainer"
+    "authors" "license" "homepage" "doc" "bug-reports" "dev-repo" "tags"
+    "depends" "depopts" "conflicts" "conflict-class" "depexts" "available"
+    "flags" "features" "build" "install" "remove" "run-test" "build-doc"
+    "build-test" "patches" "substs" "build-env" "setenv" "extra-files"
+    "pin-depends" "messages" "post-messages" "x-env-path-rewrite")
+  "Top-level field names for `neocaml-opam-mode' completion.")
+
+(defvar neocaml-opam--section-kinds
+  '("url" "extra-source")
+  "Section kinds for `neocaml-opam-mode' completion.")
+
+(defconst neocaml-opam--ident-chars "[:alnum:]_-"
+  "Characters that make up an opam field or package identifier.")
+
+(defun neocaml-opam--ident-bounds ()
+  "Return the bounds of the opam identifier at point as (START . END)."
+  (cons (save-excursion (skip-chars-backward neocaml-opam--ident-chars) (point))
+        (save-excursion (skip-chars-forward neocaml-opam--ident-chars) (point))))
+
+(defun neocaml-opam--capf (start end candidates annotation kind)
+  "Build a capf result for CANDIDATES spanning START..END.
+ANNOTATION is shown next to each candidate and KIND is the
+`:company-kind' symbol."
+  (list start end candidates
+        :annotation-function (lambda (_) (concat " " annotation))
+        :company-kind (lambda (_) kind)
+        :exclusive 'no))
+
+(defun neocaml-opam-completion-at-point ()
+  "Complete opam field and section names at point.
+Intended for `completion-at-point-functions'."
+  (let ((ppss (syntax-ppss)))
+    (cond
+     ;; Inside a string or comment: nothing.
+     ((nth 3 ppss) nil)
+     ((nth 4 ppss) nil)
+     ;; A top-level identifier at the start of a line is a field name.
+     ((zerop (car ppss))
+      (let* ((bounds (neocaml-opam--ident-bounds))
+             (start (car bounds)))
+        (when (save-excursion (goto-char start) (skip-chars-backward " \t") (bolp))
+          (neocaml-opam--capf
+           start (cdr bounds)
+           (append neocaml-opam--field-names neocaml-opam--section-kinds)
+           "field" 'keyword)))))))
+
 ;;; Flymake (opam lint)
 
 (defcustom neocaml-opam-lint-program "opam"
@@ -255,6 +308,17 @@ SOURCE-BUFFER is the buffer being checked."
 
 ;;; Mode definition
 
+(defvar neocaml-opam-mode-syntax-table
+  (let ((table (make-syntax-table)))
+    ;; `#' starts a line comment ending at the newline.  Brackets and
+    ;; double-quoted strings are inherited from the standard table; teaching
+    ;; the syntax table about comments keeps `syntax-ppss' (and thus
+    ;; completion-at-point) from misreading commented-out text as code.
+    (modify-syntax-entry ?\# "<" table)
+    (modify-syntax-entry ?\n ">" table)
+    table)
+  "Syntax table for `neocaml-opam-mode'.")
+
 ;;;###autoload
 (define-derived-mode neocaml-opam-mode prog-mode "opam"
   "Major mode for editing opam package files.
@@ -290,6 +354,10 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
 
   ;; Imenu
   (setq-local treesit-simple-imenu-settings neocaml-opam--imenu-settings)
+
+  ;; Completion
+  (add-hook 'completion-at-point-functions
+            #'neocaml-opam-completion-at-point nil t)
 
   ;; Navigation
   (setq-local treesit-defun-type-regexp
