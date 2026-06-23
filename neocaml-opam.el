@@ -36,6 +36,7 @@
 
 (require 'treesit)
 (require 'flymake)
+(require 'neocaml-common)
 
 (defgroup neocaml-opam nil
   "Major mode for editing opam files with tree-sitter."
@@ -226,44 +227,43 @@ See `prettify-symbols-alist' for more information.")
         (skip-chars-backward neocaml-opam--ident-chars)
         (buffer-substring-no-properties (point) end)))))
 
-(defun neocaml-opam--project-root ()
-  "Return the project root for opam completion.
-Uses the nearest ancestor with a `dune-project', else
-`default-directory'."
-  (if-let* ((root (locate-dominating-file default-directory "dune-project")))
-      (expand-file-name root)
-    (expand-file-name default-directory)))
+(defun neocaml-opam--completion-root ()
+  "Return the directory opam listings should run from.
+Prefers the dune project root, falling back to `default-directory'."
+  (or (neocaml-common-dune-project-root)
+      (expand-file-name default-directory)))
 
-(defun neocaml-opam--list-command ()
-  "Return the argv used to list available opam packages.
-Prefixes with `opam exec --' when `neocaml-opam-use-opam-exec' is set."
-  (if neocaml-opam-use-opam-exec
+(defun neocaml-opam--use-opam-exec-p (root)
+  "Non-nil when opam should be listed through `opam exec --'.
+True when ROOT has a project-local opam switch, or the user set
+`neocaml-opam-use-opam-exec'."
+  (or neocaml-opam-use-opam-exec
+      (neocaml-common-local-switch-p root)))
+
+(defun neocaml-opam--list-argv (root)
+  "Return the argv used to list available opam packages for ROOT."
+  (if (neocaml-opam--use-opam-exec-p root)
       (list "opam" "exec" "--"
             neocaml-opam-list-program "list" "--all" "--short")
     (list neocaml-opam-list-program "list" "--all" "--short")))
 
 (defun neocaml-opam--opam-packages (root)
   "Return the opam packages available in ROOT's switch.
-Run the listing from ROOT so a project-local switch is picked up.
-Return nil when opam is unavailable or fails."
-  (let* ((command (neocaml-opam--list-command))
-         (program (car command)))
-    (when (executable-find program)
-      (let ((default-directory (or root default-directory)))
-        (with-temp-buffer
-          (when (zerop (apply #'call-process program nil t nil (cdr command)))
-            (split-string (buffer-string) "[ \t\n]+" t)))))))
+Run the listing from ROOT so a project-local switch is picked up via
+`opam exec'.  Return nil when opam is unavailable or fails."
+  (let* ((argv (neocaml-opam--list-argv root))
+         (output (neocaml-common-run root (car argv) (cdr argv))))
+    (when output
+      (split-string output "[ \t\n]+" t))))
 
 (defun neocaml-opam--package-candidates ()
   "Return opam package names for completion in the current project.
 Caches the result per project root."
   (when neocaml-opam-complete-packages
-    (let* ((root (neocaml-opam--project-root))
-           (cached (gethash root neocaml-opam--package-cache 'missing)))
-      (if (eq cached 'missing)
-          (puthash root (neocaml-opam--opam-packages root)
-                   neocaml-opam--package-cache)
-        cached))))
+    (let ((root (neocaml-opam--completion-root)))
+      (neocaml-common-cache-get
+       neocaml-opam--package-cache root
+       (lambda () (neocaml-opam--opam-packages root))))))
 
 (defun neocaml-opam-refresh-packages ()
   "Clear the cached opam package names used for completion.
@@ -272,15 +272,6 @@ switch or `opam update')."
   (interactive)
   (clrhash neocaml-opam--package-cache)
   (message "neocaml-opam: package cache cleared"))
-
-(defun neocaml-opam--capf (start end candidates annotation kind)
-  "Build a capf result for CANDIDATES spanning START..END.
-ANNOTATION is shown next to each candidate and KIND is the
-`:company-kind' symbol."
-  (list start end candidates
-        :annotation-function (lambda (_) (concat " " annotation))
-        :company-kind (lambda (_) kind)
-        :exclusive 'no))
 
 (defun neocaml-opam-completion-at-point ()
   "Complete opam field names and dependency package names at point.
@@ -295,7 +286,7 @@ Intended for `completion-at-point-functions'."
           (when (and opens
                      (member (neocaml-opam--field-of-list (car (last opens)))
                              neocaml-opam--dependency-fields))
-            (neocaml-opam--capf
+            (neocaml-common-capf
              (1+ (nth 8 ppss)) (point)
              (completion-table-dynamic
               (lambda (_) (neocaml-opam--package-candidates)))
@@ -307,7 +298,7 @@ Intended for `completion-at-point-functions'."
       (let* ((bounds (neocaml-opam--ident-bounds))
              (start (car bounds)))
         (when (save-excursion (goto-char start) (skip-chars-backward " \t") (bolp))
-          (neocaml-opam--capf
+          (neocaml-common-capf
            start (cdr bounds)
            (append neocaml-opam--field-names neocaml-opam--section-kinds)
            "field" 'keyword)))))))

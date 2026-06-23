@@ -97,11 +97,21 @@ Resolves both plain lists and dynamic completion tables."
   (describe "package candidate source"
     (it "builds an opam-exec command when so configured"
       (let ((neocaml-opam-use-opam-exec t))
-        (expect (neocaml-opam--list-command)
+        (expect (neocaml-opam--list-argv nil)
                 :to-equal '("opam" "exec" "--" "opam" "list" "--all" "--short")))
       (let ((neocaml-opam-use-opam-exec nil))
-        (expect (neocaml-opam--list-command)
-                :to-equal '("opam" "list" "--all" "--short")))))
+        (expect (neocaml-opam--list-argv nil)
+                :to-equal '("opam" "list" "--all" "--short"))))
+
+    (it "uses opam exec automatically for a project-local switch"
+      (let ((root (file-name-as-directory (make-temp-file "neocaml-opam" t)))
+            (neocaml-opam-use-opam-exec nil))
+        (unwind-protect
+            (progn
+              (expect (neocaml-opam--use-opam-exec-p root) :to-be nil)
+              (make-directory (expand-file-name "_opam" root))
+              (expect (neocaml-opam--use-opam-exec-p root) :to-be-truthy))
+          (delete-directory root t)))))
 
   (describe "context boundaries"
     (it "offers nothing inside a comment"

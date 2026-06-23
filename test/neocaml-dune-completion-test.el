@@ -118,11 +118,23 @@ Resolves both plain lists and dynamic completion tables."
   (describe "library candidate sources"
     (it "builds an opam-exec command when so configured"
       (let ((neocaml-dune-use-opam-exec t))
-        (expect (neocaml-dune--ocamlfind-command)
+        (expect (neocaml-dune--ocamlfind-argv nil)
                 :to-equal '("opam" "exec" "--" "ocamlfind" "list")))
       (let ((neocaml-dune-use-opam-exec nil))
-        (expect (neocaml-dune--ocamlfind-command)
+        (expect (neocaml-dune--ocamlfind-argv nil)
                 :to-equal '("ocamlfind" "list"))))
+
+    (it "uses opam exec automatically for a project-local switch"
+      (let ((root (file-name-as-directory (make-temp-file "neocaml-dune" t)))
+            (neocaml-dune-use-opam-exec nil))
+        (unwind-protect
+            (progn
+              (expect (neocaml-dune--use-opam-exec-p root) :to-be nil)
+              (make-directory (expand-file-name "_opam" root))
+              (expect (neocaml-dune--use-opam-exec-p root) :to-be-truthy)
+              (expect (car (neocaml-dune--ocamlfind-argv root))
+                      :to-equal "opam"))
+          (delete-directory root t))))
 
     (it "scans local dune files for library and public_name values"
       (let ((root (file-name-as-directory (make-temp-file "neocaml-dune" t))))
@@ -148,6 +160,22 @@ Resolves both plain lists and dynamic completion tables."
               (write-region "(library (name stale))" nil
                             (expand-file-name "_build/dune" root))
               (expect (neocaml-dune--local-libraries root) :to-be nil))
+          (delete-directory root t))))
+
+    (it "does not scan for local libraries outside a dune project"
+      ;; Without a dune-project there is no bounded root, so the recursive
+      ;; scan must not run (it would otherwise walk the whole directory).
+      (let ((root (file-name-as-directory (make-temp-file "neocaml-nodune" t))))
+        (unwind-protect
+            (progn
+              (write-region "(library (name should_not_appear))" nil
+                            (expand-file-name "dune" root))
+              (spy-on 'neocaml-dune--local-libraries)
+              (spy-on 'neocaml-dune--ocamlfind-libraries :and-return-value nil)
+              (clrhash neocaml-dune--library-cache)
+              (let ((default-directory root))
+                (neocaml-dune--library-candidates))
+              (expect 'neocaml-dune--local-libraries :not :to-have-been-called))
           (delete-directory root t)))))
 
   (describe "context boundaries"
