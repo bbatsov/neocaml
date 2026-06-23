@@ -36,6 +36,7 @@
 ;;; Code:
 
 (require 'treesit)
+(require 'neocaml-common)
 
 (defgroup neocaml-dune nil
   "Major mode for editing dune files with tree-sitter."
@@ -318,49 +319,46 @@ When point is not on an atom, both ends equal point."
 Each value is the merged list of the project's own libraries and the
 findlib libraries installed in its opam switch.")
 
-;; `neocaml-dune-use-opam-exec' is defined in neocaml-dune-interaction.el.
-;; Honour it here when it happens to be loaded so completion respects a
-;; project-local opam switch, but don't hard-depend on that file.
+;; `neocaml-dune-use-opam-exec' is a defcustom in neocaml-dune-interaction.el.
+;; Honour it here when that file happens to be loaded so completion uses the
+;; same opam-exec preference as the dune build commands, but don't hard-depend
+;; on it.  A project-local switch is detected automatically regardless.
 (defvar neocaml-dune-use-opam-exec)
 
-(defun neocaml-dune--project-root ()
-  "Return the dune project root, or `default-directory' if none."
-  (if-let* ((root (locate-dominating-file default-directory "dune-project")))
-      (expand-file-name root)
-    (expand-file-name default-directory)))
+(defun neocaml-dune--use-opam-exec-p (root)
+  "Non-nil when findlib should be listed through `opam exec --'.
+True when ROOT has a project-local opam switch, or the user set
+`neocaml-dune-use-opam-exec'."
+  (or (bound-and-true-p neocaml-dune-use-opam-exec)
+      (neocaml-common-local-switch-p root)))
 
-(defun neocaml-dune--ocamlfind-command ()
-  "Return the argv used to list findlib libraries.
-Prefixes with `opam exec --' when `neocaml-dune-use-opam-exec' is set."
-  (if (bound-and-true-p neocaml-dune-use-opam-exec)
+(defun neocaml-dune--ocamlfind-argv (root)
+  "Return the argv used to list findlib libraries for ROOT."
+  (if (neocaml-dune--use-opam-exec-p root)
       (list "opam" "exec" "--" neocaml-dune-ocamlfind-program "list")
     (list neocaml-dune-ocamlfind-program "list")))
 
 (defun neocaml-dune--ocamlfind-libraries (root)
   "Return the findlib libraries available in ROOT's opam switch.
-Run the listing from ROOT so a project-local switch is picked up.
-Return nil when ocamlfind is unavailable or fails."
-  (let* ((command (neocaml-dune--ocamlfind-command))
-         (program (car command)))
-    (when (executable-find program)
-      (let ((default-directory (or root default-directory)))
-        (with-temp-buffer
-          (when (zerop (apply #'call-process program nil t nil (cdr command)))
-            (goto-char (point-min))
-            (let (libs)
-              (while (not (eobp))
-                (when (looking-at "\\([[:alnum:]_.-]+\\)[ \t]")
-                  (push (match-string-no-properties 1) libs))
-                (forward-line 1))
-              (nreverse libs))))))))
+Run the listing from ROOT so a project-local switch is picked up via
+`opam exec'.  Return nil when ocamlfind is unavailable or fails."
+  (let* ((argv (neocaml-dune--ocamlfind-argv root))
+         (output (neocaml-common-run root (car argv) (cdr argv))))
+    (when output
+      (let (libs)
+        (dolist (line (split-string output "\n" t))
+          (when (string-match "\\`\\([[:alnum:]_.+-]+\\)[ \t]" line)
+            (push (match-string 1 line) libs)))
+        (nreverse libs)))))
 
 (defun neocaml-dune--dune-files (root)
-  "Return the dune build files under ROOT, skipping build directories."
+  "Return the dune build files under ROOT, skipping build and hidden dirs."
   (directory-files-recursively
    root "\\`dune\\'" nil
    (lambda (dir)
-     (not (member (file-name-nondirectory (directory-file-name dir))
-                  '("_build" "_opam"))))))
+     (let ((name (file-name-nondirectory (directory-file-name dir))))
+       (not (or (member name '("_build" "_opam"))
+                (string-prefix-p "." name)))))))
 
 (defun neocaml-dune--stanza-library-names (stanza)
   "Return the `name' and `public_name' values of a library STANZA node."
@@ -393,18 +391,18 @@ Reads each dune file from disk, so unsaved buffers are not reflected."
 
 (defun neocaml-dune--library-candidates ()
   "Return library names for completion in the current project.
-Merges the project's own libraries with the installed findlib
-libraries, caching the result per project root."
+Merges the project's own libraries (only when inside a dune project)
+with the findlib libraries from its opam switch, caching the result
+per project root."
   (when neocaml-dune-complete-libraries
-    (let* ((root (neocaml-dune--project-root))
-           (cached (gethash root neocaml-dune--library-cache 'missing)))
-      (if (eq cached 'missing)
-          (puthash root
-                   (delete-dups
-                    (append (neocaml-dune--local-libraries root)
-                            (neocaml-dune--ocamlfind-libraries root)))
-                   neocaml-dune--library-cache)
-        cached))))
+    (let* ((root (neocaml-common-dune-project-root))
+           (key (or root (expand-file-name default-directory))))
+      (neocaml-common-cache-get
+       neocaml-dune--library-cache key
+       (lambda ()
+         (delete-dups
+          (append (when root (neocaml-dune--local-libraries root))
+                  (neocaml-dune--ocamlfind-libraries root))))))))
 
 (defun neocaml-dune-refresh-libraries ()
   "Clear the cached library names used for completion.
@@ -413,15 +411,6 @@ a library to the project, so the next completion is up to date."
   (interactive)
   (clrhash neocaml-dune--library-cache)
   (message "neocaml-dune: library cache cleared"))
-
-(defun neocaml-dune--capf (start end candidates annotation kind)
-  "Build a capf result for CANDIDATES spanning START..END.
-ANNOTATION is shown next to each candidate and KIND is the
-`:company-kind' symbol."
-  (list start end candidates
-        :annotation-function (lambda (_) (concat " " annotation))
-        :company-kind (lambda (_) kind)
-        :exclusive 'no))
 
 (defun neocaml-dune-completion-at-point ()
   "Complete dune stanza and field names at point.
@@ -439,21 +428,21 @@ Intended for `completion-at-point-functions'."
              (head-p (= start (neocaml-dune--first-atom-pos inner))))
         (cond
          ((and (= depth 1) head-p)
-          (neocaml-dune--capf start end neocaml-dune--stanza-names
-                              "stanza" 'keyword))
+          (neocaml-common-capf start end neocaml-dune--stanza-names
+                               "stanza" 'keyword))
          ((and (>= depth 2) head-p)
-          (neocaml-dune--capf start end
-                              (neocaml-dune--fields-for
-                               (neocaml-dune--head-after outer))
-                              "field" 'property))
+          (neocaml-common-capf start end
+                               (neocaml-dune--fields-for
+                                (neocaml-dune--head-after outer))
+                               "field" 'property))
          ((and neocaml-dune-complete-libraries
                (not head-p)
                (member (neocaml-dune--head-after inner)
                        neocaml-dune--library-fields))
-          (neocaml-dune--capf start end
-                              (completion-table-dynamic
-                               (lambda (_) (neocaml-dune--library-candidates)))
-                              "library" 'module)))))))
+          (neocaml-common-capf start end
+                               (completion-table-dynamic
+                                (lambda (_) (neocaml-dune--library-candidates)))
+                               "library" 'module)))))))
 
 ;;; Imenu
 

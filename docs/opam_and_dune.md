@@ -121,13 +121,14 @@ and `neocaml-opam-complete-packages`; the static stanza/field completion
 keeps working either way and needs no OCaml tooling installed.
 
 !!! tip "Project-local switches"
-    The library and package lists are gathered by running `ocamlfind` and
-    `opam` from the project root, so a project-local switch (`_opam/`) is
-    picked up as long as Emacs inherits your opam environment. If it
-    doesn't (e.g. a GUI Emacs launched from a desktop shortcut), set
-    `neocaml-dune-use-opam-exec` / `neocaml-opam-use-opam-exec` to run the
-    listings through `opam exec --`. This mirrors the same option used for
-    [dune commands](#dune-commands).
+    When the project root has a local switch (an `_opam/` directory), the
+    library and package lists are gathered through `opam exec --` from that
+    root, so the project's switch is used automatically - no configuration
+    needed. For a global switch where Emacs doesn't inherit the opam
+    environment (e.g. a GUI Emacs launched from a desktop shortcut), set
+    `neocaml-dune-use-opam-exec` / `neocaml-opam-use-opam-exec` to force the
+    listings through `opam exec --` as well. This mirrors the same option
+    used for [dune commands](#dune-commands).
 
 ## Cram Tests
 
