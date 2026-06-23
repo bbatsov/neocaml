@@ -37,6 +37,9 @@ automatically with no configuration:
 - **Compilation** - `C-c C-c` runs `compile` with OCaml error navigation
 - **Additional file types** - opam, dune, OCamllex, Menhir, and cram
   files get their own modes automatically
+- **dune & opam completion** - `completion-at-point` (`C-M-i`) offers
+  stanza/field names and library/package names in dune and opam files
+  (see [opam, dune & Cram](opam_and_dune.md#completion))
 
 ## Features that need opt-in
 

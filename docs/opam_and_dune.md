@@ -86,6 +86,39 @@ Note: this formats individual dune files via `dune format-dune-file`, which is
 different from `dune fmt` (available via `C-c C-d f`) that formats the entire
 project.
 
+## Completion
+
+Both `neocaml-dune-mode` and `neocaml-opam-mode` add a
+`completion-at-point` function, so `M-x completion-at-point` (`C-M-i`)
+offers context-aware candidates. They also plug into UIs built on
+`completion-at-point`, like the built-in `completion-preview-mode`,
+[corfu](https://github.com/minad/corfu), and
+[company](https://github.com/company-mode/company-mode).
+
+In dune files you get:
+
+- **stanza names** (`library`, `executable`, `rule`, ...) at the head of
+  a top-level form
+- **field names** for the enclosing stanza (so a `library` offers
+  `libraries`, `modules`, `public_name`, ... while a `rule` offers
+  `targets`, `deps`, `action`, ...)
+- **findlib library names** inside `libraries` and `pps` fields, sourced
+  from `ocamlfind list`
+
+In opam files you get:
+
+- **field and section names** (`synopsis`, `depends`, `build`, `url`, ...)
+  at the start of a line
+- **package names** inside the `depends`, `depopts`, and `conflicts`
+  fields, sourced from `opam list`
+
+The external candidate sources are cached for the session. Run
+`M-x neocaml-dune-refresh-libraries` or `M-x neocaml-opam-refresh-packages`
+after changing your opam switch to pick up new packages. You can turn the
+external sources off with `neocaml-dune-complete-libraries` and
+`neocaml-opam-complete-packages`; the static stanza/field completion keeps
+working either way and needs no OCaml tooling installed.
+
 ## Cram Tests
 
 `neocaml-cram-mode` provides syntax highlighting for cram test (`.t`) files, as
