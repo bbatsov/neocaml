@@ -313,35 +313,106 @@ When point is not on an atom, both ends equal point."
 (defvar neocaml-dune--library-fields '("libraries" "pps")
   "Field names whose values are findlib library names.")
 
-(defvar neocaml-dune--library-cache nil
-  "Cached list of findlib library names, or nil when not yet fetched.")
+(defvar neocaml-dune--library-cache (make-hash-table :test 'equal)
+  "Per-project cache of library names, keyed by project root.
+Each value is the merged list of the project's own libraries and the
+findlib libraries installed in its opam switch.")
 
-(defun neocaml-dune--ocamlfind-libraries ()
-  "Return the list of installed findlib libraries via ocamlfind.
+;; `neocaml-dune-use-opam-exec' is defined in neocaml-dune-interaction.el.
+;; Honour it here when it happens to be loaded so completion respects a
+;; project-local opam switch, but don't hard-depend on that file.
+(defvar neocaml-dune-use-opam-exec)
+
+(defun neocaml-dune--project-root ()
+  "Return the dune project root, or `default-directory' if none."
+  (if-let* ((root (locate-dominating-file default-directory "dune-project")))
+      (expand-file-name root)
+    (expand-file-name default-directory)))
+
+(defun neocaml-dune--ocamlfind-command ()
+  "Return the argv used to list findlib libraries.
+Prefixes with `opam exec --' when `neocaml-dune-use-opam-exec' is set."
+  (if (bound-and-true-p neocaml-dune-use-opam-exec)
+      (list "opam" "exec" "--" neocaml-dune-ocamlfind-program "list")
+    (list neocaml-dune-ocamlfind-program "list")))
+
+(defun neocaml-dune--ocamlfind-libraries (root)
+  "Return the findlib libraries available in ROOT's opam switch.
+Run the listing from ROOT so a project-local switch is picked up.
 Return nil when ocamlfind is unavailable or fails."
-  (when (executable-find neocaml-dune-ocamlfind-program)
-    (with-temp-buffer
-      (when (zerop (call-process neocaml-dune-ocamlfind-program nil t nil "list"))
-        (goto-char (point-min))
-        (let (libs)
-          (while (not (eobp))
-            (when (looking-at "\\([[:alnum:]_.-]+\\)[ \t]")
-              (push (match-string-no-properties 1) libs))
-            (forward-line 1))
-          (nreverse libs))))))
+  (let* ((command (neocaml-dune--ocamlfind-command))
+         (program (car command)))
+    (when (executable-find program)
+      (let ((default-directory (or root default-directory)))
+        (with-temp-buffer
+          (when (zerop (apply #'call-process program nil t nil (cdr command)))
+            (goto-char (point-min))
+            (let (libs)
+              (while (not (eobp))
+                (when (looking-at "\\([[:alnum:]_.-]+\\)[ \t]")
+                  (push (match-string-no-properties 1) libs))
+                (forward-line 1))
+              (nreverse libs))))))))
+
+(defun neocaml-dune--dune-files (root)
+  "Return the dune build files under ROOT, skipping build directories."
+  (directory-files-recursively
+   root "\\`dune\\'" nil
+   (lambda (dir)
+     (not (member (file-name-nondirectory (directory-file-name dir))
+                  '("_build" "_opam"))))))
+
+(defun neocaml-dune--stanza-library-names (stanza)
+  "Return the `name' and `public_name' values of a library STANZA node."
+  (let ((child (treesit-node-child stanza 0 t))
+        names)
+    (when (and child (string= (treesit-node-text child t) "library"))
+      (while (setq child (treesit-node-next-sibling child t))
+        (when (and (string= (treesit-node-type child) "field_name")
+                   (member (treesit-node-text child t) '("name" "public_name")))
+          (when-let* ((value (treesit-node-next-sibling child t)))
+            (push (treesit-node-text value t) names)))))
+    names))
+
+(defun neocaml-dune--local-libraries (root)
+  "Return the names of libraries defined by dune files under ROOT.
+Reads each dune file from disk, so unsaved buffers are not reflected."
+  (when (treesit-ready-p 'dune t)
+    (let (names)
+      (dolist (file (neocaml-dune--dune-files root))
+        (ignore-errors
+          (with-temp-buffer
+            (insert-file-contents file)
+            (treesit-parser-create 'dune)
+            (dolist (stanza (treesit-node-children
+                             (treesit-buffer-root-node 'dune) t))
+              (when (string= (treesit-node-type stanza) "stanza")
+                (setq names (nconc (neocaml-dune--stanza-library-names stanza)
+                                   names)))))))
+      (delete-dups names))))
 
 (defun neocaml-dune--library-candidates ()
-  "Return findlib library names for completion, caching the result."
-  (or neocaml-dune--library-cache
-      (setq neocaml-dune--library-cache (neocaml-dune--ocamlfind-libraries))))
+  "Return library names for completion in the current project.
+Merges the project's own libraries with the installed findlib
+libraries, caching the result per project root."
+  (when neocaml-dune-complete-libraries
+    (let* ((root (neocaml-dune--project-root))
+           (cached (gethash root neocaml-dune--library-cache 'missing)))
+      (if (eq cached 'missing)
+          (puthash root
+                   (delete-dups
+                    (append (neocaml-dune--local-libraries root)
+                            (neocaml-dune--ocamlfind-libraries root)))
+                   neocaml-dune--library-cache)
+        cached))))
 
 (defun neocaml-dune-refresh-libraries ()
-  "Clear the cached findlib library names used for completion.
-Call this after installing or removing opam packages so the next
-completion reflects the current switch."
+  "Clear the cached library names used for completion.
+Call this after installing or removing opam packages, or after adding
+a library to the project, so the next completion is up to date."
   (interactive)
-  (setq neocaml-dune--library-cache nil)
-  (message "neocaml-dune: findlib library cache cleared"))
+  (clrhash neocaml-dune--library-cache)
+  (message "neocaml-dune: library cache cleared"))
 
 (defun neocaml-dune--capf (start end candidates annotation kind)
   "Build a capf result for CANDIDATES spanning START..END.

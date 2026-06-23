@@ -12,6 +12,10 @@
 (require 'neocaml-test-helpers)
 (require 'neocaml-dune)
 
+;; Declared special so the `let' bindings below bind it dynamically (the
+;; real defcustom lives in neocaml-dune-interaction.el).
+(defvar neocaml-dune-use-opam-exec)
+
 (defun neocaml-dune-test--capf (content)
   "Run the dune capf on CONTENT, where `|' marks point.
 Return the raw capf result, or nil."
@@ -78,37 +82,73 @@ Resolves both plain lists and dynamic completion tables."
         (expect (member "name" cands) :to-be-truthy))))
 
   (describe "library-name completion"
+    ;; Stub the candidate source so these tests don't shell out to ocamlfind
+    ;; or scan the filesystem.
+    (before-each
+      (spy-on 'neocaml-dune--library-candidates
+              :and-return-value '("str" "re" "ppx_jane" "ppx_deriving")))
+
     (it "offers findlib libraries inside a libraries field"
-      (let ((neocaml-dune--library-cache '("str" "re" "ppx_jane")))
-        (let ((cands (neocaml-dune-test--candidates "(library (libraries |")))
-          (expect (member "re" cands) :to-be-truthy)
-          (expect (member "ppx_jane" cands) :to-be-truthy))))
+      (let ((cands (neocaml-dune-test--candidates "(library (libraries |")))
+        (expect (member "re" cands) :to-be-truthy)
+        (expect (member "ppx_jane" cands) :to-be-truthy)))
 
     (it "offers libraries for a subsequent entry in the field"
-      (let ((neocaml-dune--library-cache '("str" "re")))
-        (expect (member "re" (neocaml-dune-test--candidates
-                              "(library (libraries str |"))
-                :to-be-truthy)))
+      (expect (member "re" (neocaml-dune-test--candidates
+                            "(library (libraries str |"))
+              :to-be-truthy))
 
     (it "offers libraries inside a pps field"
-      (let ((neocaml-dune--library-cache '("ppx_jane" "ppx_deriving")))
-        (expect (member "ppx_deriving"
-                        (neocaml-dune-test--candidates
-                         "(library (preprocess (pps |")))
-                :to-be-truthy))
+      (expect (member "ppx_deriving"
+                      (neocaml-dune-test--candidates
+                       "(library (preprocess (pps |"))
+              :to-be-truthy))
 
     (it "offers nothing for libraries when disabled"
-      (let ((neocaml-dune-complete-libraries nil)
-            (neocaml-dune--library-cache '("str" "re")))
+      (let ((neocaml-dune-complete-libraries nil))
         (expect (neocaml-dune-test--capf "(library (libraries |")
                 :to-be nil)))
 
     (it "treats the field head itself as field completion, not a library"
       ;; at `(library (lib|' the token is the field name, not a value
-      (let ((neocaml-dune--library-cache '("str")))
-        (expect (member "libraries"
-                        (neocaml-dune-test--candidates "(library (lib|"))
-                :to-be-truthy))))
+      (expect (member "libraries"
+                      (neocaml-dune-test--candidates "(library (lib|"))
+              :to-be-truthy)))
+
+  (describe "library candidate sources"
+    (it "builds an opam-exec command when so configured"
+      (let ((neocaml-dune-use-opam-exec t))
+        (expect (neocaml-dune--ocamlfind-command)
+                :to-equal '("opam" "exec" "--" "ocamlfind" "list")))
+      (let ((neocaml-dune-use-opam-exec nil))
+        (expect (neocaml-dune--ocamlfind-command)
+                :to-equal '("ocamlfind" "list"))))
+
+    (it "scans local dune files for library and public_name values"
+      (let ((root (file-name-as-directory (make-temp-file "neocaml-dune" t))))
+        (unwind-protect
+            (progn
+              (write-region "(library (name my_lib) (public_name my.pub))" nil
+                            (expand-file-name "dune" root))
+              (make-directory (expand-file-name "sub" root))
+              (write-region "(executable (name main))" nil
+                            (expand-file-name "sub/dune" root))
+              (let ((libs (neocaml-dune--local-libraries root)))
+                (expect (member "my_lib" libs) :to-be-truthy)
+                (expect (member "my.pub" libs) :to-be-truthy)
+                ;; executable names are not library names
+                (expect (member "main" libs) :to-be nil)))
+          (delete-directory root t))))
+
+    (it "ignores dune files under _build"
+      (let ((root (file-name-as-directory (make-temp-file "neocaml-dune" t))))
+        (unwind-protect
+            (progn
+              (make-directory (expand-file-name "_build" root))
+              (write-region "(library (name stale))" nil
+                            (expand-file-name "_build/dune" root))
+              (expect (neocaml-dune--local-libraries root) :to-be nil))
+          (delete-directory root t)))))
 
   (describe "context boundaries"
     (it "offers nothing inside a comment"

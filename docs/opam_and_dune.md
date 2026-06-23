@@ -102,8 +102,9 @@ In dune files you get:
 - **field names** for the enclosing stanza (so a `library` offers
   `libraries`, `modules`, `public_name`, ... while a `rule` offers
   `targets`, `deps`, `action`, ...)
-- **findlib library names** inside `libraries` and `pps` fields, sourced
-  from `ocamlfind list`
+- **library names** inside `libraries` and `pps` fields - both your own
+  project's libraries (scanned from its `dune` files) and the installed
+  findlib libraries (from `ocamlfind list`)
 
 In opam files you get:
 
@@ -112,12 +113,21 @@ In opam files you get:
 - **package names** inside the `depends`, `depopts`, and `conflicts`
   fields, sourced from `opam list`
 
-The external candidate sources are cached for the session. Run
+The external candidate sources are cached per project. Run
 `M-x neocaml-dune-refresh-libraries` or `M-x neocaml-opam-refresh-packages`
-after changing your opam switch to pick up new packages. You can turn the
-external sources off with `neocaml-dune-complete-libraries` and
-`neocaml-opam-complete-packages`; the static stanza/field completion keeps
-working either way and needs no OCaml tooling installed.
+after changing your opam switch or adding a library to pick up the change.
+You can turn the external sources off with `neocaml-dune-complete-libraries`
+and `neocaml-opam-complete-packages`; the static stanza/field completion
+keeps working either way and needs no OCaml tooling installed.
+
+!!! tip "Project-local switches"
+    The library and package lists are gathered by running `ocamlfind` and
+    `opam` from the project root, so a project-local switch (`_opam/`) is
+    picked up as long as Emacs inherits your opam environment. If it
+    doesn't (e.g. a GUI Emacs launched from a desktop shortcut), set
+    `neocaml-dune-use-opam-exec` / `neocaml-opam-use-opam-exec` to run the
+    listings through `opam exec --`. This mirrors the same option used for
+    [dune commands](#dune-commands).
 
 ## Cram Tests
 
