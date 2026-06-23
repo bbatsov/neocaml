@@ -57,10 +57,43 @@ Resolves both plain lists and dynamic completion tables."
         (expect (nth 1 result) :to-equal 6)))
 
     (it "offers nothing in the value position of a field"
-      (expect (neocaml-opam-test--capf "version: 1|") :to-be nil))
+      (expect (neocaml-opam-test--capf "version: 1|") :to-be nil)))
 
-    (it "offers nothing inside a string value"
-      (expect (neocaml-opam-test--capf "maintainer: \"du|") :to-be nil)))
+  (describe "package-name completion"
+    (it "offers packages inside a depends list"
+      (let ((neocaml-opam--package-cache '("dune" "ppxlib" "cmdliner")))
+        (let ((cands (neocaml-opam-test--candidates "depends: [ \"du|")))
+          (expect (member "dune" cands) :to-be-truthy)
+          (expect (member "cmdliner" cands) :to-be-truthy))))
+
+    (it "offers packages inside conflicts and depopts"
+      (let ((neocaml-opam--package-cache '("dune" "ppxlib")))
+        (expect (member "ppxlib"
+                        (neocaml-opam-test--candidates "conflicts: [ \"pp|"))
+                :to-be-truthy)
+        (expect (member "dune"
+                        (neocaml-opam-test--candidates "depopts: [ \"du|"))
+                :to-be-truthy)))
+
+    (it "spans only the string contents"
+      (let* ((neocaml-opam--package-cache '("dune"))
+             (result (neocaml-opam-test--capf "depends: [ \"du|")))
+        ;; the opening quote is at position 12, so the span starts at 13
+        (expect (nth 0 result) :to-equal 13)))
+
+    (it "does not offer packages inside a version constraint"
+      (let ((neocaml-opam--package-cache '("dune")))
+        (expect (neocaml-opam-test--capf "depends: [ \"dune\" {>= \"3|")
+                :to-be nil)))
+
+    (it "does not offer packages in a non-dependency string"
+      (let ((neocaml-opam--package-cache '("dune")))
+        (expect (neocaml-opam-test--capf "maintainer: \"du|") :to-be nil)))
+
+    (it "offers nothing for packages when disabled"
+      (let ((neocaml-opam-complete-packages nil)
+            (neocaml-opam--package-cache '("dune")))
+        (expect (neocaml-opam-test--capf "depends: [ \"du|") :to-be nil))))
 
   (describe "context boundaries"
     (it "offers nothing inside a comment"

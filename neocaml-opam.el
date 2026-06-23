@@ -50,6 +50,22 @@
   :group 'neocaml-opam
   :package-version '(neocaml . "0.6.0"))
 
+(defcustom neocaml-opam-complete-packages t
+  "When non-nil, complete opam package names in dependency fields.
+Candidates come from `opam list' (see `neocaml-opam-list-program')
+and are offered inside the `depends', `depopts', and `conflicts'
+fields."
+  :type 'boolean
+  :safe #'booleanp
+  :group 'neocaml-opam
+  :package-version '(neocaml . "0.9.0"))
+
+(defcustom neocaml-opam-list-program "opam"
+  "The opam executable used to list available packages."
+  :type 'string
+  :group 'neocaml-opam
+  :package-version '(neocaml . "0.9.0"))
+
 ;;; Grammar installation
 
 (defconst neocaml-opam-grammar-recipes
@@ -174,13 +190,53 @@ See `prettify-symbols-alist' for more information.")
   '("url" "extra-source")
   "Section kinds for `neocaml-opam-mode' completion.")
 
+(defvar neocaml-opam--dependency-fields
+  '("depends" "depopts" "conflicts")
+  "Fields whose list values are opam package names.")
+
 (defconst neocaml-opam--ident-chars "[:alnum:]_-"
   "Characters that make up an opam field or package identifier.")
+
+(defvar neocaml-opam--package-cache nil
+  "Cached list of opam package names, or nil when not yet fetched.")
 
 (defun neocaml-opam--ident-bounds ()
   "Return the bounds of the opam identifier at point as (START . END)."
   (cons (save-excursion (skip-chars-backward neocaml-opam--ident-chars) (point))
         (save-excursion (skip-chars-forward neocaml-opam--ident-chars) (point))))
+
+(defun neocaml-opam--field-of-list (open-pos)
+  "Return the field name owning the list opened at OPEN-POS, or nil."
+  (save-excursion
+    (goto-char open-pos)
+    (skip-chars-backward " \t\n")
+    (when (eq (char-before) ?:)
+      (backward-char)
+      (let ((end (point)))
+        (skip-chars-backward neocaml-opam--ident-chars)
+        (buffer-substring-no-properties (point) end)))))
+
+(defun neocaml-opam--opam-packages ()
+  "Return the list of available opam packages via opam.
+Return nil when opam is unavailable or fails."
+  (when (executable-find neocaml-opam-list-program)
+    (with-temp-buffer
+      (when (zerop (call-process neocaml-opam-list-program nil t nil
+                                 "list" "--all" "--short"))
+        (split-string (buffer-string) "[ \t\n]+" t)))))
+
+(defun neocaml-opam--package-candidates ()
+  "Return opam package names for completion, caching the result."
+  (or neocaml-opam--package-cache
+      (setq neocaml-opam--package-cache (neocaml-opam--opam-packages))))
+
+(defun neocaml-opam-refresh-packages ()
+  "Clear the cached opam package names used for completion.
+Call this after the set of available packages changes (e.g. a new
+switch or `opam update')."
+  (interactive)
+  (setq neocaml-opam--package-cache nil)
+  (message "neocaml-opam: package cache cleared"))
 
 (defun neocaml-opam--capf (start end candidates annotation kind)
   "Build a capf result for CANDIDATES spanning START..END.
@@ -192,12 +248,24 @@ ANNOTATION is shown next to each candidate and KIND is the
         :exclusive 'no))
 
 (defun neocaml-opam-completion-at-point ()
-  "Complete opam field and section names at point.
+  "Complete opam field names and dependency package names at point.
 Intended for `completion-at-point-functions'."
   (let ((ppss (syntax-ppss)))
     (cond
-     ;; Inside a string or comment: nothing.
-     ((nth 3 ppss) nil)
+     ;; Inside a string: offer package names when it is an element of a
+     ;; dependency field's list.
+     ((nth 3 ppss)
+      (when neocaml-opam-complete-packages
+        (let ((opens (nth 9 ppss)))
+          (when (and opens
+                     (member (neocaml-opam--field-of-list (car (last opens)))
+                             neocaml-opam--dependency-fields))
+            (neocaml-opam--capf
+             (1+ (nth 8 ppss)) (point)
+             (completion-table-dynamic
+              (lambda (_) (neocaml-opam--package-candidates)))
+             "package" 'module)))))
+     ;; Inside a comment: nothing.
      ((nth 4 ppss) nil)
      ;; A top-level identifier at the start of a line is a field name.
      ((zerop (car ppss))
