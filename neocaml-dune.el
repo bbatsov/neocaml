@@ -185,6 +185,148 @@ buffer text with the formatted output, preserving point."
      (no-node parent-bol neocaml-dune-indent-offset)))
   "Indentation rules for `neocaml-dune-mode'.")
 
+;;; Completion
+
+;; Stanza and field names are taken from the dune manual's reference
+;; (https://dune.readthedocs.io/en/stable/reference/dune/index.html).
+
+(defvar neocaml-dune--stanza-names
+  '("library" "executable" "executables" "test" "tests" "rule" "alias"
+    "install" "env" "menhir" "ocamllex" "ocamlyacc" "documentation"
+    "cram" "mdx" "foreign_library" "toplevel" "plugin" "cinaps"
+    "deprecated_library_name" "generate_sites_module" "library_parameter"
+    "rocq.theory" "copy_files" "include" "dynamic_include" "subdir"
+    "dirs" "data_only_dirs" "ignored_subdirs" "vendored_dirs"
+    "include_subdirs" "files")
+  "Top-level stanza names for `neocaml-dune-mode' completion.")
+
+(defvar neocaml-dune--stanza-fields
+  '(("library"
+     . ("name" "public_name" "package" "synopsis" "modules" "libraries"
+        "wrapped" "preprocess" "preprocessor_deps" "optional" "foreign_stubs"
+        "foreign_archives" "install_c_headers" "public_headers" "modes"
+        "no_dynlink" "kind" "ppx_runtime_libraries" "virtual_deps" "implements"
+        "parameters" "js_of_ocaml" "wasm_of_ocaml" "flags" "ocamlc_flags"
+        "ocamlopt_flags" "library_flags" "c_library_flags"
+        "modules_without_implementation" "private_modules"
+        "allow_overlapping_dependencies" "enabled_if" "inline_tests"
+        "root_module" "ctypes" "empty_module_interface_if_absent"))
+    ("executable"
+     . ("name" "public_name" "package" "libraries" "link_flags" "link_deps"
+        "modules" "root_module" "modes" "preprocess" "preprocessor_deps"
+        "js_of_ocaml" "wasm_of_ocaml" "flags" "ocamlc_flags" "ocamlopt_flags"
+        "modules_without_implementation" "allow_overlapping_dependencies"
+        "optional" "enabled_if" "promote" "foreign_stubs" "foreign_archives"
+        "forbidden_libraries" "embed_in_plugin_libraries" "ctypes"
+        "empty_module_interface_if_absent"))
+    ("executables"
+     . ("names" "public_names" "package" "libraries" "link_flags" "link_deps"
+        "modules" "root_module" "modes" "preprocess" "preprocessor_deps"
+        "js_of_ocaml" "wasm_of_ocaml" "flags" "ocamlc_flags" "ocamlopt_flags"
+        "modules_without_implementation" "allow_overlapping_dependencies"
+        "optional" "enabled_if" "promote" "foreign_stubs" "foreign_archives"
+        "forbidden_libraries" "embed_in_plugin_libraries" "ctypes"
+        "empty_module_interface_if_absent"))
+    ("test"
+     . ("name" "libraries" "deps" "action" "enabled_if" "build_if" "locks"
+        "package" "modules" "modes" "flags" "preprocess" "preprocessor_deps"
+        "link_flags" "link_deps" "root_module" "ocamlc_flags" "ocamlopt_flags"
+        "forbidden_libraries"))
+    ("tests"
+     . ("names" "libraries" "deps" "action" "enabled_if" "build_if" "locks"
+        "package" "modules" "modes" "flags" "preprocess" "preprocessor_deps"
+        "link_flags" "link_deps" "root_module" "ocamlc_flags" "ocamlopt_flags"
+        "forbidden_libraries"))
+    ("rule"
+     . ("action" "target" "targets" "deps" "mode" "fallback" "locks" "alias"
+        "aliases" "package" "enabled_if"))
+    ("install"
+     . ("section" "files" "dirs" "source_trees" "package" "enabled_if"))
+    ("alias"
+     . ("name" "deps" "enabled_if" "action" "package" "locks"))
+    ("env"
+     . ("flags" "ocamlc_flags" "ocamlopt_flags" "link_flags" "c_flags"
+        "cxx_flags" "env-vars" "menhir_flags" "menhir" "js_of_ocaml"
+        "wasm_of_ocaml" "binaries" "inline_tests" "odoc" "rocq" "formatting"
+        "bin_annot"))
+    ("documentation"
+     . ("package" "mld_files" "files"))
+    ("menhir"
+     . ("modules" "merge_into" "flags" "infer" "explain"))
+    ("ocamllex"
+     . ("modules" "mode" "enabled_if"))
+    ("ocamlyacc"
+     . ("modules" "mode" "enabled_if")))
+  "Alist mapping a dune stanza name to its valid field names.
+Stanzas not listed here fall back to `neocaml-dune--all-fields'.")
+
+(defvar neocaml-dune--all-fields
+  (delete-dups (apply #'append (mapcar #'cdr neocaml-dune--stanza-fields)))
+  "Union of all known dune field names, used as a fallback.")
+
+(defconst neocaml-dune--atom-chars "[:alnum:]_.+-"
+  "Characters that make up a dune atom (stanza, field, or library name).")
+
+(defun neocaml-dune--atom-bounds ()
+  "Return the bounds of the dune atom at point as a cons (START . END).
+When point is not on an atom, both ends equal point."
+  (cons (save-excursion (skip-chars-backward neocaml-dune--atom-chars) (point))
+        (save-excursion (skip-chars-forward neocaml-dune--atom-chars) (point))))
+
+(defun neocaml-dune--first-atom-pos (open-pos)
+  "Return the position of the first atom following the open paren at OPEN-POS."
+  (save-excursion
+    (goto-char (1+ open-pos))
+    (skip-chars-forward " \t\n")
+    (point)))
+
+(defun neocaml-dune--head-after (open-pos)
+  "Return the head atom of the form opened at OPEN-POS, or nil."
+  (save-excursion
+    (goto-char (neocaml-dune--first-atom-pos open-pos))
+    (let ((beg (point)))
+      (skip-chars-forward neocaml-dune--atom-chars)
+      (when (> (point) beg)
+        (buffer-substring-no-properties beg (point))))))
+
+(defun neocaml-dune--fields-for (stanza)
+  "Return the field names valid inside STANZA, or the union fallback."
+  (or (cdr (assoc stanza neocaml-dune--stanza-fields))
+      neocaml-dune--all-fields))
+
+(defun neocaml-dune--capf (start end candidates annotation kind)
+  "Build a capf result for CANDIDATES spanning START..END.
+ANNOTATION is shown next to each candidate and KIND is the
+`:company-kind' symbol."
+  (list start end candidates
+        :annotation-function (lambda (_) (concat " " annotation))
+        :company-kind (lambda (_) kind)
+        :exclusive 'no))
+
+(defun neocaml-dune-completion-at-point ()
+  "Complete dune stanza and field names at point.
+Intended for `completion-at-point-functions'."
+  (let ((ppss (syntax-ppss)))
+    (when-let* (((not (nth 3 ppss)))    ; not inside a string
+                ((not (nth 4 ppss)))    ; not inside a comment
+                (opens (nth 9 ppss)))   ; enclosing open parens
+      (let* ((bounds (neocaml-dune--atom-bounds))
+             (start (car bounds))
+             (end (cdr bounds))
+             (depth (length opens))
+             (inner (car (last opens)))
+             (outer (car opens))
+             (head-p (= start (neocaml-dune--first-atom-pos inner))))
+        (cond
+         ((and (= depth 1) head-p)
+          (neocaml-dune--capf start end neocaml-dune--stanza-names
+                              "stanza" 'keyword))
+         ((and (>= depth 2) head-p)
+          (neocaml-dune--capf start end
+                              (neocaml-dune--fields-for
+                               (neocaml-dune--head-after outer))
+                              "field" 'property)))))))
+
 ;;; Imenu
 
 (defvar neocaml-dune--imenu-settings
@@ -224,6 +366,17 @@ For stanzas, returns the stanza type and its name field if present."
 
 ;;; Mode definition
 
+(defvar neocaml-dune-mode-syntax-table
+  (let ((table (make-syntax-table)))
+    ;; `;' starts a line comment ending at the newline.  Parentheses and
+    ;; double-quoted strings are inherited from the standard table; teaching
+    ;; the syntax table about comments keeps `syntax-ppss' (and thus
+    ;; completion-at-point) from miscounting parens inside comments.
+    (modify-syntax-entry ?\; "<" table)
+    (modify-syntax-entry ?\n ">" table)
+    table)
+  "Syntax table for `neocaml-dune-mode'.")
+
 ;;;###autoload
 (define-derived-mode neocaml-dune-mode prog-mode "dune"
   "Major mode for editing dune build files.
@@ -261,6 +414,10 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
 
   ;; Imenu
   (setq-local treesit-simple-imenu-settings neocaml-dune--imenu-settings)
+
+  ;; Completion
+  (add-hook 'completion-at-point-functions
+            #'neocaml-dune-completion-at-point nil t)
 
   ;; Navigation
   (setq-local treesit-defun-type-regexp "\\`stanza\\'")
