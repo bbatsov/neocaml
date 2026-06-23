@@ -58,6 +58,22 @@ Dune files conventionally use 1-space indentation."
   :group 'neocaml-dune
   :package-version '(neocaml . "0.8.0"))
 
+(defcustom neocaml-dune-complete-libraries t
+  "When non-nil, complete findlib library names in dune files.
+Candidates come from `ocamlfind list' (see
+`neocaml-dune-ocamlfind-program') and are offered inside fields
+such as `libraries' and `pps'."
+  :type 'boolean
+  :safe #'booleanp
+  :group 'neocaml-dune
+  :package-version '(neocaml . "0.9.0"))
+
+(defcustom neocaml-dune-ocamlfind-program "ocamlfind"
+  "The ocamlfind executable used to list installed libraries."
+  :type 'string
+  :group 'neocaml-dune
+  :package-version '(neocaml . "0.9.0"))
+
 ;;; Grammar installation
 
 (defconst neocaml-dune-grammar-recipes
@@ -294,6 +310,39 @@ When point is not on an atom, both ends equal point."
   (or (cdr (assoc stanza neocaml-dune--stanza-fields))
       neocaml-dune--all-fields))
 
+(defvar neocaml-dune--library-fields '("libraries" "pps")
+  "Field names whose values are findlib library names.")
+
+(defvar neocaml-dune--library-cache nil
+  "Cached list of findlib library names, or nil when not yet fetched.")
+
+(defun neocaml-dune--ocamlfind-libraries ()
+  "Return the list of installed findlib libraries via ocamlfind.
+Return nil when ocamlfind is unavailable or fails."
+  (when (executable-find neocaml-dune-ocamlfind-program)
+    (with-temp-buffer
+      (when (zerop (call-process neocaml-dune-ocamlfind-program nil t nil "list"))
+        (goto-char (point-min))
+        (let (libs)
+          (while (not (eobp))
+            (when (looking-at "\\([[:alnum:]_.-]+\\)[ \t]")
+              (push (match-string-no-properties 1) libs))
+            (forward-line 1))
+          (nreverse libs))))))
+
+(defun neocaml-dune--library-candidates ()
+  "Return findlib library names for completion, caching the result."
+  (or neocaml-dune--library-cache
+      (setq neocaml-dune--library-cache (neocaml-dune--ocamlfind-libraries))))
+
+(defun neocaml-dune-refresh-libraries ()
+  "Clear the cached findlib library names used for completion.
+Call this after installing or removing opam packages so the next
+completion reflects the current switch."
+  (interactive)
+  (setq neocaml-dune--library-cache nil)
+  (message "neocaml-dune: findlib library cache cleared"))
+
 (defun neocaml-dune--capf (start end candidates annotation kind)
   "Build a capf result for CANDIDATES spanning START..END.
 ANNOTATION is shown next to each candidate and KIND is the
@@ -325,7 +374,15 @@ Intended for `completion-at-point-functions'."
           (neocaml-dune--capf start end
                               (neocaml-dune--fields-for
                                (neocaml-dune--head-after outer))
-                              "field" 'property)))))))
+                              "field" 'property))
+         ((and neocaml-dune-complete-libraries
+               (not head-p)
+               (member (neocaml-dune--head-after inner)
+                       neocaml-dune--library-fields))
+          (neocaml-dune--capf start end
+                              (completion-table-dynamic
+                               (lambda (_) (neocaml-dune--library-candidates)))
+                              "library" 'module)))))))
 
 ;;; Imenu
 

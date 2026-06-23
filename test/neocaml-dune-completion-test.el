@@ -26,8 +26,11 @@ Return the raw capf result, or nil."
     (neocaml-dune-completion-at-point)))
 
 (defun neocaml-dune-test--candidates (content)
-  "Return the candidate list the dune capf offers for CONTENT."
-  (nth 2 (neocaml-dune-test--capf content)))
+  "Return the candidate list the dune capf offers for CONTENT.
+Resolves both plain lists and dynamic completion tables."
+  (let ((result (neocaml-dune-test--capf content)))
+    (when result
+      (all-completions "" (nth 2 result)))))
 
 (describe "neocaml-dune completion-at-point"
   (before-all
@@ -73,6 +76,39 @@ Return the raw capf result, or nil."
     (it "falls back to the union of fields for unknown stanzas"
       (let ((cands (neocaml-dune-test--candidates "(mystery_stanza (|")))
         (expect (member "name" cands) :to-be-truthy))))
+
+  (describe "library-name completion"
+    (it "offers findlib libraries inside a libraries field"
+      (let ((neocaml-dune--library-cache '("str" "re" "ppx_jane")))
+        (let ((cands (neocaml-dune-test--candidates "(library (libraries |")))
+          (expect (member "re" cands) :to-be-truthy)
+          (expect (member "ppx_jane" cands) :to-be-truthy))))
+
+    (it "offers libraries for a subsequent entry in the field"
+      (let ((neocaml-dune--library-cache '("str" "re")))
+        (expect (member "re" (neocaml-dune-test--candidates
+                              "(library (libraries str |"))
+                :to-be-truthy)))
+
+    (it "offers libraries inside a pps field"
+      (let ((neocaml-dune--library-cache '("ppx_jane" "ppx_deriving")))
+        (expect (member "ppx_deriving"
+                        (neocaml-dune-test--candidates
+                         "(library (preprocess (pps |")))
+                :to-be-truthy))
+
+    (it "offers nothing for libraries when disabled"
+      (let ((neocaml-dune-complete-libraries nil)
+            (neocaml-dune--library-cache '("str" "re")))
+        (expect (neocaml-dune-test--capf "(library (libraries |")
+                :to-be nil)))
+
+    (it "treats the field head itself as field completion, not a library"
+      ;; at `(library (lib|' the token is the field name, not a value
+      (let ((neocaml-dune--library-cache '("str")))
+        (expect (member "libraries"
+                        (neocaml-dune-test--candidates "(library (lib|"))
+                :to-be-truthy))))
 
   (describe "context boundaries"
     (it "offers nothing inside a comment"
