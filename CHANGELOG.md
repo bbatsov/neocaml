@@ -2,6 +2,8 @@
 
 ## main (unreleased)
 
+## 0.9.0 (2026-06-24)
+
 ### New features
 
 - [#63](https://github.com/bbatsov/neocaml/pull/63): Flesh out the mode and REPL menus:
@@ -27,6 +29,7 @@
 
 - Switch the `ocaml` and `ocaml-interface` grammars to tree-sitter-ocaml v0.25.0, pinned to the upstream `v0.25.0-abi14` tag (an ABI 14 regeneration of the same grammar, since v0.25.0 itself generates an ABI 15 parser most Emacs builds can't load yet). This brings in the OCaml 5.5 grammar support.
 - [#60](https://github.com/bbatsov/neocaml/issues/60): Highlight function-typed `val` specifications in `.mli` files with the function face, matching how function `let` bindings are highlighted in implementations.
+- Handle OCaml 5.5 external type declarations (`type t = external "caml_foo"`) in sexp navigation, so `C-M-f`/`C-M-b` step over the whole declaration body instead of just the `external` keyword.
 
 ## 0.8.1 (2026-05-13)
 
