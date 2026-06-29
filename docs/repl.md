@@ -216,13 +216,25 @@ Choose between plain utop and `dune utop` with `neocaml-utop-flavor`
 `dune-utop` makes the project's own libraries available in the toplevel.
 `M-x neocaml-utop-require` loads a findlib package via `#require`.
 
-Sending a phrase or definition from a source buffer also echoes its
-result (or error) in the minibuffer, SLIME/CIDER style, while the full
-output still goes to the transcript. Disable this with:
+Sending a phrase or definition from a source buffer also shows its
+result (or error) two ways, SLIME/CIDER style, while the full output
+still goes to the transcript: echoed in the minibuffer, and inline in
+the source buffer as a `=> ...` overlay at the end of the evaluated form
+(the overlay clears on the next evaluation or when you edit the code).
+Toggle either independently:
 
 ```emacs-lisp
-(setq neocaml-utop-echo-eval-result nil)
+(setq neocaml-utop-echo-eval-result nil)    ; no minibuffer echo
+(setq neocaml-utop-inline-eval-result nil)  ; no inline => overlay
 ```
+
+Region and buffer sends evaluate every `;;`-separated phrase in the
+selection, not just the first. In the transcript itself, `RET` submits
+the input when it forms a complete phrase (ends with `;;`, or is a `#`
+directive) and otherwise inserts a newline, so you can type multi-line
+phrases naturally; `RET` on a blank line submits regardless. When an
+evaluation fails, the underlined span in the source carries the error
+message as its tooltip.
 
 !!! note
     `neocaml-utop` needs utop (it relies on the `-emacs` protocol), so it

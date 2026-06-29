@@ -68,21 +68,28 @@
                   (neocaml-utop--send-eval 'fake-proc text))
                 (nreverse captured)))
 
-      (it "wraps a phrase in input/data/end, appending `;;'"
+      (it "wraps a phrase in input-multi/data/end, appending `;;'"
         (expect (send "let x = 1")
-                :to-equal '("input:add-to-history\n"
+                :to-equal '("input-multi:\n"
                             "data:let x = 1;;\n"
                             "end:\n")))
 
       (it "does not double a present `;;'"
         (expect (send "let x = 1;;")
-                :to-equal '("input:add-to-history\n"
+                :to-equal '("input-multi:\n"
                             "data:let x = 1;;\n"
+                            "end:\n")))
+
+      (it "sends every phrase of a multi-phrase region"
+        ;; input-multi means both phrases evaluate, not just the first.
+        (expect (send "let x = 1;; let y = 2;;")
+                :to-equal '("input-multi:\n"
+                            "data:let x = 1;; let y = 2;;\n"
                             "end:\n")))
 
       (it "splits a multi-line phrase into one data line per line"
         (expect (send "let x =\n  1 + 1")
-                :to-equal '("input:add-to-history\n"
+                :to-equal '("input-multi:\n"
                             "data:let x =\n"
                             "data:  1 + 1;;\n"
                             "end:\n"))))))
@@ -255,7 +262,100 @@
               (neocaml-utop--handle-accept "")
               (expect neocaml-utop--overlays :to-be nil)))
         (kill-buffer source)
+        (kill-buffer transcript))))
+
+  (it "attaches the following stderr text as the overlay tooltip"
+    (let ((source (generate-new-buffer "src"))
+          (transcript (generate-new-buffer "tr")))
+      (unwind-protect
+          (progn
+            (with-current-buffer source (insert "let y = 1 + \"a\""))
+            (with-current-buffer transcript
+              (setq neocaml-utop--error-target (list source 1 999))
+              (neocaml-utop--handle-accept "12,15")
+              ;; the error message arrives next, on stderr
+              (neocaml-utop--handle-line "stderr:Error: This expression has type string")
+              (expect (overlay-get (car neocaml-utop--overlays) 'help-echo)
+                      :to-equal "Error: This expression has type string")))
+        (kill-buffer source)
+        (kill-buffer transcript))))
+
+  (it "clears an error overlay when the underlined text is edited"
+    (let ((source (generate-new-buffer "src"))
+          (transcript (generate-new-buffer "tr")))
+      (unwind-protect
+          (progn
+            (with-current-buffer source (insert "let y = 1 + \"a\""))
+            (with-current-buffer transcript
+              (setq neocaml-utop--error-target (list source 1 999))
+              (neocaml-utop--handle-accept "12,15"))
+            (let ((ov (car (buffer-local-value 'neocaml-utop--overlays transcript))))
+              (expect (overlay-buffer ov) :to-equal source)
+              ;; edit inside the underlined span
+              (with-current-buffer source
+                (goto-char 14)
+                (insert "X"))
+              (expect (overlay-buffer ov) :to-be nil)))
+        (kill-buffer source)
         (kill-buffer transcript)))))
+
+(describe "neocaml-utop inline result overlay"
+  (it "shows the value as an after-string at the region's end of line"
+    (let ((source (generate-new-buffer "src"))
+          (transcript (generate-new-buffer "tr")))
+      (unwind-protect
+          (progn
+            (with-current-buffer source (insert "let x = 1 + 1"))
+            (with-current-buffer transcript
+              (neocaml-utop--inline-result
+               '((out . "val x : int = 2")) (list source 1 14) transcript)
+              (expect (length neocaml-utop--result-overlays) :to-equal 1)
+              (let ((ov (car neocaml-utop--result-overlays)))
+                (expect (overlay-buffer ov) :to-equal source)
+                (expect (overlay-get ov 'after-string)
+                        :to-equal (propertize "  => val x : int = 2"
+                                              'face 'neocaml-utop-result-face)))))
+        (kill-buffer source)
+        (kill-buffer transcript))))
+
+  (it "shows nothing for interactive input (target is the transcript)"
+    (let ((transcript (generate-new-buffer "tr")))
+      (unwind-protect
+          (with-current-buffer transcript
+            (insert "let x = 1 + 1")
+            (neocaml-utop--inline-result
+             '((out . "val x : int = 2")) (list transcript 1 14) transcript)
+            (expect neocaml-utop--result-overlays :to-be nil))
+        (kill-buffer transcript))))
+
+  (it "shows nothing when the result is only an error"
+    (let ((source (generate-new-buffer "src"))
+          (transcript (generate-new-buffer "tr")))
+      (unwind-protect
+          (progn
+            (with-current-buffer source (insert "let x = 1"))
+            (with-current-buffer transcript
+              (neocaml-utop--inline-result
+               '((err . "Error: boom")) (list source 1 10) transcript)
+              (expect neocaml-utop--result-overlays :to-be nil)))
+        (kill-buffer source)
+        (kill-buffer transcript)))))
+
+(describe "neocaml-utop input completeness"
+  (it "treats a `;;'-terminated phrase as complete"
+    (expect (neocaml-utop--phrase-complete-p "let x = 1;;") :to-be-truthy)
+    (expect (neocaml-utop--phrase-complete-p "let x = 1;;\n  ") :to-be-truthy))
+
+  (it "treats a toplevel directive as complete"
+    (expect (neocaml-utop--phrase-complete-p "#use \"foo.ml\"") :to-be-truthy)
+    (expect (neocaml-utop--phrase-complete-p "  #require \"str\"") :to-be-truthy))
+
+  (it "treats empty input as complete"
+    (expect (neocaml-utop--phrase-complete-p "   ") :to-be-truthy))
+
+  (it "treats an unterminated phrase as incomplete"
+    (expect (neocaml-utop--phrase-complete-p "let x =") :not :to-be-truthy)
+    (expect (neocaml-utop--phrase-complete-p "let x = 1") :not :to-be-truthy)))
 
 ;;;; Live integration against a real utop -emacs process
 
@@ -293,6 +393,24 @@
                       :to-be-truthy)
               (neocaml-utop-send-region (point-min) (point-max))
               (expect (wait (lambda () (string-match-p "val x : int = 2" (contents transcript))))
+                      :to-be-truthy))
+          (cleanup transcript source))))
+
+    (it "evaluates every phrase of a multi-phrase region"
+      ;; Regression: with plain `input' only the first phrase ran.
+      (let ((neocaml-utop-history-file nil)
+            (source (generate-new-buffer "src.ml"))
+            transcript)
+        (unwind-protect
+            (with-current-buffer source
+              (insert "let x = 1;; let y = 2;;")
+              (setq transcript (neocaml-utop--get-or-create))
+              (expect (wait (lambda () (string-match-p "utop\\[0\\]> " (contents transcript))))
+                      :to-be-truthy)
+              (neocaml-utop-send-region (point-min) (point-max))
+              (expect (wait (lambda ()
+                              (and (string-match-p "val x : int = 1" (contents transcript))
+                                   (string-match-p "val y : int = 2" (contents transcript)))))
                       :to-be-truthy))
           (cleanup transcript source))))
 
