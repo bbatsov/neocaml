@@ -35,7 +35,7 @@ It's also as cool as Neo from "The Matrix". ;-)
 - Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`, sentence movement with `M-a`/`M-e`)
 - Imenu with language-specific categories for `.ml` and `.mli`
 - Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
-- OCaml toplevel (REPL) integration (`neocaml-repl`)
+- OCaml toplevel (REPL) integration (`neocaml-repl`), plus an alternative utop backend (`neocaml-utop`) that speaks utop's native protocol for precise error highlighting and completion
 - Comment support: `fill-paragraph` (`M-q`), comment continuation (`M-j`), and `comment-dwim` (`M-;`)
 - Electric indentation on delimiter characters
 - opam file editing (`neocaml-opam-mode`) with font-lock, indentation, imenu, and `opam lint` integration (flymake and [flycheck](https://github.com/flycheck/flycheck))
