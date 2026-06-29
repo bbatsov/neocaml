@@ -135,6 +135,54 @@
       (expect neocaml-utop--completion-state :to-equal 'done)
       (expect (reverse neocaml-utop--completions) :to-equal '("map" "map2")))))
 
+(describe "neocaml-utop result echo"
+  (cl-flet ((capture-message (thunk)
+              (let (captured)
+                (cl-letf (((symbol-function 'message)
+                           (lambda (fmt &rest args)
+                             (when (stringp fmt)
+                               (setq captured (apply #'format fmt args))))))
+                  (funcall thunk))
+                captured)))
+
+    (it "captures output and echoes it when the capture is flushed"
+      (with-temp-buffer
+        (setq neocaml-utop--echo t neocaml-utop--echo-lines nil
+              neocaml-utop--echo-timer nil)
+        (neocaml-utop--handle-line "stdout:val x : int = 2")
+        (expect neocaml-utop--echo-lines :to-equal '((out . "val x : int = 2")))
+        ;; output arms a debounce timer; cancel it and flush synchronously
+        (expect (timerp neocaml-utop--echo-timer) :to-be-truthy)
+        (cancel-timer neocaml-utop--echo-timer)
+        (expect (capture-message
+                 (lambda () (neocaml-utop--echo-flush (current-buffer))))
+                :to-equal "val x : int = 2")
+        (expect neocaml-utop--echo :to-be nil)
+        (expect neocaml-utop--echo-lines :to-be nil)))
+
+    (it "echoes error text from stderr"
+      (with-temp-buffer
+        (setq neocaml-utop--echo t neocaml-utop--echo-lines nil
+              neocaml-utop--echo-timer nil)
+        (neocaml-utop--handle-line "stderr:Error: Unbound value foo")
+        (when (timerp neocaml-utop--echo-timer)
+          (cancel-timer neocaml-utop--echo-timer))
+        (expect (substring-no-properties
+                 (capture-message
+                  (lambda () (neocaml-utop--echo-flush (current-buffer)))))
+                :to-equal "Error: Unbound value foo")))
+
+    (it "does not capture when disarmed"
+      (with-temp-buffer
+        (setq neocaml-utop--echo nil neocaml-utop--echo-lines nil
+              neocaml-utop--echo-timer nil)
+        (neocaml-utop--handle-line "stdout:val x : int = 2")
+        (expect neocaml-utop--echo-lines :to-be nil)
+        (expect neocaml-utop--echo-timer :to-be nil)
+        (expect (capture-message
+                 (lambda () (neocaml-utop--echo-flush (current-buffer))))
+                :to-be nil)))))
+
 (describe "neocaml-utop error overlays"
   (it "underlines the exact character range reported by accept"
     (let ((source (generate-new-buffer "src"))
@@ -245,6 +293,28 @@
                       :to-be-truthy)
               (neocaml-utop-send-region (point-min) (point-max))
               (expect (wait (lambda () (string-match-p "val x : int = 2" (contents transcript))))
+                      :to-be-truthy))
+          (cleanup transcript source))))
+
+    (it "echoes a source evaluation's result in the minibuffer"
+      (let ((neocaml-utop-history-file nil)
+            (neocaml-utop-echo-eval-result t)
+            (source (generate-new-buffer "src.ml"))
+            transcript messages)
+        (unwind-protect
+            (with-current-buffer source
+              (insert "let x = 1 + 1")
+              (setq transcript (neocaml-utop--get-or-create))
+              (expect (wait (lambda () (string-match-p "utop\\[0\\]> " (contents transcript))))
+                      :to-be-truthy)
+              (cl-letf (((symbol-function 'message)
+                         (lambda (fmt &rest args)
+                           (when (stringp fmt) (push (apply #'format fmt args) messages)))))
+                (neocaml-utop-send-region (point-min) (point-max))
+                (wait (lambda ()
+                        (seq-find (lambda (m) (string-match-p "val x : int = 2" m))
+                                  messages))))
+              (expect (seq-find (lambda (m) (string-match-p "val x : int = 2" m)) messages)
                       :to-be-truthy))
           (cleanup transcript source))))
 

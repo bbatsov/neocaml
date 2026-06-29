@@ -216,6 +216,14 @@ Choose between plain utop and `dune utop` with `neocaml-utop-flavor`
 `dune-utop` makes the project's own libraries available in the toplevel.
 `M-x neocaml-utop-require` loads a findlib package via `#require`.
 
+Sending a phrase or definition from a source buffer also echoes its
+result (or error) in the minibuffer, SLIME/CIDER style, while the full
+output still goes to the transcript. Disable this with:
+
+```emacs-lisp
+(setq neocaml-utop-echo-eval-result nil)
+```
+
 !!! note
     `neocaml-utop` needs utop (it relies on the `-emacs` protocol), so it
     doesn't apply to the standard `ocaml` toplevel. Pick one backend per
