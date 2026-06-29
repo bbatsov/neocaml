@@ -4,7 +4,7 @@
 
 ### New features
 
-- Add `neocaml-utop`, an alternative toplevel backend that drives utop through its native editor protocol (`utop -emacs`). It runs in a comint-based transcript with input history and completion-at-point backed by utop's own engine, separates output/results/errors/warnings, and underlines the exact sub-expression a parse or type error points at in the source buffer. Sending a phrase or definition from a source buffer also echoes its result in the minibuffer (SLIME/CIDER style; toggle with `neocaml-utop-echo-eval-result`). Enable `neocaml-utop-minor-mode` in OCaml buffers to use it; the keybindings mirror `neocaml-repl-minor-mode`.
+- Add `neocaml-utop`, an alternative toplevel backend that drives utop through its native editor protocol (`utop -emacs`). It runs in a comint-based transcript with input history and completion-at-point backed by utop's own engine, separates output/results/errors/warnings, and underlines the exact sub-expression a parse or type error points at in the source buffer (with the error message as the overlay's tooltip; the underline clears when you edit the code). Source evaluations cover every `;;`-separated phrase in the region, and the result is shown both in the minibuffer (SLIME/CIDER style; toggle with `neocaml-utop-echo-eval-result`) and inline in the source buffer as a `=> ...` overlay (toggle with `neocaml-utop-inline-eval-result`). In the transcript, `RET` submits a complete phrase and otherwise inserts a newline, so multi-line phrases can be entered naturally. Enable `neocaml-utop-minor-mode` in OCaml buffers to use it; the keybindings mirror `neocaml-repl-minor-mode`.
 
 ## 0.9.0 (2026-06-24)
 

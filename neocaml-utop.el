@@ -129,11 +129,24 @@ the full output still goes to the transcript buffer."
   :type 'boolean
   :package-version '(neocaml . "0.10.0"))
 
+(defcustom neocaml-utop-inline-eval-result t
+  "When non-nil, show a source evaluation's value inline in the source buffer.
+The value is shown as a CIDER-style `=> ...' overlay at the end of the
+evaluated region; it is removed on the next evaluation or when the
+underlying text is edited."
+  :type 'boolean
+  :package-version '(neocaml . "0.10.0"))
+
 (defface neocaml-utop-error-face
   '((((supports :underline (:style wave)))
      :underline (:style wave :color "Red1"))
     (t :inherit error))
   "Face used to underline utop error spans in the source buffer."
+  :group 'neocaml-utop)
+
+(defface neocaml-utop-result-face
+  '((t :inherit shadow))
+  "Face for the inline `=>' result overlay in the source buffer."
   :group 'neocaml-utop)
 
 (defconst neocaml-utop--prompt-regexp "^utop\\[[0-9]+\\]> "
@@ -167,6 +180,15 @@ span past the source.  Nil when the last input was not source-derived
 
 (defvar-local neocaml-utop--overlays nil
   "Error overlays currently shown for the last evaluated phrase.")
+
+(defvar-local neocaml-utop--error-pending nil
+  "Error overlays awaiting their message text from the following stderr.")
+
+(defvar-local neocaml-utop--error-message ""
+  "Accumulated error text for the overlays in `neocaml-utop--error-pending'.")
+
+(defvar-local neocaml-utop--result-overlays nil
+  "Inline result overlays (the CIDER-style `=>') shown in source buffers.")
 
 (defvar-local neocaml-utop--echo nil
   "When non-nil, capture this evaluation's output for minibuffer echo.
@@ -222,10 +244,18 @@ is the per-project session derived from `neocaml-utop-buffer-name'."
 
 ;;;; Error overlays
 
+(defun neocaml-utop--overlay-evaporate (ov after &rest _)
+  "Delete OV when the text under it is edited.
+Used as an overlay modification hook; AFTER is non-nil on the call made
+after the change, which is when we remove the overlay."
+  (when after (delete-overlay ov)))
+
 (defun neocaml-utop--clear-overlays ()
   "Remove the error overlays tracked in this transcript buffer."
   (mapc #'delete-overlay neocaml-utop--overlays)
-  (setq neocaml-utop--overlays nil))
+  (setq neocaml-utop--overlays nil
+        neocaml-utop--error-pending nil
+        neocaml-utop--error-message ""))
 
 (defun neocaml-utop--handle-accept (arg)
   "Handle an `accept:ARG' message: ARG is empty on success.
@@ -233,7 +263,9 @@ Otherwise ARG is a comma-separated list of (a,b) character-offset pairs
 into the submitted phrase, which we map onto the source via
 `neocaml-utop--error-target' and underline.  Offsets are clamped to the
 phrase bounds so the appended `;;' (or an end-of-input error) cannot
-push a span past the source buffer."
+push a span past the source buffer.  The overlays clear themselves when
+the underlying text is edited, and get the error message as a tooltip
+once the following stderr arrives."
   (neocaml-utop--clear-overlays)
   (when (and (not (string-empty-p arg)) neocaml-utop--error-target)
     (let* ((buf (nth 0 neocaml-utop--error-target))
@@ -255,21 +287,37 @@ push a span past the source buffer."
                   (let ((ov (make-overlay beg ovend)))
                     (overlay-put ov 'face 'neocaml-utop-error-face)
                     (overlay-put ov 'help-echo "neocaml-utop: error here")
+                    (overlay-put ov 'modification-hooks
+                                 (list #'neocaml-utop--overlay-evaporate))
                     (push ov overlays))))))))
-      ;; Store back in the transcript buffer (we're running in its filter).
-      (setq neocaml-utop--overlays overlays))))
+      ;; Store back in the transcript buffer (we're running in its filter);
+      ;; the message text follows on stderr (see `neocaml-utop--handle-line').
+      (setq neocaml-utop--overlays overlays
+            neocaml-utop--error-pending overlays
+            neocaml-utop--error-message ""))))
 
-;;;; Result echo
+(defun neocaml-utop--note-error-text (text)
+  "Append TEXT to the pending error message and refresh overlay tooltips."
+  (when neocaml-utop--error-pending
+    (setq neocaml-utop--error-message
+          (if (string-empty-p neocaml-utop--error-message)
+              text
+            (concat neocaml-utop--error-message "\n" text)))
+    (dolist (ov neocaml-utop--error-pending)
+      (when (overlay-buffer ov)
+        (overlay-put ov 'help-echo neocaml-utop--error-message)))))
+
+;;;; Result echo and inline display
 ;;
 ;; utop's evaluated value is written to its redirected stdout, which
 ;; reaches us on a different channel than the command messages and can
 ;; land just *after* the terminating `prompt' (errors, sent inline, land
 ;; before it).  So rather than bound the capture on the prompt, we
 ;; debounce: each output line refreshes a short timer, and the result is
-;; echoed once output settles.
+;; shown once output settles.
 
 (defconst neocaml-utop--echo-settle-delay 0.2
-  "Seconds of output quiet before a captured result is echoed.")
+  "Seconds of output quiet before a captured result is shown.")
 
 (defun neocaml-utop--echo-result (lines)
   "Echo captured LINES (each (KIND . TEXT)) in the minibuffer.
@@ -284,18 +332,55 @@ Error and warning text is highlighted; empty lines are dropped."
     (unless (string-empty-p text)
       (message "%s" text))))
 
+(defun neocaml-utop--clear-result-overlays ()
+  "Remove the inline result overlays tracked in this transcript buffer."
+  (mapc #'delete-overlay neocaml-utop--result-overlays)
+  (setq neocaml-utop--result-overlays nil))
+
+(defun neocaml-utop--inline-result (lines target transcript)
+  "Show the value from LINES inline at the end of TARGET's region.
+TARGET is the (BUFFER START END) of the evaluated source; nothing is
+shown for interactive input (TARGET in TRANSCRIPT), for errors, or when
+there is no value.  The overlay is tracked in TRANSCRIPT and clears
+itself when the underlying text is edited."
+  (let ((value (mapconcat #'cdr
+                          (seq-filter (lambda (l) (and (eq (car l) 'out)
+                                                       (not (string-empty-p (cdr l)))))
+                                      lines)
+                          " ")))
+    (when (and (consp target) (not (string-empty-p value)))
+      (let ((buf (nth 0 target))
+            (end (nth 2 target)))
+        (when (and (buffer-live-p buf) (not (eq buf transcript)))
+          (let ((ov (with-current-buffer buf
+                      (save-excursion
+                        (goto-char (min end (point-max)))
+                        (let ((o (make-overlay (line-end-position) (line-end-position))))
+                          (overlay-put o 'after-string
+                                       (propertize (concat "  => " value)
+                                                   'face 'neocaml-utop-result-face))
+                          (overlay-put o 'modification-hooks
+                                       (list #'neocaml-utop--overlay-evaporate))
+                          o)))))
+            (with-current-buffer transcript
+              (push ov neocaml-utop--result-overlays))))))))
+
 (defun neocaml-utop--echo-flush (buffer)
-  "Echo and clear BUFFER's pending echo capture."
+  "Show and clear BUFFER's pending result capture (echo and/or inline)."
   (when (buffer-live-p buffer)
     (with-current-buffer buffer
-      (let ((lines (nreverse neocaml-utop--echo-lines)))
+      (let ((lines (nreverse neocaml-utop--echo-lines))
+            (target neocaml-utop--error-target))
         (setq neocaml-utop--echo nil
               neocaml-utop--echo-lines nil
               neocaml-utop--echo-timer nil)
-        (neocaml-utop--echo-result lines)))))
+        (when neocaml-utop-echo-eval-result
+          (neocaml-utop--echo-result lines))
+        (when neocaml-utop-inline-eval-result
+          (neocaml-utop--inline-result lines target buffer))))))
 
 (defun neocaml-utop--echo-accumulate (kind text)
-  "Record a TEXT line of KIND for echo and (re)arm the settle timer."
+  "Record a TEXT line of KIND for the result capture and re-arm the timer."
   (when neocaml-utop--echo
     (push (cons kind text) neocaml-utop--echo-lines)
     (when (timerp neocaml-utop--echo-timer)
@@ -322,8 +407,11 @@ Error and warning text is highlighted; empty lines are dropped."
        (concat arg "\n"))
       ("stderr"
        (neocaml-utop--echo-accumulate 'err arg)
+       (neocaml-utop--note-error-text arg)
        (concat (propertize arg 'face 'font-lock-warning-face) "\n"))
-      ("prompt" (neocaml-utop--prompt-string))
+      ("prompt"
+       (setq neocaml-utop--error-pending nil)
+       (neocaml-utop--prompt-string))
       ("accept" (neocaml-utop--handle-accept arg) "")
       ("completion-start"
        (setq neocaml-utop--completions nil
@@ -362,23 +450,50 @@ Installed in `comint-preoutput-filter-functions'."
   (process-send-string proc "end:\n"))
 
 (defun neocaml-utop--send-eval (proc text)
-  "Send TEXT to PROC as a single phrase, appending `;;' when missing.
-The terminator is required: without it utop reports a syntax error at
-end of input rather than waiting for more."
+  "Send TEXT to PROC for evaluation, appending `;;' when missing.
+Uses the protocol's `input-multi' so a region or buffer containing
+several `;;'-separated phrases evaluates all of them, not just the
+first.  The terminator is required: without it utop reports a syntax
+error at end of input rather than waiting for more."
   (let ((payload (if (string-suffix-p ";;" (string-trim-right text))
                      text
                    (concat text ";;"))))
-    (process-send-string proc "input:add-to-history\n")
+    (process-send-string proc "input-multi:\n")
     (neocaml-utop--send-data proc payload)))
 
 (defun neocaml-utop--input-sender (proc input)
-  "Comint input sender: evaluate INPUT typed in the transcript.
+  "Comint input sender: send INPUT typed in the transcript to PROC.
 Records the input's buffer span so error offsets land on it."
   (with-current-buffer (process-buffer proc)
     (let ((start (marker-position comint-last-input-start)))
       (setq neocaml-utop--error-target
             (list (current-buffer) start (+ start (length input))))))
   (neocaml-utop--send-eval proc input))
+
+(defun neocaml-utop--phrase-complete-p (input)
+  "Return non-nil when INPUT is ready to submit to utop.
+True for empty input, a phrase terminated by `;;', or a toplevel
+directive (beginning with `#')."
+  (let ((trimmed (string-trim input)))
+    (or (string-empty-p trimmed)
+        (string-suffix-p ";;" (string-trim-right input))
+        (string-prefix-p "#" trimmed))))
+
+(defun neocaml-utop-return ()
+  "Submit the current input, or insert a newline if the phrase is incomplete.
+Bound to \\`RET' in the transcript: input is treated as complete (and
+submitted) when it ends with `;;' or is a toplevel directive (begins
+with `#'), letting you type multi-line phrases naturally.  Pressing
+\\`RET' on a blank trailing line submits regardless."
+  (interactive)
+  (let* ((proc (get-buffer-process (current-buffer)))
+         (input (and proc (buffer-substring-no-properties
+                           (process-mark proc) (point-max)))))
+    (if (or (null proc)
+            (neocaml-utop--phrase-complete-p input)
+            (save-excursion (beginning-of-line) (looking-at-p "[ \t]*$")))
+        (comint-send-input)
+      (newline))))
 
 ;;;; Completion
 
@@ -419,6 +534,7 @@ Active only in the transcript buffer, on the current input line."
 (defvar neocaml-utop-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map comint-mode-map)
+    (define-key map (kbd "RET") #'neocaml-utop-return)
     (define-key map (kbd "C-c C-z") #'neocaml-utop-switch-to-source)
     (easy-menu-define neocaml-utop-mode-menu map "utop Menu"
       '("utop"
@@ -449,6 +565,7 @@ Active only in the transcript buffer, on the current input line."
   (setq-local neocaml-utop--partial "")
   (setq-local neocaml-utop--count -1)
   (setq-local neocaml-utop--overlays nil)
+  (setq-local neocaml-utop--result-overlays nil)
   (setq-local comment-start "(* ")
   (setq-local comment-end " *)")
   (setq-local comment-start-skip "(\\*+[ \t]*")
@@ -457,9 +574,11 @@ Active only in the transcript buffer, on the current input line."
   (add-hook 'completion-at-point-functions
             #'neocaml-utop-completion-at-point nil t)
   (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist))
-  ;; Error overlays live in source buffers but are tracked here; drop them
-  ;; when this transcript is killed so they don't linger on the source.
+  ;; Error and inline-result overlays live in source buffers but are
+  ;; tracked here; drop them when this transcript is killed so they don't
+  ;; linger on the source.
   (add-hook 'kill-buffer-hook #'neocaml-utop--clear-overlays nil t)
+  (add-hook 'kill-buffer-hook #'neocaml-utop--clear-result-overlays nil t)
   (when neocaml-utop-history-file
     (setq-local comint-input-ring-file-name neocaml-utop-history-file)
     (setq-local comint-input-ring-size neocaml-utop-history-size)
@@ -505,13 +624,18 @@ source-derived (so no error overlay should be drawn)."
       (setq neocaml-utop--error-target target))))
 
 (defun neocaml-utop--arm-echo ()
-  "Begin capturing the next evaluation's output for minibuffer echo.
-Honors `neocaml-utop-echo-eval-result'."
+  "Begin capturing the next evaluation's output for result display.
+Capture runs when either `neocaml-utop-echo-eval-result' or
+`neocaml-utop-inline-eval-result' is enabled; the flush decides which
+display(s) to use.  Any inline overlay from a previous evaluation is
+cleared."
   (when-let* ((buf (get-buffer (neocaml-utop--buffer-name))))
     (with-current-buffer buf
       (when (timerp neocaml-utop--echo-timer)
         (cancel-timer neocaml-utop--echo-timer))
-      (setq neocaml-utop--echo neocaml-utop-echo-eval-result
+      (neocaml-utop--clear-result-overlays)
+      (setq neocaml-utop--echo (or neocaml-utop-echo-eval-result
+                                   neocaml-utop-inline-eval-result)
             neocaml-utop--echo-lines nil
             neocaml-utop--echo-timer nil))))
 
