@@ -121,6 +121,14 @@ protocol's `complete-company' request."
   :type 'boolean
   :package-version '(neocaml . "0.10.0"))
 
+(defcustom neocaml-utop-echo-eval-result t
+  "When non-nil, echo the result of a source evaluation in the minibuffer.
+This mirrors a SLIME/CIDER-style flow: sending a phrase or definition
+from a source buffer shows its value (or error) in the echo area, while
+the full output still goes to the transcript buffer."
+  :type 'boolean
+  :package-version '(neocaml . "0.10.0"))
+
 (defface neocaml-utop-error-face
   '((((supports :underline (:style wave)))
      :underline (:style wave :color "Red1"))
@@ -159,6 +167,18 @@ span past the source.  Nil when the last input was not source-derived
 
 (defvar-local neocaml-utop--overlays nil
   "Error overlays currently shown for the last evaluated phrase.")
+
+(defvar-local neocaml-utop--echo nil
+  "When non-nil, capture this evaluation's output for minibuffer echo.
+Set when a source evaluation is sent; cleared when its terminating
+`prompt' arrives and the result has been echoed.")
+
+(defvar-local neocaml-utop--echo-lines nil
+  "Accumulated (KIND . TEXT) output lines for the current echo capture.
+KIND is `out' (stdout) or `err' (stderr); the list is reversed.")
+
+(defvar-local neocaml-utop--echo-timer nil
+  "Debounce timer that flushes the echo capture once output settles.")
 
 (defvar-local neocaml-utop--completions nil
   "Completion candidates accumulated from the current `complete' request.")
@@ -239,6 +259,51 @@ push a span past the source buffer."
       ;; Store back in the transcript buffer (we're running in its filter).
       (setq neocaml-utop--overlays overlays))))
 
+;;;; Result echo
+;;
+;; utop's evaluated value is written to its redirected stdout, which
+;; reaches us on a different channel than the command messages and can
+;; land just *after* the terminating `prompt' (errors, sent inline, land
+;; before it).  So rather than bound the capture on the prompt, we
+;; debounce: each output line refreshes a short timer, and the result is
+;; echoed once output settles.
+
+(defconst neocaml-utop--echo-settle-delay 0.2
+  "Seconds of output quiet before a captured result is echoed.")
+
+(defun neocaml-utop--echo-result (lines)
+  "Echo captured LINES (each (KIND . TEXT)) in the minibuffer.
+Error and warning text is highlighted; empty lines are dropped."
+  (let* ((kept (seq-remove (lambda (l) (string-empty-p (cdr l))) lines))
+         (text (mapconcat
+                (lambda (l)
+                  (if (eq (car l) 'err)
+                      (propertize (cdr l) 'face 'font-lock-warning-face)
+                    (cdr l)))
+                kept "\n")))
+    (unless (string-empty-p text)
+      (message "%s" text))))
+
+(defun neocaml-utop--echo-flush (buffer)
+  "Echo and clear BUFFER's pending echo capture."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (let ((lines (nreverse neocaml-utop--echo-lines)))
+        (setq neocaml-utop--echo nil
+              neocaml-utop--echo-lines nil
+              neocaml-utop--echo-timer nil)
+        (neocaml-utop--echo-result lines)))))
+
+(defun neocaml-utop--echo-accumulate (kind text)
+  "Record a TEXT line of KIND for echo and (re)arm the settle timer."
+  (when neocaml-utop--echo
+    (push (cons kind text) neocaml-utop--echo-lines)
+    (when (timerp neocaml-utop--echo-timer)
+      (cancel-timer neocaml-utop--echo-timer))
+    (setq neocaml-utop--echo-timer
+          (run-at-time neocaml-utop--echo-settle-delay nil
+                       #'neocaml-utop--echo-flush (current-buffer)))))
+
 ;;;; Protocol parsing
 
 (defun neocaml-utop--prompt-string ()
@@ -252,8 +317,12 @@ push a span past the source buffer."
          (cmd (if idx (substring line 0 idx) line))
          (arg (if idx (substring line (1+ idx)) "")))
     (pcase cmd
-      ("stdout" (concat arg "\n"))
-      ("stderr" (concat (propertize arg 'face 'font-lock-warning-face) "\n"))
+      ("stdout"
+       (neocaml-utop--echo-accumulate 'out arg)
+       (concat arg "\n"))
+      ("stderr"
+       (neocaml-utop--echo-accumulate 'err arg)
+       (concat (propertize arg 'face 'font-lock-warning-face) "\n"))
       ("prompt" (neocaml-utop--prompt-string))
       ("accept" (neocaml-utop--handle-accept arg) "")
       ("completion-start"
@@ -435,6 +504,17 @@ source-derived (so no error overlay should be drawn)."
     (with-current-buffer buf
       (setq neocaml-utop--error-target target))))
 
+(defun neocaml-utop--arm-echo ()
+  "Begin capturing the next evaluation's output for minibuffer echo.
+Honors `neocaml-utop-echo-eval-result'."
+  (when-let* ((buf (get-buffer (neocaml-utop--buffer-name))))
+    (with-current-buffer buf
+      (when (timerp neocaml-utop--echo-timer)
+        (cancel-timer neocaml-utop--echo-timer))
+      (setq neocaml-utop--echo neocaml-utop-echo-eval-result
+            neocaml-utop--echo-lines nil
+            neocaml-utop--echo-timer nil))))
+
 ;;;###autoload
 (defun neocaml-utop-run ()
   "Start a utop session for the current buffer's project, or switch to it."
@@ -507,6 +587,7 @@ Works whether or not the toplevel is still running."
   (let ((proc (neocaml-utop--ensure-process))
         (source (current-buffer)))
     (neocaml-utop--set-error-target (list source start end))
+    (neocaml-utop--arm-echo)
     (neocaml-utop--send-eval proc (buffer-substring-no-properties start end))
     (pulse-momentary-highlight-region start end)))
 
