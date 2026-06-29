@@ -155,13 +155,69 @@ e.g. `OCaml-REPL[utop]`.
 ```
 
 !!! note
-    Don't pass utop's `-emacs` flag; it activates a structured
-    protocol meant for the old `utop.el` integration, which
-    `neocaml-repl' doesn't implement.  Plain `utop` works fine with
-    the comint-based REPL.
+    Don't pass utop's `-emacs` flag here. It activates a structured
+    protocol that the comint-based REPL doesn't speak; plain `utop`
+    works fine with `neocaml-repl`. If you want that protocol, use the
+    dedicated [`neocaml-utop`](#the-utop-protocol-backend) backend
+    described below.
 
 !!! note
     If Emacs can't find `utop` or `ocaml`, your shell `PATH` may not be
     inherited. See
     [Troubleshooting](troubleshooting.md#ocamllsp-not-found-macos-gui-emacs)
     for the fix.
+
+## The utop protocol backend
+
+`neocaml-utop` is an alternative toplevel integration that drives utop
+through its native editor protocol (`utop -emacs`) instead of treating
+it as a plain comint stream. It's a separate module from `neocaml-repl`;
+use whichever you prefer. `neocaml-repl` remains the right choice for the
+standard `ocaml` toplevel, which has no protocol of its own.
+
+In protocol mode utop does no rendering itself and reports structured
+information that a raw stream can't, which lets `neocaml-utop`:
+
+- separate output, results, errors, and warnings without guessing from
+  the text;
+- underline the **exact** sub-expression a parse or type error points at,
+  back in your source buffer (see the `neocaml-utop-error-face` face),
+  rather than just the line;
+- answer completion from utop's own engine, wired into
+  `completion-at-point` in the transcript.
+
+The transcript is a comint derivative, so input editing, history (with
+optional persistence via `neocaml-utop-history-file`), and read-only
+prompts work as usual.
+
+Enable the source-buffer minor mode to get the keybindings, then press
+`C-c C-z` to start a session:
+
+```emacs-lisp
+(add-hook 'neocaml-base-mode-hook #'neocaml-utop-minor-mode)
+```
+
+The keybindings mirror `neocaml-repl-minor-mode`:
+
+| Keybinding | Command | Description |
+|------------|---------|-------------|
+| `C-c C-z` | `neocaml-utop-switch-to-utop` | Start utop or switch to a running session |
+| `C-c C-c` | `neocaml-utop-send-definition` | Send the definition at point |
+| `C-c C-r` | `neocaml-utop-send-region` | Send the active region |
+| `C-c C-b` | `neocaml-utop-send-buffer` | Send the whole buffer |
+| `C-c C-p` | `neocaml-utop-send-phrase` | Send the phrase at point (code up to `;;`) |
+| `C-c C-n` | `neocaml-utop-send-phrase-and-step` | Send the phrase, then move to the next one |
+| `C-c C-l` | `neocaml-utop-load-file` | Load the current file via `#use` |
+| `C-c C-i` | `neocaml-utop-interrupt` | Interrupt the utop process |
+| `C-c C-k` | `neocaml-utop-clear-buffer` | Clear the transcript buffer |
+
+Choose between plain utop and `dune utop` with `neocaml-utop-flavor`
+(`utop` or `dune-utop`), set globally or per project via `.dir-locals.el`;
+`dune-utop` makes the project's own libraries available in the toplevel.
+`M-x neocaml-utop-require` loads a findlib package via `#require`.
+
+!!! note
+    `neocaml-utop` needs utop (it relies on the `-emacs` protocol), so it
+    doesn't apply to the standard `ocaml` toplevel. Pick one backend per
+    buffer: enable either `neocaml-repl-minor-mode` or
+    `neocaml-utop-minor-mode`, since they share the same keybindings.

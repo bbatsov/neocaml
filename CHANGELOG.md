@@ -2,6 +2,10 @@
 
 ## main (unreleased)
 
+### New features
+
+- Add `neocaml-utop`, an alternative toplevel backend that drives utop through its native editor protocol (`utop -emacs`). It runs in a comint-based transcript with input history and completion-at-point backed by utop's own engine, separates output/results/errors/warnings, and underlines the exact sub-expression a parse or type error points at in the source buffer. Enable `neocaml-utop-minor-mode` in OCaml buffers to use it; the keybindings mirror `neocaml-repl-minor-mode`.
+
 ## 0.9.0 (2026-06-24)
 
 ### New features
