@@ -137,6 +137,16 @@ underlying text is edited."
   :type 'boolean
   :package-version '(neocaml . "0.10.0"))
 
+(defcustom neocaml-utop-fontify-input t
+  "When non-nil, fontify transcript input using tree-sitter via `neocaml-mode'.
+This uses `comint-fontify-input-mode' (Emacs 29.1+) to give the OCaml
+code you type in the transcript full syntax highlighting, while the
+toplevel's output keeps its own highlighting.
+
+Set to nil to use only the basic transcript font-lock keywords for input."
+  :type 'boolean
+  :package-version '(neocaml . "0.10.0"))
+
 (defface neocaml-utop-error-face
   '((((supports :underline (:style wave)))
      :underline (:style wave :color "Red1"))
@@ -584,7 +594,12 @@ Active only in the transcript buffer, on the current input line."
     (setq-local comint-input-ring-size neocaml-utop-history-size)
     (setq-local comint-input-ignoredups t)
     (comint-read-input-ring t)
-    (add-hook 'kill-buffer-hook #'comint-write-input-ring nil t)))
+    (add-hook 'kill-buffer-hook #'comint-write-input-ring nil t))
+  ;; Tree-sitter fontification for transcript input, via an indirect
+  ;; buffer in `neocaml-mode' (mirrors `neocaml-repl').
+  (when neocaml-utop-fontify-input
+    (setq-local comint-indirect-setup-function #'neocaml-mode)
+    (comint-fontify-input-mode)))
 
 ;;;; Lifecycle
 

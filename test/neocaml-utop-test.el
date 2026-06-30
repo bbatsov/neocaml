@@ -357,6 +357,22 @@
     (expect (neocaml-utop--phrase-complete-p "let x =") :not :to-be-truthy)
     (expect (neocaml-utop--phrase-complete-p "let x = 1") :not :to-be-truthy)))
 
+(describe "neocaml-utop input fontification"
+  (it "enables comint-fontify-input-mode when configured"
+    (let ((neocaml-utop-fontify-input t)
+          (neocaml-utop-history-file nil))
+      (with-temp-buffer
+        (neocaml-utop-mode)
+        (expect comint-fontify-input-mode :to-be-truthy)
+        (expect comint-indirect-setup-function :to-equal #'neocaml-mode))))
+
+  (it "leaves input unfontified when disabled"
+    (let ((neocaml-utop-fontify-input nil)
+          (neocaml-utop-history-file nil))
+      (with-temp-buffer
+        (neocaml-utop-mode)
+        (expect comint-fontify-input-mode :not :to-be-truthy)))))
+
 ;;;; Live integration against a real utop -emacs process
 
 (describe "neocaml-utop live session"
