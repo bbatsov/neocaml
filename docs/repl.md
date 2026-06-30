@@ -232,7 +232,9 @@ Region and buffer sends evaluate every `;;`-separated phrase in the
 selection, not just the first. In the transcript itself, `RET` submits
 the input when it forms a complete phrase (ends with `;;`, or is a `#`
 directive) and otherwise inserts a newline, so you can type multi-line
-phrases naturally; `RET` on a blank line submits regardless. When an
+phrases naturally; `RET` on a blank line submits regardless. Input you
+type is fontified with tree-sitter (via `comint-fontify-input-mode`),
+which you can turn off with `neocaml-utop-fontify-input`. When an
 evaluation fails, the underlined span in the source carries the error
 message as its tooltip.
 
