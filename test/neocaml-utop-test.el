@@ -139,7 +139,8 @@
       (neocaml-utop--handle-line "completion:map2")
       (neocaml-utop--handle-line "completion-stop:")
       (expect neocaml-utop--completion-state :to-equal 'done)
-      (expect (reverse neocaml-utop--completions) :to-equal '("map" "map2")))))
+      ;; the collection order is an internal detail; assert the set
+      (expect neocaml-utop--completions :to-have-same-items-as '("map" "map2")))))
 
 (describe "neocaml-utop result echo"
   (cl-flet ((capture-message (thunk)

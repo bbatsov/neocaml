@@ -145,11 +145,9 @@ Resolves both plain lists and dynamic completion tables."
               (make-directory (expand-file-name "sub" root))
               (write-region "(executable (name main))" nil
                             (expand-file-name "sub/dune" root))
-              (let ((libs (neocaml-dune--local-libraries root)))
-                (expect (member "my_lib" libs) :to-be-truthy)
-                (expect (member "my.pub" libs) :to-be-truthy)
-                ;; executable names are not library names
-                (expect (member "main" libs) :to-be nil)))
+              ;; exactly the library/public names, and not the executable
+              (expect (neocaml-dune--local-libraries root)
+                      :to-have-same-items-as '("my_lib" "my.pub")))
           (delete-directory root t))))
 
     (it "ignores dune files under _build"
