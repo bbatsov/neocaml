@@ -14,6 +14,47 @@
 
 ;;;; Tests
 
+(defun neocaml-test--run-face-matcher (target expected)
+  "Call the `:to-have-face' matcher directly and return its (RESULT . MESSAGE).
+Lets a spec inspect the matcher's own outcome without failing itself."
+  (funcall (get :to-have-face 'buttercup-matcher)
+           (lambda () target) (lambda () expected)))
+
+(describe "the :to-have-face matcher"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (it "passes for both the string and range forms"
+    (with-temp-buffer
+      (insert "let x = 1")
+      (let ((treesit-font-lock-level 4)) (neocaml-mode))
+      (font-lock-ensure)
+      (goto-char (point-min))
+      (expect "let" :to-have-face 'font-lock-keyword-face)
+      (goto-char (point-min))
+      (expect (list 1 3) :to-have-face 'font-lock-keyword-face)))
+
+  (it "fails with a descriptive message on a face mismatch"
+    (with-temp-buffer
+      (insert "let x = 1")
+      (let ((treesit-font-lock-level 4)) (neocaml-mode))
+      (font-lock-ensure)
+      (goto-char (point-min))
+      (let ((result (neocaml-test--run-face-matcher "let" 'font-lock-string-face)))
+        (expect (car result) :to-be nil)
+        (expect (cdr result) :to-match "to have face font-lock-string-face"))))
+
+  (it "fails when the text cannot be found"
+    (with-temp-buffer
+      (insert "let x = 1")
+      (let ((treesit-font-lock-level 4)) (neocaml-mode))
+      (font-lock-ensure)
+      (goto-char (point-min))
+      (let ((result (neocaml-test--run-face-matcher "nonexistent" 'font-lock-keyword-face)))
+        (expect (car result) :to-be nil)
+        (expect (cdr result) :to-match "not present")))))
+
 (describe "neocaml font-lock"
   (before-all
     (unless (treesit-language-available-p 'ocaml)

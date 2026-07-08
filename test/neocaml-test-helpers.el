@@ -94,6 +94,49 @@ Otherwise return the symbol `various-faces'."
           (setq pos (1+ pos)))
         (if consistent face 'various-faces)))))
 
+(defun neocaml-test--face-target (target)
+  "Resolve TARGET to a (START END DESCRIPTION) list in the current buffer.
+TARGET is one of:
+  - a string, searched for sequentially from point (whole identifiers are
+    matched on symbol boundaries, other text literally);
+  - a position (integer);
+  - a (START END) range.
+Return nil when a string TARGET cannot be found."
+  (cond
+   ((stringp target)
+    (let ((case-fold-search nil))
+      (when (if (string-match-p "\\`[a-zA-Z_][a-zA-Z0-9_]*\\'" target)
+                (re-search-forward
+                 (concat "\\_<" (regexp-quote target) "\\_>") nil t)
+              (search-forward target nil t))
+        (list (match-beginning 0) (1- (match-end 0)) (format "%S" target)))))
+   ((integerp target)
+    (list target target (format "position %d" target)))
+   ((and (consp target) (integerp (car target)))
+    (list (nth 0 target) (nth 1 target)
+          (format "range %d-%d" (nth 0 target) (nth 1 target))))))
+
+(buttercup-define-matcher :to-have-face (target expected)
+  "Check that TARGET is fontified with face EXPECTED in the current buffer.
+TARGET is a string (searched for sequentially from point, matching whole
+identifiers on symbol boundaries), a position, or a (START END) range.
+Only meaningful after the buffer has been fontified."
+  (let* ((target (funcall target))
+         (expected (funcall expected))
+         (resolved (neocaml-test--face-target target)))
+    (if (not resolved)
+        (cons nil (format "Expected to find %S in the buffer to check its \
+face, but it was not present" target))
+      (let* ((start (nth 0 resolved))
+             (end (nth 1 resolved))
+             (desc (nth 2 resolved))
+             (actual (neocaml-test-face-at-range start end)))
+        (cons (equal actual expected)
+              (if (equal actual expected)
+                  (format "Expected %s not to have face %S" desc expected)
+                (format "Expected %s to have face %S, but it had %S"
+                        desc expected actual)))))))
+
 (defun neocaml-test--check-face-specs (mode content face-specs)
   "Fontify CONTENT with MODE and assert FACE-SPECS.
 Each element of FACE-SPECS is either:
@@ -108,27 +151,9 @@ Each element of FACE-SPECS is either:
     (dolist (spec face-specs)
       (if (stringp (car spec))
           ;; Text-based spec: ("text" face)
-          (let* ((text (nth 0 spec))
-                 (expected (nth 1 spec))
-                 (case-fold-search nil)
-                 (found (if (string-match-p "\\`[a-zA-Z_][a-zA-Z0-9_]*\\'" text)
-                            ;; Identifier-like text: use symbol boundaries
-                            ;; to avoid matching inside longer identifiers/keywords
-                            (re-search-forward
-                             (concat "\\_<" (regexp-quote text) "\\_>") nil t)
-                          (search-forward text nil t))))
-            (expect found :not :to-be nil)
-            (when found
-              (let* ((start (match-beginning 0))
-                     (end (1- (match-end 0)))
-                     (actual (neocaml-test-face-at-range start end)))
-                (expect actual :to-equal expected))))
+          (expect (nth 0 spec) :to-have-face (nth 1 spec))
         ;; Position-based spec: (start end face)
-        (let* ((start (nth 0 spec))
-               (end (nth 1 spec))
-               (expected (nth 2 spec))
-               (actual (neocaml-test-face-at-range start end)))
-          (expect actual :to-equal expected))))))
+        (expect (list (nth 0 spec) (nth 1 spec)) :to-have-face (nth 2 spec))))))
 
 (defmacro when-fontifying-it (description &rest tests)
   "Create a Buttercup test asserting font-lock faces in OCaml code.
