@@ -14,6 +14,30 @@
 (require 'buttercup)
 (require 'neocaml)
 
+;;;; Buffer teardown
+
+(defvar neocaml-test--buffers nil
+  "Buffers registered for teardown after the current spec.")
+
+(defun neocaml-test-track-buffer (buffer)
+  "Register BUFFER (and any process it runs) for teardown, and return it.
+Pair with `neocaml-test-kill-tracked-buffers' in an `after-each' so specs
+can create buffers without hand-rolling `unwind-protect' cleanup."
+  (push buffer neocaml-test--buffers)
+  buffer)
+
+(defun neocaml-test-kill-tracked-buffers ()
+  "Kill the buffers registered with `neocaml-test-track-buffer'.
+Any live process in a tracked buffer is deleted first (without a
+query-on-exit prompt)."
+  (dolist (buffer neocaml-test--buffers)
+    (when (buffer-live-p buffer)
+      (when-let* ((proc (get-buffer-process buffer)))
+        (set-process-query-on-exit-flag proc nil)
+        (delete-process proc))
+      (kill-buffer buffer)))
+  (setq neocaml-test--buffers nil))
+
 ;;;; String helpers
 
 (defun neocaml-test--dedent (string)

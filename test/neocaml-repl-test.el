@@ -105,123 +105,122 @@
         (expect (buffer-substring-no-properties pos (+ pos 2)) :to-equal ";;")))))
 
 (describe "neocaml-repl source-to-repl switch"
+  (after-each (neocaml-test-kill-tracked-buffers))
+
   (it "pops to an existing REPL buffer and records the source"
-    (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
-          (repl (get-buffer-create neocaml-repl-buffer-name)))
-      (unwind-protect
-          (with-current-buffer source
-            ;; Existing REPL has the same flavor as requested, so no restart prompt.
-            (with-current-buffer repl (setq neocaml-repl--flavor neocaml-repl-flavor))
-            (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
-            (spy-on 'comint-check-proc :and-return-value t)
-            (spy-on 'pop-to-buffer)
-            (neocaml-repl-switch-to-repl)
-            (expect 'pop-to-buffer :to-have-been-called-with neocaml-repl-buffer-name)
-            (expect (buffer-local-value 'neocaml-repl--source-buffer repl)
-                    :to-equal source))
-        (kill-buffer source)
-        (when (buffer-live-p repl) (kill-buffer repl)))))
+    (let ((source (neocaml-test-track-buffer
+                   (generate-new-buffer "*neocaml-repl-test-source*")))
+          (repl (neocaml-test-track-buffer
+                 (get-buffer-create neocaml-repl-buffer-name))))
+      (with-current-buffer source
+        ;; Existing REPL has the same flavor as requested, so no restart prompt.
+        (with-current-buffer repl (setq neocaml-repl--flavor neocaml-repl-flavor))
+        (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
+        (spy-on 'comint-check-proc :and-return-value t)
+        (spy-on 'pop-to-buffer)
+        (neocaml-repl-switch-to-repl)
+        (expect 'pop-to-buffer :to-have-been-called-with neocaml-repl-buffer-name)
+        (expect (buffer-local-value 'neocaml-repl--source-buffer repl)
+                :to-equal source))))
 
   (it "starts a new REPL when none is running and records the source"
-    (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
-          (repl (get-buffer-create neocaml-repl-buffer-name)))
-      (unwind-protect
-          (with-current-buffer source
-            (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
-            (spy-on 'comint-check-proc :and-return-value nil)
-            (spy-on 'neocaml-repl-start)
-            (neocaml-repl-switch-to-repl)
-            (expect 'neocaml-repl-start :to-have-been-called)
-            (expect (buffer-local-value 'neocaml-repl--source-buffer repl)
-                    :to-equal source))
-        (kill-buffer source)
-        (when (buffer-live-p repl) (kill-buffer repl)))))
+    (let ((source (neocaml-test-track-buffer
+                   (generate-new-buffer "*neocaml-repl-test-source*")))
+          (repl (neocaml-test-track-buffer
+                 (get-buffer-create neocaml-repl-buffer-name))))
+      (with-current-buffer source
+        (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
+        (spy-on 'comint-check-proc :and-return-value nil)
+        (spy-on 'neocaml-repl-start)
+        (neocaml-repl-switch-to-repl)
+        (expect 'neocaml-repl-start :to-have-been-called)
+        (expect (buffer-local-value 'neocaml-repl--source-buffer repl)
+                :to-equal source))))
 
   (it "offers to restart the REPL when the requested flavor differs"
-    (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
-          (repl (get-buffer-create neocaml-repl-buffer-name)))
-      (unwind-protect
-          (with-current-buffer source
-            (with-current-buffer repl (setq neocaml-repl--flavor 'ocaml))
-            (let ((neocaml-repl-flavor 'utop))
-              (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
-              (spy-on 'comint-check-proc :and-return-value t)
-              (spy-on 'y-or-n-p :and-return-value t)
-              (spy-on 'neocaml-repl--kill)
-              (spy-on 'neocaml-repl-start)
-              (neocaml-repl-switch-to-repl)
-              (expect 'neocaml-repl--kill :to-have-been-called)
-              (expect 'neocaml-repl-start :to-have-been-called)))
-        (kill-buffer source)
-        (when (buffer-live-p repl) (kill-buffer repl))))))
+    (let ((source (neocaml-test-track-buffer
+                   (generate-new-buffer "*neocaml-repl-test-source*")))
+          (repl (neocaml-test-track-buffer
+                 (get-buffer-create neocaml-repl-buffer-name))))
+      (with-current-buffer source
+        (with-current-buffer repl (setq neocaml-repl--flavor 'ocaml))
+        (let ((neocaml-repl-flavor 'utop))
+          (spy-on 'neocaml-repl--buffer :and-return-value neocaml-repl-buffer-name)
+          (spy-on 'comint-check-proc :and-return-value t)
+          (spy-on 'y-or-n-p :and-return-value t)
+          (spy-on 'neocaml-repl--kill)
+          (spy-on 'neocaml-repl-start)
+          (neocaml-repl-switch-to-repl)
+          (expect 'neocaml-repl--kill :to-have-been-called)
+          (expect 'neocaml-repl-start :to-have-been-called))))))
 
 (describe "neocaml-repl buffer switching"
+  (after-each (neocaml-test-kill-tracked-buffers))
+
   (it "pops to the saved source buffer"
-    (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
-          (repl (generate-new-buffer "*neocaml-repl-test-repl*")))
-      (unwind-protect
-          (with-current-buffer repl
-            (setq-local neocaml-repl--source-buffer source)
-            (spy-on 'pop-to-buffer)
-            (neocaml-repl-switch-to-source)
-            (expect 'pop-to-buffer :to-have-been-called-with source))
-        (kill-buffer source)
-        (kill-buffer repl))))
+    (let ((source (neocaml-test-track-buffer
+                   (generate-new-buffer "*neocaml-repl-test-source*")))
+          (repl (neocaml-test-track-buffer
+                 (generate-new-buffer "*neocaml-repl-test-repl*"))))
+      (with-current-buffer repl
+        (setq-local neocaml-repl--source-buffer source)
+        (spy-on 'pop-to-buffer)
+        (neocaml-repl-switch-to-source)
+        (expect 'pop-to-buffer :to-have-been-called-with source))))
 
   (it "messages when no source buffer is set"
-    (let ((repl (generate-new-buffer "*neocaml-repl-test-repl*")))
-      (unwind-protect
-          (with-current-buffer repl
-            (setq-local neocaml-repl--source-buffer nil)
-            (spy-on 'message)
-            (neocaml-repl-switch-to-source)
-            (expect 'message :to-have-been-called-with "No source buffer to return to"))
-        (kill-buffer repl))))
+    (let ((repl (neocaml-test-track-buffer
+                 (generate-new-buffer "*neocaml-repl-test-repl*"))))
+      (with-current-buffer repl
+        (setq-local neocaml-repl--source-buffer nil)
+        (spy-on 'message)
+        (neocaml-repl-switch-to-source)
+        (expect 'message :to-have-been-called-with "No source buffer to return to"))))
 
   (it "messages when the saved source buffer is dead"
-    (let ((source (generate-new-buffer "*neocaml-repl-test-source*"))
-          (repl (generate-new-buffer "*neocaml-repl-test-repl*")))
-      (unwind-protect
-          (with-current-buffer repl
-            (setq-local neocaml-repl--source-buffer source)
-            (kill-buffer source)
-            (spy-on 'message)
-            (neocaml-repl-switch-to-source)
-            (expect 'message :to-have-been-called-with "No source buffer to return to"))
-        (when (buffer-live-p repl) (kill-buffer repl))))))
+    (let ((source (neocaml-test-track-buffer
+                   (generate-new-buffer "*neocaml-repl-test-source*")))
+          (repl (neocaml-test-track-buffer
+                 (generate-new-buffer "*neocaml-repl-test-repl*"))))
+      (with-current-buffer repl
+        (setq-local neocaml-repl--source-buffer source)
+        (kill-buffer source)
+        (spy-on 'message)
+        (neocaml-repl-switch-to-source)
+        (expect 'message :to-have-been-called-with "No source buffer to return to")))))
 
 (describe "neocaml-repl--start-command"
+  (after-each (neocaml-test-kill-tracked-buffers))
+
   (it "records the flavor and command and sets the mode line"
-    (let ((repl "*neocaml-repl-startcmd-test*"))
-      (unwind-protect
-          (progn
-            (spy-on 'make-comint-in-buffer :and-call-fake
-                    (lambda (_name buffer &rest _) (get-buffer-create buffer)))
-            (spy-on 'neocaml-repl-mode)
-            (let ((buf (neocaml-repl--start-command repl '("utop") 'utop)))
-              (with-current-buffer buf
-                (expect neocaml-repl--flavor :to-equal 'utop)
-                (expect neocaml-repl--command-line :to-equal '("utop"))
-                (expect mode-name :to-equal "OCaml-REPL[utop]"))))
-        (when (get-buffer repl) (kill-buffer repl))))))
+    (spy-on 'make-comint-in-buffer :and-call-fake
+            (lambda (_name buffer &rest _) (get-buffer-create buffer)))
+    (spy-on 'neocaml-repl-mode)
+    (let ((buf (neocaml-test-track-buffer
+                (neocaml-repl--start-command "*neocaml-repl-startcmd-test*"
+                                             '("utop") 'utop))))
+      (with-current-buffer buf
+        (expect neocaml-repl--flavor :to-equal 'utop)
+        (expect neocaml-repl--command-line :to-equal '("utop"))
+        (expect mode-name :to-equal "OCaml-REPL[utop]")))))
 
 (describe "neocaml-repl restart"
+  (after-each (neocaml-test-kill-tracked-buffers))
+
   (it "relaunches with the recorded flavor and command"
-    (let ((repl (get-buffer-create "*neocaml-repl-restart-test*")))
-      (unwind-protect
-          (progn
-            (with-current-buffer repl
-              (setq-local neocaml-repl--flavor 'utop)
-              (setq-local neocaml-repl--command-line '("utop")))
-            (spy-on 'neocaml-repl--buffer :and-return-value "*neocaml-repl-restart-test*")
-            (spy-on 'neocaml-repl--kill)
-            (spy-on 'neocaml-repl--start-command)
-            (neocaml-repl-restart)
-            (expect 'neocaml-repl--kill
-                    :to-have-been-called-with "*neocaml-repl-restart-test*")
-            (expect 'neocaml-repl--start-command
-                    :to-have-been-called-with "*neocaml-repl-restart-test*" '("utop") 'utop))
-        (when (buffer-live-p repl) (kill-buffer repl)))))
+    (let ((repl (neocaml-test-track-buffer
+                 (get-buffer-create "*neocaml-repl-restart-test*"))))
+      (with-current-buffer repl
+        (setq-local neocaml-repl--flavor 'utop)
+        (setq-local neocaml-repl--command-line '("utop")))
+      (spy-on 'neocaml-repl--buffer :and-return-value "*neocaml-repl-restart-test*")
+      (spy-on 'neocaml-repl--kill)
+      (spy-on 'neocaml-repl--start-command)
+      (neocaml-repl-restart)
+      (expect 'neocaml-repl--kill
+              :to-have-been-called-with "*neocaml-repl-restart-test*")
+      (expect 'neocaml-repl--start-command
+              :to-have-been-called-with "*neocaml-repl-restart-test*" '("utop") 'utop)))
 
   (it "falls back to a fresh start when nothing was recorded"
     (spy-on 'neocaml-repl--buffer :and-return-value "*neocaml-repl-absent*")
