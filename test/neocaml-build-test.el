@@ -13,30 +13,30 @@
 
 (describe "neocaml--resolve-build-path"
   (it "resolves dune-style _build/default/lib/foo.ml"
-    (cl-letf (((symbol-function 'file-readable-p)
-               (lambda (f) (string= f "/project/lib/foo.ml"))))
-      (expect (neocaml--resolve-build-path "/project/_build/default/lib/foo.ml")
-              :to-equal "/project/lib/foo.ml")))
+    (spy-on 'file-readable-p :and-call-fake
+            (lambda (f) (string= f "/project/lib/foo.ml")))
+    (expect (neocaml--resolve-build-path "/project/_build/default/lib/foo.ml")
+            :to-equal "/project/lib/foo.ml"))
 
   (it "resolves ocamlbuild-style _build/lib/foo.ml"
-    (cl-letf (((symbol-function 'file-readable-p)
-               (lambda (f) (string= f "/project/lib/foo.ml"))))
-      (expect (neocaml--resolve-build-path "/project/_build/lib/foo.ml")
-              :to-equal "/project/lib/foo.ml")))
+    (spy-on 'file-readable-p :and-call-fake
+            (lambda (f) (string= f "/project/lib/foo.ml")))
+    (expect (neocaml--resolve-build-path "/project/_build/lib/foo.ml")
+            :to-equal "/project/lib/foo.ml"))
 
   (it "returns nil for non-_build paths"
     (expect (neocaml--resolve-build-path "/project/lib/foo.ml")
             :to-be nil))
 
   (it "returns nil when no source file exists"
-    (cl-letf (((symbol-function 'file-readable-p) (lambda (_f) nil)))
-      (expect (neocaml--resolve-build-path "/project/_build/default/lib/foo.ml")
-              :to-be nil)))
+    (spy-on 'file-readable-p :and-return-value nil)
+    (expect (neocaml--resolve-build-path "/project/_build/default/lib/foo.ml")
+            :to-be nil))
 
   (it "prefers dune-style over ocamlbuild-style when both exist"
-    (cl-letf (((symbol-function 'file-readable-p) (lambda (_f) t)))
-      (expect (neocaml--resolve-build-path "/project/_build/default/lib/foo.ml")
-              :to-equal "/project/lib/foo.ml"))))
+    (spy-on 'file-readable-p :and-return-value t)
+    (expect (neocaml--resolve-build-path "/project/_build/default/lib/foo.ml")
+            :to-equal "/project/lib/foo.ml")))
 
 (describe "neocaml-redirect-build-files"
   (it "defaults to t"
@@ -47,42 +47,28 @@
             :to-equal #'booleanp)))
 
 (describe "neocaml--check-build-dir"
+  (before-each
+    (spy-on 'derived-mode-p :and-return-value t)
+    (spy-on 'y-or-n-p :and-return-value nil))
+
   (it "prompts to switch when visiting a _build/ file"
-    (let ((prompted nil))
-      (cl-letf (((symbol-function 'buffer-file-name)
-                 (lambda () "/project/_build/default/lib/foo.ml"))
-                ((symbol-function 'derived-mode-p)
-                 (lambda (&rest _) t))
-                ((symbol-function 'file-readable-p)
-                 (lambda (f) (string= f "/project/lib/foo.ml")))
-                ((symbol-function 'y-or-n-p)
-                 (lambda (_prompt) (setq prompted t) nil)))
-        (let ((neocaml-redirect-build-files t))
-          (neocaml--check-build-dir)
-          (expect prompted :to-be t)))))
+    (spy-on 'buffer-file-name :and-return-value "/project/_build/default/lib/foo.ml")
+    (spy-on 'file-readable-p :and-call-fake
+            (lambda (f) (string= f "/project/lib/foo.ml")))
+    (let ((neocaml-redirect-build-files t))
+      (neocaml--check-build-dir)
+      (expect 'y-or-n-p :to-have-been-called)))
 
   (it "does not prompt when neocaml-redirect-build-files is nil"
-    (let ((prompted nil))
-      (cl-letf (((symbol-function 'buffer-file-name)
-                 (lambda () "/project/_build/default/lib/foo.ml"))
-                ((symbol-function 'derived-mode-p)
-                 (lambda (&rest _) t))
-                ((symbol-function 'y-or-n-p)
-                 (lambda (_prompt) (setq prompted t) nil)))
-        (let ((neocaml-redirect-build-files nil))
-          (neocaml--check-build-dir)
-          (expect prompted :to-be nil)))))
+    (spy-on 'buffer-file-name :and-return-value "/project/_build/default/lib/foo.ml")
+    (let ((neocaml-redirect-build-files nil))
+      (neocaml--check-build-dir)
+      (expect 'y-or-n-p :not :to-have-been-called)))
 
   (it "does not prompt for non-_build/ files"
-    (let ((prompted nil))
-      (cl-letf (((symbol-function 'buffer-file-name)
-                 (lambda () "/project/lib/foo.ml"))
-                ((symbol-function 'derived-mode-p)
-                 (lambda (&rest _) t))
-                ((symbol-function 'y-or-n-p)
-                 (lambda (_prompt) (setq prompted t) nil)))
-        (let ((neocaml-redirect-build-files t))
-          (neocaml--check-build-dir)
-          (expect prompted :to-be nil))))))
+    (spy-on 'buffer-file-name :and-return-value "/project/lib/foo.ml")
+    (let ((neocaml-redirect-build-files t))
+      (neocaml--check-build-dir)
+      (expect 'y-or-n-p :not :to-have-been-called))))
 
 ;;; neocaml-build-test.el ends here

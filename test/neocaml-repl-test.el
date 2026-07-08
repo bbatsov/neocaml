@@ -35,31 +35,29 @@
     (expect (string-match-p neocaml-repl--prompt-regexp "val x : int") :not :to-be-truthy)))
 
 (describe "neocaml-repl input sender"
-  ;; Stub out `comint-send-string' so we can capture what would be
-  ;; sent to the toplevel without a real process.
-  (let (captured)
-    (before-each (setq captured nil))
+  ;; Spy on `comint-send-string' to capture what would be sent to the
+  ;; toplevel without a real process.
+  (before-each (spy-on 'comint-send-string))
 
-    (cl-flet ((send (input)
-                (cl-letf (((symbol-function 'comint-send-string)
-                           (lambda (_proc str) (setq captured str))))
-                  (neocaml-repl--input-sender 'fake-proc input))
-                captured))
+  (cl-flet ((send (input)
+              (neocaml-repl--input-sender 'fake-proc input)
+              (nth 1 (spy-context-args
+                      (spy-calls-most-recent 'comint-send-string)))))
 
-      (it "appends `;;' and a newline when input is unterminated"
-        (expect (send "let x = 1") :to-equal "let x = 1\n;;\n"))
+    (it "appends `;;' and a newline when input is unterminated"
+      (expect (send "let x = 1") :to-equal "let x = 1\n;;\n"))
 
-      (it "leaves input alone when it already ends with `;;'"
-        (expect (send "let x = 1;;") :to-equal "let x = 1;;\n"))
+    (it "leaves input alone when it already ends with `;;'"
+      (expect (send "let x = 1;;") :to-equal "let x = 1;;\n"))
 
-      (it "treats trailing whitespace as still terminated"
-        (expect (send "let x = 1;;   ") :to-equal "let x = 1;;   \n")
-        (expect (send "let x = 1;;\n") :to-equal "let x = 1;;\n\n"))
+    (it "treats trailing whitespace as still terminated"
+      (expect (send "let x = 1;;   ") :to-equal "let x = 1;;   \n")
+      (expect (send "let x = 1;;\n") :to-equal "let x = 1;;\n\n"))
 
-      (it "does not get fooled by `;;' inside a string"
-        ;; The trailing-`;;' check is purely textual; if the literal
-        ;; last two chars aren't `;;' we must terminate.
-        (expect (send "let s = \";;\"") :to-equal "let s = \";;\"\n;;\n")))))
+    (it "does not get fooled by `;;' inside a string"
+      ;; The trailing-`;;' check is purely textual; if the literal
+      ;; last two chars aren't `;;' we must terminate.
+      (expect (send "let s = \";;\"") :to-equal "let s = \";;\"\n;;\n"))))
 
 (describe "neocaml-repl phrase delimiter search"
   (before-all

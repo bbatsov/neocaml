@@ -49,50 +49,49 @@
 
 (describe "neocaml-utop buffer naming"
   (it "uses the base name when there is no project"
-    (cl-letf (((symbol-function 'neocaml-repl--project-id) (lambda () nil)))
-      (let ((neocaml-utop-buffer-name "*utop*"))
-        (expect (neocaml-utop--buffer-name) :to-equal "*utop*"))))
+    (spy-on 'neocaml-repl--project-id :and-return-value nil)
+    (let ((neocaml-utop-buffer-name "*utop*"))
+      (expect (neocaml-utop--buffer-name) :to-equal "*utop*")))
 
   (it "derives a per-project name from the base"
-    (cl-letf (((symbol-function 'neocaml-repl--project-id) (lambda () "proj")))
-      (let ((neocaml-utop-buffer-name "*utop*"))
-        (expect (neocaml-utop--buffer-name) :to-equal "*utop: proj*")))))
+    (spy-on 'neocaml-repl--project-id :and-return-value "proj")
+    (let ((neocaml-utop-buffer-name "*utop*"))
+      (expect (neocaml-utop--buffer-name) :to-equal "*utop: proj*"))))
 
 (describe "neocaml-utop input sender protocol"
-  ;; Capture the bytes that would be written to the process.
-  (let (captured)
-    (cl-flet ((send (text)
-                (setq captured nil)
-                (cl-letf (((symbol-function 'process-send-string)
-                           (lambda (_proc str) (push str captured))))
-                  (neocaml-utop--send-eval 'fake-proc text))
-                (nreverse captured)))
+  ;; Spy on `process-send-string' to capture the bytes sent to the process.
+  (before-each (spy-on 'process-send-string))
 
-      (it "wraps a phrase in input-multi/data/end, appending `;;'"
-        (expect (send "let x = 1")
-                :to-equal '("input-multi:\n"
-                            "data:let x = 1;;\n"
-                            "end:\n")))
+  (cl-flet ((send (text)
+              (neocaml-utop--send-eval 'fake-proc text)
+              (mapcar (lambda (args) (nth 1 args))
+                      (spy-calls-all-args 'process-send-string))))
 
-      (it "does not double a present `;;'"
-        (expect (send "let x = 1;;")
-                :to-equal '("input-multi:\n"
-                            "data:let x = 1;;\n"
-                            "end:\n")))
+    (it "wraps a phrase in input-multi/data/end, appending `;;'"
+      (expect (send "let x = 1")
+              :to-equal '("input-multi:\n"
+                          "data:let x = 1;;\n"
+                          "end:\n")))
 
-      (it "sends every phrase of a multi-phrase region"
-        ;; input-multi means both phrases evaluate, not just the first.
-        (expect (send "let x = 1;; let y = 2;;")
-                :to-equal '("input-multi:\n"
-                            "data:let x = 1;; let y = 2;;\n"
-                            "end:\n")))
+    (it "does not double a present `;;'"
+      (expect (send "let x = 1;;")
+              :to-equal '("input-multi:\n"
+                          "data:let x = 1;;\n"
+                          "end:\n")))
 
-      (it "splits a multi-line phrase into one data line per line"
-        (expect (send "let x =\n  1 + 1")
-                :to-equal '("input-multi:\n"
-                            "data:let x =\n"
-                            "data:  1 + 1;;\n"
-                            "end:\n"))))))
+    (it "sends every phrase of a multi-phrase region"
+      ;; input-multi means both phrases evaluate, not just the first.
+      (expect (send "let x = 1;; let y = 2;;")
+              :to-equal '("input-multi:\n"
+                          "data:let x = 1;; let y = 2;;\n"
+                          "end:\n")))
+
+    (it "splits a multi-line phrase into one data line per line"
+      (expect (send "let x =\n  1 + 1")
+              :to-equal '("input-multi:\n"
+                          "data:let x =\n"
+                          "data:  1 + 1;;\n"
+                          "end:\n")))))
 
 (describe "neocaml-utop protocol line handling"
   (it "renders stdout verbatim"
