@@ -1,5 +1,9 @@
 # Changelog
 
+<!-- Entries are one line per item and section headings repeat for every release,
+     so the line-length and duplicate-heading rules don't fit this file. -->
+<!-- markdownlint-disable MD013 MD024 -->
+
 ## main (unreleased)
 
 ### New features
@@ -168,7 +172,7 @@
 ### Bug fixes
 
 - Fix `M-q` (`fill-paragraph`) not indenting continuation lines in comments.
-- Fix `M-;` (`comment-dwim`) failing to remove ` *)` when uncommenting a region.
+- Fix `M-;` (`comment-dwim`) failing to remove `*)` when uncommenting a region.
 
 ### New features
 
