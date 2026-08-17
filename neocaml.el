@@ -1235,7 +1235,7 @@ This makes commands like `delete-pair' work correctly."
   `((,language
      (sexp (not ,(rx (or "{" "}" "(" ")" "[" "]" "[|" "|]"
                          "," "." ";" ";;" ":" "::" ":>" "->"
-                         "<-" "=" "|" ".."))))
+                         "<-" "=" "|" ".." "\"" "'"))))
      (list ,neocaml--list-node-regex)
      (sentence ,(regexp-opt '("value_definition"
                               "type_definition"
