@@ -310,6 +310,203 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
   "OCaml builtin type names for tree-sitter font-locking.
 List taken from the upstream highlights.scm.")
 
+;;;; Ocamldoc markup rendering
+;;
+;; Doc comments ((** ... *)) are written in the ocamldoc markup
+;; language: {b bold}, {i italic}, [inline code], {[ code blocks ]},
+;; {!references}, @tags, and so on.  The comment text is opaque to the
+;; parse tree, so the `doc-markup' font-lock feature scans doc comment
+;; nodes with regular expressions and renders the markup with real
+;; faces (bold, italic, a code face), layered on top of
+;; `font-lock-doc-face' so the markup reads in place instead of as
+;; punctuation soup.  Disable by removing `doc-markup' from
+;; `treesit-font-lock-feature-list'.
+;;
+;; Longer term this could be replaced by injecting the tree-sitter odoc
+;; grammar into doc comments (the way `js-ts-mode' injects jsdoc); the
+;; scanner keeps the feature working without an extra grammar.
+
+(defconst neocaml--doc-comment-regexp "^(\\*\\*[^*]"
+  "Regexp matching the text of a doc comment node ((** ...).
+The [^*] excludes (*** separator comments.")
+
+(defface neocaml-doc-markup-face
+  '((t :inherit font-lock-doc-markup-face))
+  "Face for ocamldoc markup delimiters and @tags in doc comments."
+  :group 'neocaml)
+
+(defface neocaml-doc-bold-face
+  '((t :inherit bold))
+  "Face for {b ...} markup in doc comments."
+  :group 'neocaml)
+
+(defface neocaml-doc-italic-face
+  '((t :inherit italic))
+  "Face for {i ...} and {e ...} markup in doc comments."
+  :group 'neocaml)
+
+(defface neocaml-doc-heading-face
+  '((t :inherit bold))
+  "Face for {0 ...} to {5 ...} section headings in doc comments."
+  :group 'neocaml)
+
+(defface neocaml-doc-code-face
+  '((t :inherit font-lock-constant-face))
+  "Face for [inline code], {[ code blocks ]} and verbatim text in doc comments."
+  :group 'neocaml)
+
+(defface neocaml-doc-reference-face
+  '((t :inherit font-lock-constant-face))
+  "Face for {!reference} and {:link} targets in doc comments."
+  :group 'neocaml)
+
+(defconst neocaml--doc-markup-tag-regexp
+  (concat "@" (regexp-opt '("author" "before" "canonical" "children_order"
+                            "closed" "deprecated" "hidden" "inline" "open"
+                            "order_category" "param" "raise" "return" "see"
+                            "short_title" "since" "toc_status" "version"))
+          "\\_>")
+  "Regexp matching an ocamldoc/odoc tag such as @param or @return.")
+
+(defun neocaml--doc-markup-close (open close limit)
+  "Return the position of the CLOSE char balancing one open construct.
+Scan from point up to LIMIT, treating OPEN and CLOSE (characters) as
+nesting delimiters and a backslash as escaping the next character.
+Point should be just past the opening delimiter.  Return nil if the
+construct is unbalanced."
+  (save-excursion
+    ;; `skip-chars-forward' jumps over runs of uninteresting text at C
+    ;; speed; only delimiters and backslashes are handled in Lisp.
+    (let ((skip (concat "^" (string open close) "\\\\"))
+          (depth 1) found)
+      (while (and (not found)
+                  (progn (skip-chars-forward skip limit)
+                         (< (point) limit)))
+        (let ((c (char-after)))
+          (cond ((eq c ?\\) (forward-char 1))
+                ((eq c open) (setq depth (1+ depth)))
+                ((eq c close)
+                 (setq depth (1- depth))
+                 (when (zerop depth) (setq found (point))))))
+        (forward-char 1))
+      found)))
+
+(defun neocaml--doc-markup-content-face (marker)
+  "Return the face for the content of a {MARKER ...} construct, if any.
+MARKER is the character after the opening brace."
+  (cond ((eq marker ?b) 'neocaml-doc-bold-face)
+        ((memq marker '(?i ?e)) 'neocaml-doc-italic-face)
+        ;; Section headings: {0 ...} to {5 ...}
+        ((<= ?0 marker ?9) 'neocaml-doc-heading-face)))
+
+(defun neocaml--doc-markup-fontify-span (open open-end close-beg close-end
+                                              content-face override)
+  "Fontify one markup construct.
+OPEN..OPEN-END is the opening delimiter and CLOSE-BEG..CLOSE-END the
+closing one; both get `neocaml-doc-markup-face'.  The content between
+them gets CONTENT-FACE, when non-nil.  OVERRIDE is the override flag
+from `treesit-font-lock-rules'."
+  (treesit-fontify-with-override
+   open open-end 'neocaml-doc-markup-face override)
+  (when content-face
+    (treesit-fontify-with-override open-end close-beg content-face override))
+  (treesit-fontify-with-override
+   close-beg close-end 'neocaml-doc-markup-face override))
+
+(defun neocaml--fontify-doc-markup (node override _start end &rest _)
+  "Fontify ocamldoc markup inside the comment NODE.
+Only doc comments are touched; plain comments are left alone.
+OVERRIDE is the override flag from `treesit-font-lock-rules'.
+Scanning always starts from the beginning of the node - starting
+mid-comment could miss an opening marker - but stops once past END,
+the end of the region being fontified; jit-lock asks for the rest
+later."
+  (let ((limit (treesit-node-end node)))
+    (save-excursion
+      (goto-char (treesit-node-start node))
+      (when (looking-at neocaml--doc-comment-regexp)
+        (forward-char 3)                ; skip the (**
+        (while (< (point) (min limit end))
+          (let ((c (char-after)))
+            (cond
+             ;; Escape sequences: \{ \} \[ \] \@
+             ((eq c ?\\)
+              (forward-char
+               (if (memq (char-after (1+ (point))) '(?\{ ?\} ?\[ ?\] ?@)) 2 1)))
+             ((eq c ?\{)
+              (cond
+               ;; {[ code block ]} and {v verbatim v} - no markup inside
+               ((looking-at "{\\(?:\\(\\[\\)\\|v[ \t\n]\\)")
+                (let* ((open (point))
+                       (opener-end (match-end 0))
+                       (closer (if (match-beginning 1) "]}" "v}"))
+                       (close (save-excursion
+                                (search-forward closer limit t))))
+                  (if (not close)
+                      (goto-char opener-end)
+                    (neocaml--doc-markup-fontify-span
+                     open opener-end (- close 2) close
+                     'neocaml-doc-code-face override)
+                    (goto-char close))))
+               ;; {!ref}, {:url}, {{!ref} ...}, {{:url} ...} - the target
+               ;; runs to the brace closing the innermost opener
+               ((looking-at "{{?[!:]")
+                (let* ((open (point))
+                       (target-beg (match-end 0))
+                       (close (save-excursion
+                                (goto-char target-beg)
+                                (neocaml--doc-markup-close ?\{ ?\} limit))))
+                  (if (not close)
+                      (goto-char target-beg)
+                    (neocaml--doc-markup-fontify-span
+                     open target-beg close (1+ close)
+                     'neocaml-doc-reference-face override)
+                    (goto-char (1+ close)))))
+               ;; {b ...}, {i ...}, {e ...}, {2 ...} headings, {^ ...},
+               ;; {_ ...}, {C ...}, {L ...}, {R ...}
+               ((looking-at
+                 "{\\(?:[0-9]\\(?::[^ \t\n{}]+\\)?\\|[bie^_CLR]\\)[ \t\n]")
+                (let* ((open (point))
+                       (marker-end (match-end 0))
+                       (close (save-excursion
+                                (goto-char marker-end)
+                                (neocaml--doc-markup-close ?\{ ?\} limit))))
+                  (if (not close)
+                      (goto-char marker-end)
+                    (neocaml--doc-markup-fontify-span
+                     open marker-end close (1+ close)
+                     (neocaml--doc-markup-content-face (char-after (1+ open)))
+                     override)
+                    ;; Continue scanning inside the construct so that
+                    ;; nested markup like {b ... {i ...}} stacks its faces.
+                    (goto-char marker-end))))
+               (t (forward-char 1))))
+             ;; [inline code]
+             ((eq c ?\[)
+              (let ((open (point))
+                    (close (save-excursion
+                             (forward-char 1)
+                             (neocaml--doc-markup-close ?\[ ?\] limit))))
+                (if (not close)
+                    (forward-char 1)
+                  (neocaml--doc-markup-fontify-span
+                   open (1+ open) close (1+ close)
+                   'neocaml-doc-code-face override)
+                  (goto-char (1+ close)))))
+             ;; @tags, at the start of a line or after whitespace
+             ((eq c ?@)
+              (if (and (memq (char-before) '(?\s ?\t ?\n ?*))
+                       (looking-at neocaml--doc-markup-tag-regexp))
+                  (progn
+                    (treesit-fontify-with-override
+                     (point) (match-end 0) 'neocaml-doc-markup-face override)
+                    (goto-char (match-end 0)))
+                (forward-char 1)))
+             ;; Plain text: hop to the next markup candidate at C speed.
+             (t
+              (forward-char 1)
+              (skip-chars-forward "^\\\\{[@" limit)))))))))
+
 ;; The `ocaml-interface' grammar inherits all node types from the base
 ;; `ocaml' grammar (overriding only `compilation_unit'), so queries
 ;; referencing .ml-only constructs (e.g. `application_expression',
@@ -322,12 +519,21 @@ The return value is suitable for `treesit-font-lock-settings'."
    (treesit-font-lock-rules
     :language language
     :feature 'comment
-    '((((comment) @font-lock-doc-face)
-       (:match "^(\\*\\*[^*]" @font-lock-doc-face))
+    `((((comment) @font-lock-doc-face)
+       (:match ,neocaml--doc-comment-regexp @font-lock-doc-face))
       (comment) @font-lock-comment-face
       ;; Preprocessor directives
       (line_number_directive) @font-lock-comment-face
       (directive) @font-lock-comment-face)
+
+   ;; Must come after `comment' so the markup faces stack on top of
+   ;; `font-lock-doc-face' rather than being painted over by it.  The
+   ;; doc-comment check happens inside the function (a `:match' here
+   ;; would cons the whole comment text just to test its first chars).
+   :language language
+   :feature 'doc-markup
+   :override 'prepend
+   '((comment) @neocaml--fontify-doc-markup)
 
    :language language
    :feature 'definition
@@ -1650,7 +1856,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local treesit-font-lock-feature-list
               '((comment definition)
                 (keyword string type)
-                (attribute builtin constant escape-sequence number)
+                (attribute builtin constant doc-markup escape-sequence number)
                 (operator bracket delimiter variable property label function)))
 
   (setq-local indent-line-function #'treesit-indent)

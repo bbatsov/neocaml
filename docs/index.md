@@ -45,6 +45,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 ## Features
 
 - Tree-sitter based font-locking (4 levels) for `.ml` and `.mli` files
+- Ocamldoc markup rendering in doc comments: `{b bold}`, `{i italic}`, `[code]`, `{[...]}` blocks, `{!references}` and `@tags` are displayed with real faces
 - Tree-sitter based indentation with cycle-indent support
 - Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`, sentence movement with `M-a`/`M-e`)
 - Imenu with language-specific categories for `.ml` and `.mli`
