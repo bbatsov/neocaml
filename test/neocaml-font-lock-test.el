@@ -83,6 +83,52 @@ Lets a spec inspect the matcher's own outcome without failing itself."
       ("#!/usr/bin/env ocaml\nlet x = 1"
        ("#!/usr/bin/env ocaml" font-lock-comment-face))))
 
+  (describe "doc-markup feature"
+    (when-fontifying-it "renders bold, italic and emphasis markup"
+      ("(** {b strong} {i slanted} {e stressed} *)"
+       ("{b" (neocaml-doc-markup-face font-lock-doc-face))
+       ("strong" (neocaml-doc-bold-face font-lock-doc-face))
+       ("slanted" (neocaml-doc-italic-face font-lock-doc-face))
+       ("stressed" (neocaml-doc-italic-face font-lock-doc-face))))
+
+    (when-fontifying-it "stacks faces for nested markup"
+      ("(** {b outer {i both}} *)"
+       ("outer" (neocaml-doc-bold-face font-lock-doc-face))
+       ("both" (neocaml-doc-italic-face neocaml-doc-bold-face font-lock-doc-face))))
+
+    (when-fontifying-it "renders section headings in bold"
+      ("(** {2 Overview} *)"
+       ("{2" (neocaml-doc-markup-face font-lock-doc-face))
+       ("Overview" (neocaml-doc-heading-face font-lock-doc-face))))
+
+    (when-fontifying-it "gives inline code and code blocks a code face"
+      ("(** applies [f x] here *)"
+       ("f x" (neocaml-doc-code-face font-lock-doc-face)))
+      ("(** {[ let x = 1 ]} *)"
+       ("let x = 1" (neocaml-doc-code-face font-lock-doc-face))))
+
+    (when-fontifying-it "highlights references and links"
+      ("(** see {!List.map} and {{:https://ocaml.org} the manual} *)"
+       ("List.map" (neocaml-doc-reference-face font-lock-doc-face))
+       ("https://ocaml.org" (neocaml-doc-reference-face font-lock-doc-face))
+       ("the manual" font-lock-doc-face)))
+
+    (when-fontifying-it "highlights ocamldoc tags"
+      ("(** @param x the input\n    @return the output *)"
+       ("@param" (neocaml-doc-markup-face font-lock-doc-face))
+       ("the input" font-lock-doc-face)
+       ("@return" (neocaml-doc-markup-face font-lock-doc-face))))
+
+    (when-fontifying-it "leaves escaped delimiters alone"
+      ("(** escaped \\[ bracket and \\{ brace *)"
+       ("bracket" font-lock-doc-face)
+       ("brace" font-lock-doc-face)))
+
+    (when-fontifying-it "does not touch plain comments"
+      ("(* not doc: {b bold} [code] *)"
+       ("bold" font-lock-comment-face)
+       ("code" font-lock-comment-face))))
+
   (describe "definition feature"
     (when-fontifying-it "fontifies let-bound variables"
       ("let x = 42"
