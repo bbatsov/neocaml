@@ -15,8 +15,9 @@ ecosystem: [dune](https://dune.build) build files,
 [opam](https://opam.ocaml.org) package definitions,
 [OCamllex](https://v2.ocaml.org/manual/lexyacc.html) lexer definitions (`.mll`),
 [Menhir](http://gallium.inria.fr/~fpottier/menhir/) parser definitions (`.mly`),
-and [cram](https://dune.readthedocs.io/en/stable/tests.html#cram-tests) test
-files (`.t`) -- each with a dedicated major mode.
+[cram](https://dune.readthedocs.io/en/stable/tests.html#cram-tests) test files
+(`.t`), and [odoc](https://ocaml.github.io/odoc/) documentation pages (`.mld`)
+-- each with a dedicated major mode.
 
 You can also view compiled OCaml artifacts (`.cmi`, `.cmo`, `.cmx`, etc.)
 directly in Emacs via `ocamlobjinfo`.
@@ -59,6 +60,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Cram test file editing (`neocaml-cram-mode`) with font-lock for commands, output, modifiers, and prose
+- odoc documentation editing (`neocaml-odoc-mode`) with font-lock, indentation, imenu, and language injection into `{@lang[...]}` code blocks for OCaml, dune, and opam (Emacs 30+)
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - `_build` directory awareness (offers to switch to source when opening build artifacts, configurable via `neocaml-redirect-build-files`)

@@ -13,14 +13,15 @@ are only available on newer versions:
   thing (on earlier versions, neocaml provides `neocaml-backward-up-list`
   as a workaround)
 
-## How do I install grammars for dune, opam, OCamllex, or Menhir?
+## How do I install grammars for dune, opam, OCamllex, Menhir, or odoc?
 
 `M-x neocaml-install-grammars` only installs the OCaml and
 OCaml-interface grammars. The other modes have their own grammar
 install commands: `M-x neocaml-dune-install-grammar`,
 `M-x neocaml-opam-install-grammar`,
-`M-x neocaml-ocamllex-install-grammar`, and
-`M-x neocaml-menhir-install-grammar`. Each mode will also prompt
+`M-x neocaml-ocamllex-install-grammar`,
+`M-x neocaml-menhir-install-grammar`, and
+`M-x neocaml-odoc-install-grammar`. Each mode will also prompt
 you to install its grammar on first use.
 
 ## Can I use Merlin instead of Eglot?

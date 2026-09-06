@@ -33,13 +33,14 @@ Or with `use-package` on Emacs 30+:
     OCaml-interface grammars. If grammar installation fails, see
     [Troubleshooting](troubleshooting.md#tree-sitter-abi-version-mismatch).
 
-    The modes for dune, opam, OCamllex, and Menhir files each use
-    their own grammar. These are installed automatically when you
+    The modes for dune, opam, OCamllex, Menhir, and odoc files each
+    use their own grammar. These are installed automatically when you
     first open a file of that type, or you can install them manually
     with `M-x neocaml-dune-install-grammar`,
     `M-x neocaml-opam-install-grammar`,
-    `M-x neocaml-ocamllex-install-grammar`, and
-    `M-x neocaml-menhir-install-grammar`.
+    `M-x neocaml-ocamllex-install-grammar`,
+    `M-x neocaml-menhir-install-grammar`, and
+    `M-x neocaml-odoc-install-grammar`.
 
 !!! tip
     If you have another OCaml major mode installed (e.g. `tuareg` or `caml-mode`),

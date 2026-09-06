@@ -48,6 +48,7 @@ nav:
     - REPL Integration: repl.md
     - opam, dune & Cram: opam_and_dune.md
     - OCamllex & Menhir: ocamllex_and_menhir.md
+    - odoc: odoc.md
     - Compiled Artifacts: objinfo.md
     - Debugging: debugging.md
   - Migration: migration.md
