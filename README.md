@@ -45,9 +45,10 @@ It's also as cool as Neo from "The Matrix". ;-)
 - dune build commands (`neocaml-dune-interaction-mode`): build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
 - OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
+- OCaml/JSX file editing (`neocaml-mlx-mode`) for `.mlx` files (Melange/React and similar PPX-driven OCaml-JSX), with embedded JSX highlighting via `tsx` language injection (Emacs 30+)
 - Cram test file editing (`neocaml-cram-mode`) with font-lock for commands, output, modifiers, and prose
 - odoc documentation editing (`neocaml-odoc-mode`) with font-lock, indentation, imenu, and language injection into `{@lang[...]}` code blocks for OCaml, dune, and opam (Emacs 30+)
-- Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars`
+- Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars` (and the `tsx`/JSX grammar via `M-x neocaml-mlx-install-grammar`)
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
 - `_build` directory awareness (offers to switch to source when opening build artifacts)
 - Eglot integration (with [ocaml-eglot](https://github.com/tarides/ocaml-eglot) support)

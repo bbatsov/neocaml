@@ -7,6 +7,7 @@
 - [#60](https://github.com/bbatsov/neocaml/issues/60): Render ocamldoc markup in doc comments - `{b bold}`, `{i italic}`, `[code]`, `{[...]}` code blocks, `{!references}` and `@tags` are now displayed with real faces via the new `doc-markup` font-lock feature (enabled at the default font-lock level).
 
 - [#46](https://github.com/bbatsov/neocaml/pull/46): New `neocaml-odoc-mode` for [odoc](https://ocaml.github.io/odoc/) documentation pages (`.mld`), with font-lock for headings, inline markup, code spans, references, links, tags, lists and tables, indentation, imenu, and language injection into `{@lang[...]}` code blocks for OCaml, dune and opam (Emacs 30+). Install its grammar with `M-x neocaml-odoc-install-grammar`.
+- [#77](https://github.com/bbatsov/neocaml/pull/77): Add `neocaml-mlx-mode`, a major mode for `.mlx` files (OCaml with embedded JSX, as used by Melange/React), with JSX highlighting via `tsx` grammar injection (Emacs 30+).
 
 ### Changes
 

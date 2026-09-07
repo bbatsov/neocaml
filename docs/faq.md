@@ -11,7 +11,7 @@ are only available on newer versions:
   `down-list`)
 - **Emacs 31+**: native `backward-up-list` support via the `list`
   thing (on earlier versions, neocaml provides `neocaml-backward-up-list`
-  as a workaround)
+  as a workaround), and embedded JSX highlighting in `neocaml-mlx-mode`
 
 ## How do I install grammars for dune, opam, OCamllex, Menhir, or odoc?
 
