@@ -1805,15 +1805,25 @@ the language-specific parts of the mode."
                      :language-id "ocaml.interface"))
                    "ocamllsp"))))
 
+(defconst neocaml--dape-config-names
+  '(ocamlearlybird lldb-dap lldb-vscode gdb)
+  "Names of `dape-configs' entries that should be offered in OCaml buffers.
+`ocamlearlybird' debugs bytecode executables; the rest are native
+debuggers that work on `ocamlopt'-built executables.  dape filters
+its suggestions by major mode, so these need `neocaml-mode' added
+to their `modes' to show up at the `dape' prompt.")
+
 (defun neocaml--register-with-dape ()
-  "Register neocaml modes with dape's ocamlearlybird config if loaded."
+  "Register neocaml modes with dape configurations if dape is loaded.
+The configurations are listed in `neocaml--dape-config-names'."
   (when (boundp 'dape-configs)
-    (when-let* ((cfg (alist-get 'ocamlearlybird dape-configs)))
-      (let ((modes (plist-get cfg 'modes)))
-        (unless (memq 'neocaml-mode modes)
-          (plist-put cfg 'modes
-                     (append '(neocaml-mode neocaml-interface-mode)
-                             modes)))))))
+    (dolist (name neocaml--dape-config-names)
+      (when-let* ((cfg (alist-get name dape-configs)))
+        (let ((modes (plist-get cfg 'modes)))
+          (unless (memq 'neocaml-mode modes)
+            (plist-put cfg 'modes
+                       (append '(neocaml-mode neocaml-interface-mode)
+                               modes))))))))
 
 (define-derived-mode neocaml-base-mode prog-mode "OCaml"
   "Base major mode for OCaml files, providing shared setup.

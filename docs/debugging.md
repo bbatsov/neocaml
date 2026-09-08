@@ -6,6 +6,9 @@ Debug Adapter Protocol client, available from GNU ELPA) and
 debugging. When dape is loaded, neocaml automatically registers its modes with
 dape's built-in `ocamlearlybird` configuration.
 
+ocamlearlybird debugs **bytecode**. For **native** executables built by
+`ocamlopt`, see [Native debugging](#native-debugging-lldb-gdb) below.
+
 ## Setup
 
 1. Install ocamlearlybird:
@@ -47,6 +50,36 @@ Once the session starts, dape provides the standard debugging commands:
 | `dape-info` | | Show debugger info (variables, stack, breakpoints) |
 | `dape-repl` | | Open the debug REPL |
 | `dape-quit` | `C-x C-a q` | Stop the debug session |
+
+## Native debugging (lldb, gdb)
+
+ocamlearlybird cannot attach to native executables. For those, use a native
+debugger through dape's `lldb-dap` configuration (macOS, Linux) or `gdb`
+(Linux; dape requires gdb >= 14.1). neocaml registers its modes with these
+configurations too, so they appear at the `M-x dape` prompt in OCaml buffers.
+
+Compile with debug information -- in your `dune` file:
+
+```
+(executable
+ (name main)
+ (ocamlopt_flags (:standard -g)))
+```
+
+Then `dune build`, and start a session with `M-x dape`, choosing `lldb-dap`
+(or `gdb`) and pointing `:program` at `_build/default/bin/main.exe`.
+
+Everything past that -- symbol mangling, setting breakpoints, reading
+backtraces, and inspecting OCaml values with the `tools/gdb.py` and
+`tools/lldb.py` helper scripts -- is covered by the
+[Native debugging chapter](https://ocaml.org/manual/5.5/native-debugger.html)
+of the OCaml manual. Two settings from it are worth knowing up front, because
+dune's build layout makes them likely:
+
+- if the debugger cannot find your sources, set `target.source-map` (lldb) or
+  use `directory` (gdb) to redirect the recorded paths
+- build dependencies with `OPAMKEEPBUILDDIR=1` so their sources remain
+  available for source-level debugging
 
 ## Caveats
 
