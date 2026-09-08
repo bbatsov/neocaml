@@ -2,7 +2,8 @@
 
 ;; Copyright © 2025-2026 Bozhidar Batsov
 ;;
-;; Author: Bozhidar Batsov <bozhidar@batsov.dev>
+;; Author: Tim McGilchrist <timmcgil@gmail.com>
+;;         Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.dev>
 ;; URL: http://github.com/bbatsov/neocaml
 ;; Keywords: languages ocaml
@@ -82,19 +83,21 @@
 (defcustom neocaml-eml-embedded-language 'ocaml
   "Language to inject into the code regions of an eml template.
 
-`dream_eml' decides between OCaml and Reason from the file
-extension, so `.eml.ml' is OCaml and `.eml.re' is Reason -- but
-`.eml.html' falls through to OCaml unless the dune rule passes
-`--emit-reason', and Dream ships an example of each under the same
-`template.eml.html' name.  The extension therefore cannot decide it
-and this defaults to `ocaml'; set it as a file-local or
-directory-local variable for a `.eml.html' that is really Reason.
+Only OCaml is supported out of the box.  A template's code regions
+are whatever `dream_eml' was told to emit, and it can be told to
+emit another language when the dune rule passes `--emit-reason', so
+the extension does not always settle it: `.eml.html' falls through
+to OCaml unless the rule says otherwise, and Dream ships an example
+of each under the same `template.eml.html' name.  Set this as a
+file-local or directory-local variable for such a file, to nil to
+inject nothing, or to another language symbol if you have installed
+that grammar yourself.
 
 When the grammar for this language is not installed, the code
-regions are simply left unhighlighted."
+regions are left unhighlighted."
   :type '(choice (const :tag "OCaml" ocaml)
-                 (const :tag "Reason" reason)
-                 (const :tag "None" nil))
+                 (const :tag "None" nil)
+                 (symbol :tag "Other language"))
   :safe #'symbolp
   :group 'neocaml-eml
   :package-version '(neocaml . "0.11.0"))
@@ -111,7 +114,7 @@ Has no effect when the `html' grammar is not installed."
 
 (defconst neocaml-eml-grammar-recipes
   '((eml "https://github.com/tmcgilchrist/tree-sitter-eml"
-         "v0.1.0"
+         "0.1.0"
          "src"))
   "Tree-sitter grammar recipe for Dream eml template files.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
@@ -299,11 +302,16 @@ is a no-op instead of a hazard.")
 
 (defun neocaml-eml--embedded-language-for-file ()
   "Return the embedded language implied by the current file name.
-`.eml.re' is Reason; everything else keeps the value of
-`neocaml-eml-embedded-language', which defaults to OCaml."
+A `.eml.re' gets none.  Its code regions are Reason rather than
+OCaml, and injecting OCaml into them would be worse than leaving
+them plain.  There is nothing to inject instead: the only
+tree-sitter Reason grammar is a two-commit stub abandoned in 2024,
+and neither Emacs nor nvim-treesitter ships one.  Everything else
+keeps the value of `neocaml-eml-embedded-language', which defaults
+to `ocaml'."
   (if (and buffer-file-name
            (string-suffix-p ".eml.re" buffer-file-name))
-      'reason
+      nil
     neocaml-eml-embedded-language))
 
 ;;;###autoload
@@ -374,7 +382,7 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
 
 ;; `neocaml-mode' claims "\\.ml\\'", which also matches `foo.eml.ml'.
 ;; `add-to-list' prepends and the first match in `auto-mode-alist' wins,
-;; so these entries have to be added after it; the autoload cookie above
+;; so these entries have to be added after it.  The autoload cookie above
 ;; `neocaml-mode' comes earlier in the generated autoloads file, which
 ;; makes that so.  `neocaml-eml-test.el' pins the behaviour.
 ;;;###autoload

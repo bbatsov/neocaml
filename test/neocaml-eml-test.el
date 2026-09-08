@@ -202,7 +202,7 @@ let () = Dream.run
       ("let f response =\n  %% response\n  <p>hi</p>\n  %%\n"
        ("%% response" font-lock-preprocessor-face)))
 
-    ;; `<%B b %>' and `<%02X n %>' both appear in Dream's examples; the
+    ;; `<%B b %>' and `<%02X n %>' both appear in Dream's examples.  The
     ;; conversion is not always a single letter.
     (when-fontifying-eml-it "fontifies non-string and multi-character conversions"
       ("let f b =\n  <p><%B b %></p>\n"
@@ -212,7 +212,7 @@ let () = Dream.run
 
     ;; `% let%lwt () = Dream.flush response in' is a code line whose body
     ;; contains a `%' of its own.  Only the marker in column 0 belongs to
-    ;; eml; the rest of the line is OCaml and must keep the injected faces.
+    ;; eml.  The rest of the line is OCaml and must keep the injected faces.
     ;; Anchoring the delimiter capture to the `%' child rather than to
     ;; `code_line' is what keeps them apart.
     (it "does not fontify a percent inside a code line body"
@@ -363,8 +363,8 @@ let () = Dream.run
         (expect neocaml-eml-embedded-language :to-equal 'ocaml)))
 
     (it "is a safe file-local variable"
-      ;; `.eml.html' is OCaml or Reason depending on whether the dune rule
-      ;; passes --emit-reason, so it has to be settable per file.
+      ;; `.eml.html' is OCaml only when the dune rule does not say otherwise,
+      ;; so the embedded language has to be settable per file.
       (expect (get 'neocaml-eml-embedded-language 'safe-local-variable)
               :to-be-truthy))
 
@@ -375,19 +375,37 @@ let () = Dream.run
                    (treesit-buffer-root-node 'eml) "ERROR")
                   :to-be nil))))
 
-    ;; dream_eml reads the syntax off `Filename.extension', so .eml.re is
-    ;; Reason.  Emacs ships no `reason' grammar, so this also exercises the
-    ;; path where the code regions go unhighlighted.
-    (it "selects Reason for a .eml.re file"
+    ;; A .eml.re holds no OCaml, so nothing is injected rather than the
+    ;; wrong thing.  The template skeleton still parses and highlights.
+    (it "injects nothing into a .eml.re file"
       (with-eml-named-buffer "x.eml.re" "let f = x => {\n  <p>hi</p>\n};\n"
-        (expect neocaml-eml-embedded-language :to-equal 'reason)
+        (expect neocaml-eml-embedded-language :to-be nil)
+        (expect (neocaml-eml--code-injection-available-p) :to-be nil)
         (expect (treesit-search-subtree
                  (treesit-buffer-root-node 'eml) "ERROR")
                 :to-be nil)))
 
+    ;; And the consequence, which is the part a regression would show up in:
+    ;; no ocaml parser is created, and the Reason code carries no face.  A
+    ;; `.eml.re' that fell back to the `ocaml' default would fontify `let'
+    ;; and `=>' as though they were OCaml.
+    (it "leaves the code regions of a .eml.re unfontified"
+      (with-eml-named-buffer "x.eml.re"
+          "let greet = who => {\n  <p>Hi <%s who %></p>\n};\n"
+        (font-lock-ensure)
+        (expect (neocaml-eml-test--parser 'ocaml) :to-be nil)
+        (expect (neocaml-eml-test--face-of "let greet") :to-be nil)
+        (expect (neocaml-eml-test--face-of "who =>") :to-be nil)
+        ;; The template skeleton is still eml's, and the text still HTML's.
+        (expect (neocaml-eml-test--face-of "<%")
+                :to-equal 'neocaml-eml-delimiter-face)
+        (when (treesit-language-available-p 'html)
+          (expect (neocaml-eml-test--face-of "p>Hi")
+                  :to-equal 'font-lock-function-name-face))))
+
     ;; .eml.html is the ambiguous one: `Filename.extension' gives ".html",
-    ;; which falls through to OCaml unless the dune rule passes
-    ;; --emit-reason.  Default to OCaml and let the user override.
+    ;; which falls through to OCaml unless the dune rule says otherwise.
+    ;; Default to OCaml and let the user override.
     (it "defaults a .eml.html file to OCaml"
       (with-eml-named-buffer "x.eml.html" "let f x =\n  <p><%s x %></p>\n"
         (expect neocaml-eml-embedded-language :to-equal 'ocaml))))
