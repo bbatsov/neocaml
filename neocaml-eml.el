@@ -113,6 +113,10 @@ Has no effect when the `html' grammar is not installed."
 ;;; Grammar installation
 
 (defconst neocaml-eml-grammar-recipes
+  ;; REV is a tag on the grammar repository, and tree-sitter-eml tags
+  ;; without a `v' prefix.  The tag has to exist before CI runs: a missing
+  ;; one makes `treesit-install-language-grammar' warn rather than fail, so
+  ;; the eml suite goes pending and the build still reports success.
   '((eml "https://github.com/tmcgilchrist/tree-sitter-eml"
          "0.1.0"
          "src"))
