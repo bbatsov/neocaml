@@ -91,7 +91,12 @@ of an injected language.  `treesit-merge-font-lock-feature-list'
 does the same thing but only exists on Emacs 31+."
   (let (result)
     (while (or a b)
-      (push (delete-dups (append (pop a) (pop b))) result))
+      ;; The trailing nil makes `append' copy its last argument too.  Without
+      ;; it the result shares structure with B, and the destructive
+      ;; `delete-dups' below would splice conses out of the caller's list --
+      ;; which for a caller passing a defconst means corrupting it for the
+      ;; rest of the session.
+      (push (delete-dups (append (pop a) (pop b) nil)) result))
     (nreverse result)))
 
 (provide 'neocaml-common)
