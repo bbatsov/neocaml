@@ -14,15 +14,40 @@ let render_home tasks =
   </body>
   </html>
 
-let render_form request =
-  %% response
-  <form method="POST" action="/">
-    <%s! Dream.csrf_tag request %>
-    <input name="message" autofocus>
-  </form>
-  %%
+let render_task tasks task =
+  <html>
+  <body>
+%   begin match List.assoc_opt task tasks with
+%   | Some complete ->
+      <p>Task: <%s task %></p>
+      <p>Complete: <%B complete %></p>
+%   | None ->
+      <p>Task not found!</p>
+%   end;
+  </body>
+  </html>
+
+let tasks = [
+  ("Write documentation", true);
+  ("Create examples", true);
+  ("Publish website", true);
+  ("Profit", false);
+]
 
 let () =
   Dream.run
   @@ Dream.logger
-  @@ Dream.router [Dream.get "/" (fun _ -> Dream.html (render_home []))]
+  @@ Dream.router [
+
+    Dream.get "/"
+      (fun _ ->
+        render_home tasks
+        |> Dream.html);
+
+    Dream.get "/:task"
+      (fun request ->
+        Dream.param request "task"
+        |> render_task tasks
+        |> Dream.html);
+
+  ]

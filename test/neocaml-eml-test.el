@@ -6,6 +6,11 @@
 
 ;; Buttercup tests for neocaml-eml-mode: font-lock, injection ranges,
 ;; indentation, and integration.
+;;
+;; The `sample*.eml.ml' fixtures are verbatim copies of files from
+;; camlworks/dream, so that the awkward shapes are the ones the format
+;; actually produces rather than ones written to suit the mode.  See
+;; test/resources/eml-fixtures.md for what each one is for.
 
 ;;; Code:
 
@@ -44,6 +49,48 @@ or (START END FACE) for position-based matching."
   "Return the buffer text of each included range of LANGUAGE's parser."
   (mapcar (lambda (r) (buffer-substring-no-properties (car r) (cdr r)))
           (neocaml-eml-test--real-ranges language)))
+
+(defun neocaml-eml-test--fixture (name)
+  "Return the absolute path of the eml fixture NAME."
+  (expand-file-name
+   (concat "resources/" name)
+   (file-name-directory (locate-library "neocaml-eml-test"))))
+
+(defmacro with-eml-fixture (name &rest body)
+  "Visit fixture NAME in `neocaml-eml-mode', fontify it, and run BODY.
+The buffer keeps a file name, so that the mode sees the extension."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (let ((file (neocaml-eml-test--fixture ,name)))
+       (insert-file-contents file)
+       (setq buffer-file-name file))
+     (neocaml-eml-mode)
+     (font-lock-ensure)
+     (treesit-update-ranges)
+     (goto-char (point-min))
+     (unwind-protect (progn ,@body)
+       (set-buffer-modified-p nil)
+       (setq buffer-file-name nil))))
+
+(defmacro with-eml-named-buffer (name content &rest body)
+  "Run BODY in a `neocaml-eml-mode' buffer holding CONTENT and named NAME.
+Only the file name matters; NAME need not exist."
+  (declare (indent 2))
+  `(with-temp-buffer
+     (insert ,content)
+     (setq buffer-file-name (expand-file-name ,name temporary-file-directory))
+     (neocaml-eml-mode)
+     (goto-char (point-min))
+     (unwind-protect (progn ,@body)
+       (set-buffer-modified-p nil)
+       (setq buffer-file-name nil))))
+
+(defun neocaml-eml-test--face-of (text &optional offset)
+  "Return the face at TEXT in the current buffer, OFFSET characters in."
+  (save-excursion
+    (goto-char (point-min))
+    (when (search-forward text nil t)
+      (get-text-property (+ (match-beginning 0) (or offset 0)) 'face))))
 
 (defconst neocaml-eml-test--template
   "let render tasks =
@@ -101,6 +148,34 @@ let () = Dream.run
       (with-neocaml-test-buffer neocaml-eml-mode neocaml-eml-test--template
         (expect indent-tabs-mode :to-be nil))))
 
+  (describe "template boundaries"
+    ;; Q1: only spaces count as indentation.  `scan_whitespace' in eml.ml
+    ;; never matches a tab, so a tab-indented `<html>' has indent 0, fails
+    ;; the `[ ]*<' test, and stays inside the code block.
+    (it "does not open a template on a tab-indented line"
+      (with-neocaml-test-buffer neocaml-eml-mode "let f =\n\t<html>\n"
+        (expect (treesit-search-subtree
+                 (treesit-buffer-root-node 'eml) "template")
+                :to-be nil)))
+
+    (it "opens a template on a space-indented line"
+      (with-neocaml-test-buffer neocaml-eml-mode "let f =\n  <html>\n"
+        (expect (treesit-search-subtree
+                 (treesit-buffer-root-node 'eml) "template")
+                :to-be-truthy)))
+
+    ;; Dream ships one of these, so it is not a hypothetical.
+    (it "handles a file with no template at all"
+      (with-eml-fixture "sample-no-template.eml.ml"
+        (expect (treesit-search-subtree
+                 (treesit-buffer-root-node 'eml) "ERROR")
+                :to-be nil)
+        (expect (treesit-search-subtree
+                 (treesit-buffer-root-node 'eml) "template")
+                :to-be nil)
+        (expect (neocaml-eml-test--face-of "let () =")
+                :to-equal 'font-lock-keyword-face))))
+
   (describe "font-lock"
     (when-fontifying-eml-it "fontifies directive delimiters"
       ("let f x =\n  <p><%s x %></p>\n"
@@ -126,6 +201,26 @@ let () = Dream.run
     (when-fontifying-eml-it "fontifies the options and terminator lines"
       ("let f response =\n  %% response\n  <p>hi</p>\n  %%\n"
        ("%% response" font-lock-preprocessor-face)))
+
+    ;; `<%B b %>' and `<%02X n %>' both appear in Dream's examples; the
+    ;; conversion is not always a single letter.
+    (when-fontifying-eml-it "fontifies non-string and multi-character conversions"
+      ("let f b =\n  <p><%B b %></p>\n"
+       (18 18 neocaml-eml-format-face))
+      ("let f n =\n  <p><%02X n %></p>\n"
+       (18 20 neocaml-eml-format-face)))
+
+    ;; `% let%lwt () = Dream.flush response in' is a code line whose body
+    ;; contains a `%' of its own.  Only the marker in column 0 belongs to
+    ;; eml; the rest of the line is OCaml and must keep the injected faces.
+    ;; Anchoring the delimiter capture to the `%' child rather than to
+    ;; `code_line' is what keeps them apart.
+    (it "does not fontify a percent inside a code line body"
+      (with-eml-fixture "sample-stream.eml.ml"
+        (expect (neocaml-eml-test--face-of "%   let rec paragraphs")
+                :to-equal 'neocaml-eml-delimiter-face)
+        (expect (neocaml-eml-test--face-of "let%lwt" 3)
+                :not :to-equal 'neocaml-eml-delimiter-face)))
 
     ;; A directive inside an HTML attribute value sits in a gap in the html
     ;; parser's ranges, and the attribute node spans that gap.  The eml
@@ -167,12 +262,62 @@ let () = Dream.run
       (with-neocaml-test-buffer neocaml-eml-mode neocaml-eml-test--template
         (treesit-update-ranges)
         (let ((texts (neocaml-eml-test--range-texts 'ocaml)))
+          (expect texts :to-be-truthy)
           (expect (cl-some (lambda (s) (string-search "<html>" s)) texts)
                   :to-be nil)
           (expect (cl-some (lambda (s) (string-search "<p>Task" s)) texts)
                   :to-be nil)
           (expect (cl-some (lambda (s) (string-prefix-p "%" s)) texts)
                   :to-be nil))))
+
+    ;; The commonest shape in Dream's corpus: the template is the entire
+    ;; body of a `let', so with the text removed the OCaml reads `let home ='
+    ;; followed straight by the next binding.  The injected tree therefore
+    ;; contains an ERROR -- that is inherent, not a bug -- but tree-sitter
+    ;; keeps the tokens inside it and the surrounding OCaml stays highlighted.
+    ;; 12 of Dream's 25 .eml.{ml,html} examples have this shape, so a change
+    ;; to how the ranges are grouped must not silently degrade it.
+    (it "still highlights OCaml around a template that is a whole let body"
+      (with-eml-fixture "sample-text-template.eml.ml"
+        (expect (neocaml-eml-test--face-of "let home")
+                :to-equal 'font-lock-keyword-face)
+        (expect (neocaml-eml-test--face-of "Dream.run")
+                :to-equal 'font-lock-type-face)))
+
+    (it "handles two templates in one file"
+      (with-eml-fixture "sample.eml.ml"
+        (expect (length (cl-remove-if-not
+                         (lambda (n) (equal (treesit-node-type n) "template"))
+                         (treesit-node-children (treesit-buffer-root-node 'eml))))
+                :to-equal 2)
+        ;; Both bindings, either side of the first template, are highlighted.
+        (expect (neocaml-eml-test--face-of "let render_home")
+                :to-equal 'font-lock-keyword-face)
+        (expect (neocaml-eml-test--face-of "let render_task")
+                :to-equal 'font-lock-keyword-face)))
+
+    ;; The `%%' options and terminator lines are eml's own syntax: they are
+    ;; neither OCaml nor HTML and must not reach either parser.
+    (it "keeps the %% lines out of every injection"
+      (with-eml-fixture "sample-stream.eml.ml"
+        (dolist (language '(ocaml html))
+          (let ((texts (neocaml-eml-test--range-texts language)))
+            (expect texts :to-be-truthy)
+            (dolist (text texts)
+              (expect (string-search "%%" text) :to-be nil))))))
+
+    ;; The only file in Dream's corpus whose template closes on a non-zero
+    ;; dedent: indent 4, wrapped in `Dream.set_body ... begin', closing at
+    ;; `  end;' at indent 2.  The `end;' has to reach the OCaml parser with
+    ;; its leading whitespace or the `begin' never balances.
+    (it "carries a non-zero dedent back into the OCaml stream"
+      (with-eml-fixture "sample-dedent.eml.ml"
+        (let ((stream (apply #'concat (neocaml-eml-test--range-texts 'ocaml))))
+          (expect (string-search "begin" stream) :to-be-truthy)
+          (expect (string-search "end;" stream) :to-be-truthy)
+          (expect (string-search "<html>" stream) :to-be nil))
+        (expect (neocaml-eml-test--face-of "begin")
+                :to-equal 'font-lock-keyword-face)))
 
     ;; The point of sharing one parser: a code block and the `%' lines under
     ;; it are one statement stream, so `begin' and its `end' have to be seen
@@ -228,7 +373,47 @@ let () = Dream.run
         (with-neocaml-test-buffer neocaml-eml-mode neocaml-eml-test--template
           (expect (treesit-search-subtree
                    (treesit-buffer-root-node 'eml) "ERROR")
-                  :to-be nil)))))
+                  :to-be nil))))
+
+    ;; dream_eml reads the syntax off `Filename.extension', so .eml.re is
+    ;; Reason.  Emacs ships no `reason' grammar, so this also exercises the
+    ;; path where the code regions go unhighlighted.
+    (it "selects Reason for a .eml.re file"
+      (with-eml-named-buffer "x.eml.re" "let f = x => {\n  <p>hi</p>\n};\n"
+        (expect neocaml-eml-embedded-language :to-equal 'reason)
+        (expect (treesit-search-subtree
+                 (treesit-buffer-root-node 'eml) "ERROR")
+                :to-be nil)))
+
+    ;; .eml.html is the ambiguous one: `Filename.extension' gives ".html",
+    ;; which falls through to OCaml unless the dune rule passes
+    ;; --emit-reason.  Default to OCaml and let the user override.
+    (it "defaults a .eml.html file to OCaml"
+      (with-eml-named-buffer "x.eml.html" "let f x =\n  <p><%s x %></p>\n"
+        (expect neocaml-eml-embedded-language :to-equal 'ocaml))))
+
+  (describe "incremental reparse"
+    (before-all
+      (unless (and (treesit-language-available-p 'ocaml)
+                   (treesit-language-available-p 'html))
+        (signal 'buttercup-pending "OCaml or HTML grammar not available")))
+
+    (it "extends the injection ranges after an edit"
+      (with-neocaml-test-buffer neocaml-eml-mode "let f x =\n  <p>hi</p>\n"
+        (treesit-update-ranges)
+        (let ((html-before (length (neocaml-eml-test--real-ranges 'html)))
+              (ocaml-before (length (neocaml-eml-test--real-ranges 'ocaml))))
+          (goto-char (point-max))
+          (insert "  <p><%s x %></p>\n")
+          (treesit-update-ranges)
+          (font-lock-ensure)
+          (expect (length (neocaml-eml-test--real-ranges 'html))
+                  :to-be-greater-than html-before)
+          (expect (length (neocaml-eml-test--real-ranges 'ocaml))
+                  :to-be-greater-than ocaml-before)
+          ;; The directive typed in is picked up, not just re-spanned.
+          (expect (neocaml-eml-test--face-of "<%")
+                  :to-equal 'neocaml-eml-delimiter-face)))))
 
   (describe "indentation"
     ;; eml is layout-sensitive in a way the grammar cannot repair, so the
@@ -248,21 +433,26 @@ let () = Dream.run
           (expect (buffer-string) :to-equal before)))))
 
   (describe "integration"
-    (it "opens a real template with both parsers and no errors"
-      (let ((file (expand-file-name
-                   "resources/sample.eml.ml"
-                   (file-name-directory (locate-library "neocaml-eml-test")))))
-        (with-temp-buffer
-          (insert-file-contents file)
-          (neocaml-eml-mode)
-          (font-lock-ensure)
+    (it "opens every Dream fixture with no eml parse errors"
+      (dolist (fixture '("sample.eml.ml"
+                         "sample-stream.eml.ml"
+                         "sample-dedent.eml.ml"
+                         "sample-text-template.eml.ml"
+                         "sample-no-template.eml.ml"))
+        (with-eml-fixture fixture
           (expect (treesit-search-subtree
                    (treesit-buffer-root-node 'eml) "ERROR")
                   :to-be nil)
-          (when (treesit-language-available-p 'ocaml)
-            (expect (neocaml-eml-test--parser 'ocaml) :to-be-truthy))
-          (when (treesit-language-available-p 'html)
-            (expect (neocaml-eml-test--parser 'html) :to-be-truthy)))))))
+          (expect (treesit-search-subtree
+                   (treesit-buffer-root-node 'eml) "MISSING")
+                  :to-be nil))))
+
+    (it "creates both injected parsers for a template with code and text"
+      (with-eml-fixture "sample.eml.ml"
+        (when (treesit-language-available-p 'ocaml)
+          (expect (neocaml-eml-test--parser 'ocaml) :to-be-truthy))
+        (when (treesit-language-available-p 'html)
+          (expect (neocaml-eml-test--parser 'html) :to-be-truthy))))))
 
 (provide 'neocaml-eml-test)
 
