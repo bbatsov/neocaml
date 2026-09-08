@@ -284,15 +284,18 @@ which would run their mode hooks on every file visit."
      ;; A `%' code line only counts as one if the `%' is in column 0.
      ((node-is "code_line") column-0 0)
      ((parent-is "code_line") column-0 0)
-     ;; The `%%' lines line up with the template they open or close.
-     ((node-is "template_options") parent-bol 0)
-     ((node-is "template_end") parent-bol 0)
-     ;; Template text is layout-significant: never reflow it, just keep
-     ;; whatever the previous line had.
-     ((parent-is "template") prev-line 0)
+     ;; Everything else keeps the indentation it already has.  Note
+     ;; `no-indent' and not `prev-line': the latter anchors to the previous
+     ;; line's first non-whitespace character, so a template's first line
+     ;; takes the indent of the code block above it, the next line takes
+     ;; that, and the whole template flattens to column 0 -- which ends the
+     ;; template and silently breaks the file.
+     ((node-is "template_options") no-indent 0)
+     ((node-is "template_end") no-indent 0)
+     ((parent-is "template") no-indent 0)
      ((node-is "ocaml_block") no-indent 0)
      ((parent-is "ocaml_block") no-indent 0)
-     (no-node prev-line 0)))
+     (no-node no-indent 0)))
   "Indentation rules for `neocaml-eml-mode'.
 
 Deliberately conservative.  eml is layout-sensitive in a way the

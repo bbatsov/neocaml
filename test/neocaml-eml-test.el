@@ -300,11 +300,14 @@ let () = Dream.run
     ;; neither OCaml nor HTML and must not reach either parser.
     (it "keeps the %% lines out of every injection"
       (with-eml-fixture "sample-stream.eml.ml"
+        ;; Only the grammars that are actually installed: CI installs ocaml
+        ;; but not html, so asserting on html unconditionally fails there.
         (dolist (language '(ocaml html))
-          (let ((texts (neocaml-eml-test--range-texts language)))
-            (expect texts :to-be-truthy)
-            (dolist (text texts)
-              (expect (string-search "%%" text) :to-be nil))))))
+          (when (treesit-language-available-p language)
+            (let ((texts (neocaml-eml-test--range-texts language)))
+              (expect texts :to-be-truthy)
+              (dolist (text texts)
+                (expect (string-search "%%" text) :to-be nil)))))))
 
     ;; The only file in Dream's corpus whose template closes on a non-zero
     ;; dedent: indent 4, wrapped in `Dream.set_body ... begin', closing at
