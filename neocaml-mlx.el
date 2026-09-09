@@ -62,6 +62,7 @@
 
 (require 'treesit)
 (require 'neocaml)
+(require 'neocaml-common)
 (require 'typescript-ts-mode)
 
 (declare-function neocaml--setup-mode "neocaml")
@@ -223,15 +224,6 @@ Returns nil when injection is not available."
          (jsx_self_closing_element ["<" "/>"] @neocaml-mlx-jsx-tag-delimiter-face)
          (jsx_attribute (property_identifier) @typescript-ts-jsx-attribute-face)))))))
 
-(defun neocaml-mlx--merge-feature-lists (a b)
-  "Merge the feature lists A and B level by level, dropping duplicates.
-Fallback for `treesit-merge-font-lock-feature-list', which only
-exists on Emacs 31+."
-  (let (result)
-    (while (or a b)
-      (push (delete-dups (append (pop a) (pop b))) result))
-    (nreverse result)))
-
 (defun neocaml-mlx--font-lock-feature-list ()
   "Return the feature list merging `ocaml' and `tsx' feature levels.
 The current buffer is expected to have been configured by
@@ -243,7 +235,7 @@ to either mode's feature levels are reflected here automatically."
                         treesit-font-lock-feature-list)))
     (if (fboundp 'treesit-merge-font-lock-feature-list)
         (treesit-merge-font-lock-feature-list ocaml-features tsx-features)
-      (neocaml-mlx--merge-feature-lists ocaml-features tsx-features))))
+      (neocaml-common-merge-feature-lists ocaml-features tsx-features))))
 
 ;;; Indentation
 

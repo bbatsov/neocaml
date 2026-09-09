@@ -35,6 +35,7 @@ jobs:
           eldev eval '(progn (load "neocaml-menhir") (neocaml-menhir-install-grammar))'
           eldev eval '(progn (load "neocaml-odoc") (neocaml-odoc-install-grammar))'
           eldev eval '(progn (load "neocaml-mlx") (neocaml-mlx-install-grammar))'
+          eldev eval '(progn (load "neocaml-eml") (neocaml-eml-install-grammar))'
 
       - run: eldev byte-compile --warnings-as-errors
 
