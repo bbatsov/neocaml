@@ -173,8 +173,9 @@ let () = Dream.run
         (expect (treesit-search-subtree
                  (treesit-buffer-root-node 'eml) "template")
                 :to-be nil)
-        (expect (neocaml-eml-test--face-of "let () =")
-                :to-equal 'font-lock-keyword-face))))
+        (when (neocaml-eml--code-injection-available-p)
+          (expect (neocaml-eml-test--face-of "let () =")
+                  :to-equal 'font-lock-keyword-face)))))
 
   (describe "font-lock"
     (when-fontifying-eml-it "fontifies directive delimiters"
@@ -233,8 +234,9 @@ let () = Dream.run
 
   (describe "OCaml injection"
     (before-all
-      (unless (treesit-language-available-p 'ocaml)
-        (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+      (unless (neocaml-eml--code-injection-available-p)
+        (signal 'buttercup-pending "OCaml injection unavailable (needs Emacs 30+ \
+and the OCaml grammar)")))
 
     (it "creates a single ocaml parser"
       (with-neocaml-test-buffer neocaml-eml-mode neocaml-eml-test--template
@@ -339,8 +341,9 @@ let () = Dream.run
 
   (describe "HTML injection"
     (before-all
-      (unless (treesit-language-available-p 'html)
-        (signal 'buttercup-pending "tree-sitter HTML grammar not available")))
+      (unless (neocaml-eml--html-injection-available-p)
+        (signal 'buttercup-pending "HTML injection unavailable (needs Emacs 30+ \
+and the HTML grammar)")))
 
     (it "covers the template text and nothing else"
       (with-neocaml-test-buffer neocaml-eml-mode neocaml-eml-test--template
@@ -402,7 +405,7 @@ let () = Dream.run
         ;; The template skeleton is still eml's, and the text still HTML's.
         (expect (neocaml-eml-test--face-of "<%")
                 :to-equal 'neocaml-eml-delimiter-face)
-        (when (treesit-language-available-p 'html)
+        (when (neocaml-eml--html-injection-available-p)
           (expect (neocaml-eml-test--face-of "p>Hi")
                   :to-equal 'font-lock-function-name-face))))
 
@@ -415,9 +418,9 @@ let () = Dream.run
 
   (describe "incremental reparse"
     (before-all
-      (unless (and (treesit-language-available-p 'ocaml)
-                   (treesit-language-available-p 'html))
-        (signal 'buttercup-pending "OCaml or HTML grammar not available")))
+      (unless (and (neocaml-eml--code-injection-available-p)
+                   (neocaml-eml--html-injection-available-p))
+        (signal 'buttercup-pending "OCaml or HTML injection unavailable")))
 
     (it "extends the injection ranges after an edit"
       (with-neocaml-test-buffer neocaml-eml-mode "let f x =\n  <p>hi</p>\n"
@@ -470,9 +473,9 @@ let () = Dream.run
 
     (it "creates both injected parsers for a template with code and text"
       (with-eml-fixture "sample.eml.ml"
-        (when (treesit-language-available-p 'ocaml)
+        (when (neocaml-eml--code-injection-available-p)
           (expect (neocaml-eml-test--parser 'ocaml) :to-be-truthy))
-        (when (treesit-language-available-p 'html)
+        (when (neocaml-eml--html-injection-available-p)
           (expect (neocaml-eml-test--parser 'html) :to-be-truthy))))))
 
 (provide 'neocaml-eml-test)
