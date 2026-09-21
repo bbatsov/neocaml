@@ -1798,12 +1798,13 @@ the language-specific parts of the mode."
 
 (defun neocaml--register-with-eglot ()
   "Register neocaml modes with eglot if loaded."
-  (when (boundp 'eglot-server-programs)
-    (add-to-list 'eglot-server-programs
-                 '(((neocaml-mode :language-id "ocaml")
-                    (neocaml-interface-mode
-                     :language-id "ocaml.interface"))
-                   "ocamllsp"))))
+  (with-eval-after-load 'eglot
+    (when (boundp 'eglot-server-programs)
+      (add-to-list 'eglot-server-programs
+                   '(((neocaml-mode :language-id "ocaml")
+                      (neocaml-interface-mode
+                       :language-id "ocaml.interface"))
+                     "ocamllsp")))))
 
 (defun neocaml--register-with-dape ()
   "Register neocaml modes with dape's ocamlearlybird config if loaded."
