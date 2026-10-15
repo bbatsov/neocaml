@@ -81,7 +81,7 @@ project's switch is consulted."
 
 (defconst neocaml-opam-grammar-recipes
   '((opam "https://github.com/tmcgilchrist/tree-sitter-opam"
-          "master"
+          "0.1.0"
           "src"))
   "Tree-sitter grammar recipe for opam files.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
