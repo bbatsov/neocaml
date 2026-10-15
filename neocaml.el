@@ -154,17 +154,17 @@ displaying it."
       (or pkg-version neocaml-version))))
 
 (defconst neocaml-grammar-recipes
-  ;; We pin to the `v0.25.0-abi14' tag: tree-sitter-ocaml v0.25.0 itself
+  ;; We pin to the `v0.26.0-abi14' tag: tree-sitter-ocaml v0.26.0 itself
   ;; generates an ABI 15 parser, which most Emacs builds can't yet load,
   ;; so upstream provides this ABI-14 regeneration of the same grammar.
-  ;; Move to a plain `v0.25.x' tag once ABI 15 is broadly supported by the
+  ;; Move to a plain `v0.26.x' tag once ABI 15 is broadly supported by the
   ;; libtree-sitter Emacs links against.
   '((ocaml "https://github.com/tree-sitter/tree-sitter-ocaml"
-           "v0.25.0-abi14"
+           "v0.26.0-abi14"
            "grammars/ocaml/src")
     ;; that's the grammar for mli code
     (ocaml-interface "https://github.com/tree-sitter/tree-sitter-ocaml"
-                     "v0.25.0-abi14"
+                     "v0.26.0-abi14"
                      "grammars/interface/src"))
   "Tree-sitter grammar recipes for OCaml and OCaml Interface.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
