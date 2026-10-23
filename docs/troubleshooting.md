@@ -84,6 +84,16 @@ package fixes this:
   :config (exec-path-from-shell-initialize))
 ```
 
+## Highlighting goes wrong partway through a file (Eglot)
+
+On Emacs 31 Eglot paints semantic tokens from `ocamllsp` over neocaml's
+font-lock (see [Semantic highlighting](usage.md#semantic-highlighting)).
+`ocamllsp` releases before 1.28.0 send those tokens out of order for
+bindings with a type annotation (`let f : t = ...`), and Eglot doesn't
+cope with that: everything after the first such binding gets painted
+onto the wrong lines. Upgrade `ocaml-lsp-server` to 1.28.0 or newer, or
+turn semantic tokens off as described in the section linked above.
+
 ## Stale byte-compiled files after upgrading
 
 If neocaml behaves oddly after an upgrade (old features, missing

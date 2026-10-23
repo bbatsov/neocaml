@@ -111,6 +111,26 @@ more. It works with neocaml out of the box:
   (ocaml-eglot . eglot-ensure))
 ```
 
+### Semantic highlighting
+
+On Emacs 31, Eglot enables `eglot-semantic-tokens-mode` whenever the
+server supports semantic tokens, and `ocamllsp` does. The tokens are
+painted on top of neocaml's tree-sitter font-lock, so some faces change
+once Eglot is running - module names, for instance, end up in
+`font-lock-keyword-face`, because that's what Eglot maps the LSP
+`namespace` token type to.
+
+If you prefer neocaml's own highlighting, tell Eglot to ignore the
+capability:
+
+```emacs-lisp
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-ignored-server-capabilities :semanticTokensProvider))
+```
+
+Alternatively, keep semantic tokens and trim what they paint with
+`eglot-semantic-token-types` and `eglot-semantic-token-modifiers`.
+
 ## Compilation
 
 `C-c C-c` runs `M-x compile`, and neocaml registers an OCaml-specific error
