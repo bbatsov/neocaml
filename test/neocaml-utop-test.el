@@ -30,22 +30,70 @@
     (let ((neocaml-utop-flavor 'utop)
           (neocaml-utop-program "utop")
           (neocaml-utop-program-args nil))
-      (expect (neocaml-utop--command) :to-equal '("utop" "-emacs"))))
+      (expect (neocaml-utop--command)
+              :to-equal (list default-directory "utop" "-emacs"))))
 
   (it "keeps extra program args before -emacs"
     (let ((neocaml-utop-flavor 'utop)
           (neocaml-utop-program "utop")
           (neocaml-utop-program-args '("-short-paths")))
-      (expect (neocaml-utop--command) :to-equal '("utop" "-short-paths" "-emacs"))))
+      (expect (neocaml-utop--command)
+              :to-equal (list default-directory "utop" "-short-paths" "-emacs")))))
 
-  (it "builds a dune utop command terminated by -emacs"
-    (let* ((neocaml-utop-flavor 'dune-utop)
-           (neocaml-utop-program-args nil)
-           (cmd (neocaml-utop--command)))
-      (expect (car cmd) :to-equal "dune")
-      (expect (cadr cmd) :to-equal "utop")
-      (expect (member "--" cmd) :to-be-truthy)
-      (expect (car (last cmd)) :to-equal "-emacs"))))
+(describe "neocaml-utop start directory"
+  :var (root lib started-in)
+  (before-each
+    (setq root (file-name-as-directory (make-temp-file "neocaml-utop-proj" t))
+          lib (expand-file-name "lib/" root)
+          started-in nil)
+    (write-region "" nil (expand-file-name "dune-project" root) nil 'silent)
+    (make-directory lib)
+    (spy-on 'make-comint-in-buffer
+            :and-call-fake (lambda (&rest _) (setq started-in default-directory))))
+  (after-each
+    (neocaml-test-kill-tracked-buffers)
+    (delete-directory root t))
+
+  (cl-flet ((start (flavor dir)
+              (let ((neocaml-utop-flavor flavor)
+                    (neocaml-utop-history-file nil)
+                    (neocaml-utop-fontify-input nil)
+                    (default-directory dir))
+                (neocaml-test-track-buffer (neocaml-utop--get-or-create))))
+            (restart (transcript flavor)
+              (setq started-in nil)
+              (let ((neocaml-utop-flavor flavor))
+                (with-current-buffer transcript
+                  (neocaml-utop-restart)))))
+
+    (it "runs dune utop on . from the project root"
+      (let ((neocaml-utop-program-args '("-short-paths")))
+        (start 'dune-utop lib))
+      (expect started-in :to-equal root)
+      (expect (nthcdr 2 (spy-calls-args-for 'make-comint-in-buffer 0))
+              :to-equal '("dune" nil "utop" "." "--" "-short-paths" "-emacs")))
+
+    (it "starts in the source's directory when reusing a transcript outside a project"
+      ;; Both sources map to the base `*utop*' buffer.
+      (let ((first (file-name-as-directory (make-temp-file "neocaml-utop-a" t)))
+            (second (file-name-as-directory (make-temp-file "neocaml-utop-b" t))))
+        (unwind-protect
+            (progn
+              (start 'dune-utop first)
+              (start 'dune-utop second)
+              (expect started-in :to-equal second))
+          (delete-directory first t)
+          (delete-directory second t))))
+
+    (it "restarts dune utop in the project root"
+      ;; The restart runs from the transcript buffer, where the flavor set
+      ;; for the source buffer may not apply.
+      (restart (start 'dune-utop lib) 'utop)
+      (expect started-in :to-equal root))
+
+    (it "restarts a plain utop session where it ran"
+      (restart (start 'utop lib) 'dune-utop)
+      (expect started-in :to-equal lib))))
 
 (describe "neocaml-utop buffer naming"
   (it "uses the base name when there is no project"

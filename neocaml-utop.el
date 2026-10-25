@@ -222,7 +222,7 @@ KIND is `out' (stdout) or `err' (stderr); the list is reversed.")
   "Source buffer that last switched to this transcript.")
 
 (defvar-local neocaml-utop--command-line nil
-  "The (PROGRAM ARG...) this transcript was launched with.
+  "The (DIR PROGRAM ARG...) this transcript was launched with.
 Recorded so `neocaml-utop-restart' relaunches the same toplevel even
 though it runs from the transcript buffer, which lacks the source's
 directory-local `neocaml-utop-flavor'.")
@@ -243,13 +243,16 @@ is the per-project session derived from `neocaml-utop-buffer-name'."
    (t neocaml-utop-buffer-name)))
 
 (defun neocaml-utop--command ()
-  "Return (PROGRAM ARG...) for launching utop per `neocaml-utop-flavor'."
+  "Return (DIR PROGRAM ARG...) for launching utop per `neocaml-utop-flavor'.
+DIR is the directory to run it in.  `dune utop' resolves its directory
+argument against that and rejects absolute paths, so the `dune-utop'
+flavor runs from the project root and passes `.'."
   (pcase neocaml-utop-flavor
     ('dune-utop
-     (let ((root (or (neocaml-common-dune-project-root) default-directory)))
-       (append (list "dune" "utop" root "--")
-               neocaml-utop-program-args (list "-emacs"))))
-    (_ (append (list neocaml-utop-program)
+     (append (list (or (neocaml-common-dune-project-root) default-directory)
+                   "dune" "utop" "." "--")
+             neocaml-utop-program-args (list "-emacs")))
+    (_ (append (list default-directory neocaml-utop-program)
                neocaml-utop-program-args (list "-emacs")))))
 
 ;;;; Error overlays
@@ -605,21 +608,23 @@ Active only in the transcript buffer, on the current input line."
 
 (defun neocaml-utop--get-or-create (&optional command)
   "Return the transcript buffer for the current context, starting it if needed.
-COMMAND, when given, is the (PROGRAM ARG...) to launch (used by
+COMMAND, when given, is the (DIR PROGRAM ARG...) to launch (used by
 `neocaml-utop-restart').  Otherwise it is computed here, while the
 current buffer is still the source one, so that directory-local settings
 like `neocaml-utop-flavor' are honored."
-  (let ((bufname (neocaml-utop--buffer-name))
-        (command (or command (neocaml-utop--command))))
+  (let ((bufname (neocaml-utop--buffer-name)))
     (unless (comint-check-proc bufname)
-      (with-current-buffer (get-buffer-create bufname)
-        (unless (derived-mode-p 'neocaml-utop-mode)
-          (neocaml-utop-mode))
-        (setq neocaml-utop--partial "")
-        (setq neocaml-utop--count -1)
-        (setq neocaml-utop--command-line command)
-        (apply #'make-comint-in-buffer "neocaml-utop" (current-buffer)
-               (car command) nil (cdr command))))
+      (let ((command (or command (neocaml-utop--command))))
+        (with-current-buffer (get-buffer-create bufname)
+          ;; Set before the mode, so its hooks see the directory utop runs in.
+          (setq default-directory (car command))
+          (unless (derived-mode-p 'neocaml-utop-mode)
+            (neocaml-utop-mode))
+          (setq neocaml-utop--partial "")
+          (setq neocaml-utop--count -1)
+          (setq neocaml-utop--command-line command)
+          (apply #'make-comint-in-buffer "neocaml-utop" (current-buffer)
+                 (cadr command) nil (cddr command)))))
     (get-buffer bufname)))
 
 (defun neocaml-utop--ensure-process ()
