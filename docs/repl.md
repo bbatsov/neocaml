@@ -190,6 +190,15 @@ The transcript is a comint derivative, so input editing, history (with
 optional persistence via `neocaml-utop-history-file`), and read-only
 prompts work as usual.
 
+Completion in the transcript (`TAB`) goes through `completion-at-point`,
+so it plugs into whatever UI you use on top of it, like
+[corfu](https://github.com/minad/corfu) or
+[company](https://github.com/company-mode/company-mode). The transcript
+is a comint buffer rather than a `prog-mode` one, so if you enable corfu
+from `prog-mode-hook`, add it to `neocaml-utop-mode-hook` as well (or use
+`global-corfu-mode`). With `corfu-auto`, setting `corfu-auto-trigger` to
+`"."` pops up a module's members right after you type `List.`.
+
 Enable the source-buffer minor mode to get the keybindings, then press
 `C-c C-z` to start a session:
 

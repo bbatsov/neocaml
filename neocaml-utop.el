@@ -116,8 +116,9 @@ Set to nil to disable history persistence."
 
 (defcustom neocaml-utop-completion-at-point t
   "When non-nil, offer utop-backed completion in the transcript buffer.
-Completion candidates come from utop's own completion engine via the
-protocol's `complete-company' request."
+Candidates come from utop's own completion engine and are offered
+through `completion-at-point', so they work with any completion UI
+built on it, such as corfu or company."
   :type 'boolean
   :package-version '(neocaml . "0.10.0"))
 
