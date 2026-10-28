@@ -512,6 +512,15 @@ later."
 ;; referencing .ml-only constructs (e.g. `application_expression',
 ;; `let_binding') silently produce no matches in .mli files.  This
 ;; lets us use a single set of font-lock rules for both languages.
+(defconst neocaml--font-lock-feature-list
+  '((comment definition)
+    (keyword string type)
+    (attribute builtin constant doc-markup escape-sequence number)
+    (operator bracket delimiter variable property label function))
+  "Value for `treesit-font-lock-feature-list' in the OCaml modes.
+Named so that modes injecting OCaml into another host grammar can
+merge it with their own without instantiating `neocaml-mode'.")
+
 (defun neocaml-mode--font-lock-settings (language)
   "Return tree-sitter font-lock settings for LANGUAGE.
 The return value is suitable for `treesit-font-lock-settings'."
@@ -1853,11 +1862,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (bug-reference-prog-mode)
 
   ;; TODO: Make this configurable?
-  (setq-local treesit-font-lock-feature-list
-              '((comment definition)
-                (keyword string type)
-                (attribute builtin constant doc-markup escape-sequence number)
-                (operator bracket delimiter variable property label function)))
+  (setq-local treesit-font-lock-feature-list neocaml--font-lock-feature-list)
 
   (setq-local indent-line-function #'treesit-indent)
 

@@ -12,10 +12,10 @@
 ;;; Commentary:
 
 ;; Small, dependency-free helpers shared by neocaml's auxiliary tool
-;; modes (dune and opam): completion-at-point result construction,
-;; dune project-root detection, opam local-switch detection, a
-;; per-key memoization helper, and running an external program from a
-;; given directory.
+;; modes: completion-at-point result construction, dune project-root
+;; detection, opam local-switch detection, a per-key memoization
+;; helper, running an external program from a given directory, and
+;; merging tree-sitter font-lock feature lists.
 
 ;;; License:
 
@@ -82,6 +82,22 @@ is not found, or the command exits non-zero.  DIR may be nil, meaning
           (with-temp-buffer
             (when (zerop (apply #'call-process program nil '(t nil) nil args))
               (buffer-string))))))))
+
+(defun neocaml-common-merge-feature-lists (a b)
+  "Merge the font-lock feature lists A and B level by level.
+Duplicates are dropped and the longer list's extra levels are kept.
+Used by the modes that combine a host grammar's features with those
+of an injected language.  `treesit-merge-font-lock-feature-list'
+does the same thing but only exists on Emacs 31+."
+  (let (result)
+    (while (or a b)
+      ;; The trailing nil makes `append' copy its last argument too.  Without
+      ;; it the result shares structure with B, and the destructive
+      ;; `delete-dups' below would splice conses out of the caller's list --
+      ;; which for a caller passing a defconst means corrupting it for the
+      ;; rest of the session.
+      (push (delete-dups (append (pop a) (pop b) nil)) result))
+    (nreverse result)))
 
 (provide 'neocaml-common)
 
