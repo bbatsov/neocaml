@@ -13,6 +13,11 @@
 - [#46](https://github.com/bbatsov/neocaml/pull/46): New `neocaml-odoc-mode` for [odoc](https://ocaml.github.io/odoc/) documentation pages (`.mld`), with font-lock for headings, inline markup, code spans, references, links, tags, lists and tables, indentation, imenu, and language injection into `{@lang[...]}` code blocks for OCaml, dune and opam (Emacs 30+). Install its grammar with `M-x neocaml-odoc-install-grammar`.
 - [#77](https://github.com/bbatsov/neocaml/pull/77): Add `neocaml-mlx-mode`, a major mode for `.mlx` files (OCaml with embedded JSX, as used by Melange/React), with JSX highlighting via `tsx` grammar injection (Emacs 30+).
 - [#95](https://github.com/bbatsov/neocaml/pull/95): Complete findlib package names in `neocaml-repl-require` and `neocaml-utop-require`, using the packages `ocamlfind list` reports for the project's opam switch.
+- [#96](https://github.com/bbatsov/neocaml/pull/96): Add commands for working with the current file's tests:
+  - `neocaml-dune-test-file` (`C-c C-d T`) runs a cram test on its own, or the tests of the file's directory for other files.
+  - `neocaml-dune-promotion-diff` (`C-c C-d =`) shows the file's pending promotion in a `diff-mode` buffer (with a prefix argument, every pending promotion).
+  - `neocaml-dune-promote-file` (`C-c C-d P`) promotes only that file and reverts its buffer.
+  - In `neocaml-cram-mode`, `C-c C-c` runs the test, `C-c C-r` shows its correction and `C-c C-p` promotes it.
 
 ### Changes
 

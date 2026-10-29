@@ -89,6 +89,15 @@ Indexes shell command lines.")
 
 ;;; Mode definition
 
+(defvar neocaml-cram-mode-map
+  (let ((map (make-sparse-keymap)))
+    ;; Autoloaded from neocaml-dune-interaction.el.
+    (define-key map (kbd "C-c C-c") 'neocaml-dune-test-file)
+    (define-key map (kbd "C-c C-r") 'neocaml-dune-promotion-diff)
+    (define-key map (kbd "C-c C-p") 'neocaml-dune-promote-file)
+    map)
+  "Keymap for `neocaml-cram-mode'.")
+
 ;;;###autoload
 (define-derived-mode neocaml-cram-mode text-mode "Cram"
   "Major mode for editing cram test files.
