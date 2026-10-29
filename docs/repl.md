@@ -8,7 +8,7 @@ features:
 - Persistent input history across sessions
 - Clickable error locations (via `compilation-shell-minor-mode`)
 - Quick switching between source and REPL with `C-c C-z`
-- Support for both the standard `ocaml` toplevel and [utop](#using-utop-instead-of-the-default-ocaml-toplevel)
+- Support for both the standard `ocaml` toplevel and [utop](#choosing-a-toplevel)
 
 To get started, enable `neocaml-repl-minor-mode` (which adds REPL
 keybindings to your OCaml buffers), then press `C-c C-z` to start
