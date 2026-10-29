@@ -99,7 +99,12 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
     (when-fontifying-dune-it "fontifies library names"
       ("(library\n (libraries base stdio))"
        ("base" font-lock-type-face)
-       ("stdio" font-lock-type-face))))
+       ("stdio" font-lock-type-face)))
+
+    (when-fontifying-dune-it "fontifies package tags"
+      ("(package\n (name p)\n (tags (org:mirage \"with space\")))"
+       ("org:mirage" font-lock-type-face)
+       ("\"with space\"" font-lock-string-face))))
 
   (describe "operator feature"
     (when-fontifying-dune-it "fontifies blang operators"
