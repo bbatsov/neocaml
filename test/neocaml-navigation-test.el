@@ -38,6 +38,17 @@
       (beginning-of-defun 2)
       (expect (looking-at "let b") :to-be-truthy)))
 
+  (it "treats OxCaml kind definitions as defuns"
+    (with-neocaml-buffer "
+        let a = 1
+
+        kind_ k = value
+
+        let b = 2"
+      (goto-char (point-max))
+      (beginning-of-defun 2)
+      (expect (looking-at "kind_ k") :to-be-truthy)))
+
   (it "skips nested let-in expressions"
     (with-neocaml-buffer "
         let outer =
@@ -98,6 +109,15 @@
       (forward-sexp)
       (expect (looking-back "bar" (line-beginning-position)) :to-be-truthy)))
 
+  (it "skips OxCaml mode markers like other punctuation"
+    ;; Emacs 29 moves by `neocaml--block-regex', not the sexp thing
+    (unless (fboundp 'treesit-forward-sexp)
+      (signal 'buttercup-pending "treesit-forward-sexp not available (requires Emacs 30+)"))
+    (with-neocaml-buffer "let x @ local = 1"
+      (search-forward "x ")
+      (forward-sexp)
+      (expect (looking-back "@ local" (line-beginning-position)) :to-be-truthy)))
+
   (it "moves over a string"
     (with-neocaml-buffer "let x = \"hello\""
       (search-forward "= ")
@@ -137,6 +157,13 @@
         (while (and node (not (string= (treesit-node-type node) "type_binding")))
           (setq node (treesit-node-parent node)))
         (expect (neocaml--defun-name node) :to-equal "shape"))))
+
+  (it "returns the name of an OxCaml kind definition"
+    (with-neocaml-buffer "kind_ k = value mod global"
+      (let ((node (treesit-node-at (point-min))))
+        (while (and node (not (string= (treesit-node-type node) "kind_definition")))
+          (setq node (treesit-node-parent node)))
+        (expect (neocaml--defun-name node) :to-equal "k"))))
 
   (it "returns the name of an external type binding"
     (with-neocaml-buffer "type ext_t = external \"caml_foo\""
@@ -191,6 +218,14 @@
       (let ((pos (point)))
         (forward-sentence)
         (expect (> (point) pos) :to-be-truthy))))
+
+  (it "forward-sentence stops at the end of an OxCaml kind definition"
+    (with-neocaml-buffer "
+        kind_ k = value
+
+        let x = 1"
+      (forward-sentence)
+      (expect (looking-back "kind_ k = value" (line-beginning-position)) :to-be-truthy)))
 
   (it "backward-sentence moves to the previous top-level definition"
     (with-neocaml-buffer "
@@ -298,6 +333,20 @@
       (search-forward "1 ")
       (up-list)
       (expect (char-before) :to-equal ?\))))
+
+  (it "treats OxCaml immutable arrays as lists"
+    ;; Navigation uses the list thing from Emacs 31, and before that
+    ;; `treesit-thing-at' finds the token at point instead
+    (when (< emacs-major-version 31)
+      (signal 'buttercup-pending "the list thing requires Emacs 31+"))
+    (with-neocaml-buffer "let x = [: 1; 2 :]"
+      (search-forward "1")
+      (expect (treesit-node-type (treesit-thing-at (point) 'list))
+              :to-equal "iarray_expression"))
+    (with-neocaml-buffer "let f = function [: x :] -> x"
+      (search-forward "x")
+      (expect (treesit-node-type (treesit-thing-at (point) 'list))
+              :to-equal "iarray_pattern")))
 
   (it "down-list moves into a parenthesized expression"
     (with-neocaml-buffer "let x = (1 + 2)"
@@ -437,5 +486,25 @@ end"
     (with-neocaml-buffer "let x = 1"
       (goto-char (point-min))
       (expect (neocaml-backward-up-list) :to-throw 'user-error))))
+
+(describe "navigation: imenu"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (it "lists OxCaml kind definitions"
+    (with-neocaml-buffer "
+        kind_ k = value mod global
+
+        module M = struct
+          kind_ k2 = float64
+        end"
+      (expect (mapcar #'car (cdr (assoc "Kind" (treesit-simple-imenu))))
+              :to-equal '("k" "M.k2"))))
+
+  (it "lists OxCaml kind definitions in interfaces"
+    (with-neocaml-interface-buffer "kind_ k = value"
+      (expect (mapcar #'car (cdr (assoc "Kind" (treesit-simple-imenu))))
+              :to-equal '("k")))))
 
 ;;; neocaml-navigation-test.el ends here
