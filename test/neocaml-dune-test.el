@@ -45,12 +45,6 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
               :to-equal expected)))
         code-strings)))
 
-(defun neocaml-dune-test--wraps-fields-p ()
-  "Return non-nil if the dune grammar wraps each field in `stanza_field'."
-  (string-match-p "stanza_field"
-                  (treesit-node-string
-                   (treesit-parse-string "(library (name x))" 'dune))))
-
 ;;;; Tests
 
 (describe "neocaml-dune font-lock"
@@ -116,7 +110,31 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
     (when-fontifying-dune-it "fontifies parentheses"
       ("(library)"
        (1 1 font-lock-bracket-face)
-       (9 9 font-lock-bracket-face)))))
+       (9 9 font-lock-bracket-face))))
+
+  (describe "variable feature"
+    (when-fontifying-dune-it "fontifies pforms"
+      ("(rule\n (deps %{x})\n (action (run %{bin:foo} %{deps})))"
+       ("%{x}" font-lock-variable-use-face)
+       ("%{bin:foo}" font-lock-variable-use-face)
+       ("%{deps}" font-lock-variable-use-face))
+      ("(library\n (enabled_if (>= %{ocaml_version} 4.14)))"
+       (">=" font-lock-operator-face)
+       ("%{ocaml_version}" font-lock-variable-use-face)))
+
+    (when-fontifying-dune-it "fontifies pforms in library names"
+      ("(library\n (libraries %{lib}))"
+       ("%{lib}" font-lock-variable-use-face)))
+
+    (when-fontifying-dune-it "leaves pforms inside longer atoms alone"
+      ("(rule\n (action (run %{deps}.bak)))"
+       ("%{deps}" nil)))
+
+    (it "enables pform fontification at the default level"
+      (with-temp-buffer
+        (neocaml-dune-mode)
+        (expect (memq 'variable (nth 2 treesit-font-lock-feature-list))
+                :to-be-truthy)))))
 
 (describe "neocaml-dune indentation"
   (before-all
