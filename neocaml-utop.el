@@ -243,15 +243,17 @@ is the per-project session derived from `neocaml-utop-buffer-name'."
       (format "%s: %s*" base (neocaml-repl--project-id))))
    (t neocaml-utop-buffer-name)))
 
+(declare-function neocaml-dune--utop-command "neocaml-dune-interaction" ())
+
 (defun neocaml-utop--command ()
   "Return (DIR PROGRAM ARG...) for launching utop per `neocaml-utop-flavor'.
-DIR is the directory to run it in.  `dune utop' resolves its directory
-argument against that and rejects absolute paths, so the `dune-utop'
-flavor runs from the project root and passes `.'."
+DIR is the directory to run it in.  The `dune-utop' flavor runs `dune
+utop' from the dune project root, following `neocaml-dune-program' and
+`neocaml-dune-use-opam-exec'."
   (pcase neocaml-utop-flavor
     ('dune-utop
-     (append (list (or (neocaml-common-dune-project-root) default-directory)
-                   "dune" "utop" "." "--")
+     (require 'neocaml-dune-interaction)
+     (append (neocaml-dune--utop-command) (list "--")
              neocaml-utop-program-args (list "-emacs")))
     (_ (append (list default-directory neocaml-utop-program)
                neocaml-utop-program-args (list "-emacs")))))

@@ -74,7 +74,9 @@ Per-project REPLs derive their name from this (e.g. \"*OCaml: proj*\")."
 - `ocaml': the standard ocaml toplevel, using `neocaml-repl-program-name'
   and `neocaml-repl-program-args'.
 - `utop': the utop toplevel.
-- `dune-utop': `dune utop' for the current project (see `neocaml-dune-utop').
+- `dune-utop': `dune utop' for the current dune project, run from its
+  root and following `neocaml-dune-program' and
+  `neocaml-dune-use-opam-exec'.
 
 Set this globally or per project via a `.dir-locals.el' file; the REPL
 reads it when it starts."
@@ -156,27 +158,40 @@ project identifier (or the base name when there is no project)."
 One of the symbols accepted by `neocaml-repl-flavor'.")
 
 (defvar-local neocaml-repl--command-line nil
-  "The (PROGRAM . ARGS) this REPL buffer was started with.
-Recorded so `neocaml-repl-restart' can relaunch the same toplevel,
-including the `dune-utop' command, which isn't reconstructible from the
-global configuration.")
+  "The (DIR PROGRAM . ARGS) this REPL buffer was started with.
+Recorded so `neocaml-repl-restart' relaunches the same toplevel even
+though it runs from the REPL buffer, which lacks the source's
+directory-local `neocaml-repl-flavor'.")
+
+(declare-function neocaml-dune--utop-command "neocaml-dune-interaction" ())
 
 (defun neocaml-repl--command ()
-  "Return (PROGRAM . ARGS) for the current `neocaml-repl-flavor'.
-The `ocaml' and `dune-utop' flavors use `neocaml-repl-program-name' and
-`neocaml-repl-program-args' (the latter is configured by
-`neocaml-dune-utop'); `utop' uses the utop toplevel."
+  "Return (DIR PROGRAM . ARGS) for the current `neocaml-repl-flavor'.
+DIR is the directory to run the toplevel in.  The `ocaml' flavor uses
+`neocaml-repl-program-name' and `neocaml-repl-program-args', `utop' the
+utop toplevel, both run from the current directory, and `dune-utop'
+runs `dune utop' from the dune project root."
   (pcase neocaml-repl-flavor
-    ('utop (cons "utop" nil))
-    (_ (cons neocaml-repl-program-name neocaml-repl-program-args))))
+    ('utop (list default-directory "utop"))
+    ('dune-utop
+     (require 'neocaml-dune-interaction)
+     (neocaml-dune--utop-command))
+    (_ (append (list default-directory neocaml-repl-program-name)
+               neocaml-repl-program-args))))
 
 (defun neocaml-repl--start-command (bufname command flavor)
   "Start a REPL in BUFNAME running COMMAND for FLAVOR, and return the buffer.
-COMMAND is a (PROGRAM . ARGS) pair.  Records FLAVOR and COMMAND
-buffer-locally so the REPL can be restarted as the same toplevel."
-  (let ((buffer (apply #'make-comint-in-buffer "OCaml" bufname
-                       (car command) nil (cdr command))))
+COMMAND is a (DIR PROGRAM . ARGS) list, as returned by
+`neocaml-repl--command', and the toplevel runs in DIR.  Records FLAVOR
+and COMMAND buffer-locally so the REPL can be restarted as the same
+toplevel."
+  (let ((buffer (get-buffer-create bufname)))
     (with-current-buffer buffer
+      ;; A REPL buffer outlives its process, so set the directory every
+      ;; time instead of keeping the one the buffer was first created in.
+      (setq default-directory (car command))
+      (apply #'make-comint-in-buffer "OCaml" buffer
+             (cadr command) nil (cddr command))
       (neocaml-repl-mode)
       (setq neocaml-repl--flavor flavor)
       (setq neocaml-repl--command-line command)
@@ -274,15 +289,18 @@ to avoid false positives from `;;' inside strings or comments."
                                (concat input "\n;;\n")))))
 
 ;;;###autoload
-(defun neocaml-repl-start ()
+(defun neocaml-repl-start (&optional command)
   "Start an OCaml toplevel for the current buffer's project.
-If a REPL for the project is already running, switch to its buffer."
+If a REPL for the project is already running, switch to its buffer.
+COMMAND is the (DIR PROGRAM . ARGS) to run, by default the one for
+`neocaml-repl-flavor'."
   (interactive)
   (let ((bufname (neocaml-repl--buffer)))
     (if (comint-check-proc bufname)
         (pop-to-buffer bufname)
       (pop-to-buffer
-       (neocaml-repl--start-command bufname (neocaml-repl--command)
+       (neocaml-repl--start-command bufname
+                                    (or command (neocaml-repl--command))
                                     neocaml-repl-flavor)))))
 
 (defun neocaml-repl-switch-to-source ()
@@ -304,16 +322,21 @@ Use \\[neocaml-repl-switch-to-source] in the REPL to return."
          (running (comint-check-proc bufname))
          (running-flavor (and running
                               (buffer-local-value 'neocaml-repl--flavor
-                                                  (get-buffer bufname)))))
+                                                  (get-buffer bufname))))
+         command)
     (cond
      ;; A REPL with a different toplevel is running; offer to restart it
      ;; with the requested flavor (this is how `neocaml-dune-utop' and a
      ;; changed `neocaml-repl-flavor' take effect).
      ((and running (not (eq running-flavor neocaml-repl-flavor))
+           ;; Work out the command first, so one that can't run here
+           ;; (`dune-utop' outside a dune project) fails before the
+           ;; running REPL is killed.
+           (setq command (neocaml-repl--command))
            (y-or-n-p (format "An existing %s REPL is running for this project; \
 restart it as %s? " running-flavor neocaml-repl-flavor)))
       (neocaml-repl--kill bufname)
-      (neocaml-repl-start))
+      (neocaml-repl-start command))
      (running (pop-to-buffer bufname))
      (t (neocaml-repl-start)))
     (with-current-buffer bufname

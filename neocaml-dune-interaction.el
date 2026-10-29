@@ -39,9 +39,6 @@
 (require 'ansi-color)
 
 (declare-function neocaml-repl-switch-to-repl "neocaml-repl")
-(defvar neocaml-repl-program-name)
-(defvar neocaml-repl-program-args)
-(defvar neocaml-repl-buffer-name)
 (defvar neocaml-repl-flavor)
 
 (defgroup neocaml-dune-interaction nil
@@ -92,13 +89,28 @@ error if none is found."
 
 ;;; Running dune commands
 
+(defun neocaml-dune--program ()
+  "Return the program and leading arguments that run dune.
+That's `neocaml-dune-program', behind `opam exec --' when
+`neocaml-dune-use-opam-exec' is non-nil."
+  (append (when neocaml-dune-use-opam-exec (list "opam" "exec" "--"))
+          (list neocaml-dune-program)))
+
 (defun neocaml-dune--command-prefix ()
-  "Return the command prefix for running dune.
-When `neocaml-dune-use-opam-exec' is non-nil, returns
-\"opam exec -- dune\", otherwise just \"dune\"."
-  (if neocaml-dune-use-opam-exec
-      (concat "opam exec -- " (shell-quote-argument neocaml-dune-program))
-    (shell-quote-argument neocaml-dune-program)))
+  "Return the command prefix for running dune, as a shell string.
+For example \"opam exec -- dune\" or just \"dune\" (see
+`neocaml-dune--program')."
+  (mapconcat #'shell-quote-argument (neocaml-dune--program) " "))
+
+(defun neocaml-dune--utop-command ()
+  "Return (DIR PROGRAM ARG...) for running `dune utop' in the current project.
+DIR is the project root.  `dune utop' resolves its directory argument
+against the directory it runs in and rejects absolute paths, so it runs
+from DIR on `.'.  Like the other dune commands, this follows
+`neocaml-dune-program' and `neocaml-dune-use-opam-exec'.  Signal an
+error outside a dune project."
+  (cons (neocaml-dune--project-root)
+        (append (neocaml-dune--program) (list "utop" "."))))
 
 (defun neocaml-dune--command-line (command args)
   "Return the shell command line for dune COMMAND with ARGS."
@@ -258,16 +270,7 @@ Launches utop with the project's libraries loaded, using the full
 REPL interaction (send region, send definition, etc.)."
   (interactive)
   (require 'neocaml-repl)
-  ;; Bind `default-directory' to the project root so the REPL is named (and
-  ;; routed) per project, and source files in the project send to it.
-  (let* ((default-directory (neocaml-dune--project-root))
-         (program (if neocaml-dune-use-opam-exec "opam" neocaml-dune-program))
-         (args (if neocaml-dune-use-opam-exec
-                   (list "exec" "--" neocaml-dune-program "utop" ".")
-                 (list "utop" ".")))
-         (neocaml-repl-program-name program)
-         (neocaml-repl-program-args args)
-         (neocaml-repl-flavor 'dune-utop))
+  (let ((neocaml-repl-flavor 'dune-utop))
     (neocaml-repl-switch-to-repl)))
 
 (defvar neocaml-dune--command-history nil

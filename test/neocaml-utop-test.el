@@ -14,6 +14,7 @@
 
 (require 'neocaml-test-helpers)
 (require 'neocaml-utop)
+(require 'neocaml-dune-interaction)
 (require 'cl-lib)
 
 (describe "neocaml-utop prompt regex"
@@ -73,14 +74,32 @@
       (expect (nthcdr 2 (spy-calls-args-for 'make-comint-in-buffer 0))
               :to-equal '("dune" nil "utop" "." "--" "-short-paths" "-emacs")))
 
+    (it "honors the dune settings for dune utop"
+      (let ((neocaml-dune-program "/opt/dune")
+            (neocaml-dune-use-opam-exec t))
+        (start 'dune-utop lib))
+      (expect started-in :to-equal root)
+      (expect (nthcdr 2 (spy-calls-args-for 'make-comint-in-buffer 0))
+              :to-equal '("opam" nil "exec" "--" "/opt/dune" "utop" "." "--" "-emacs")))
+
+    (it "fails outside a dune project before creating a transcript"
+      (let ((outside (file-name-as-directory (make-temp-file "neocaml-utop-none" t)))
+            (neocaml-utop-buffer-name "*neocaml-utop-outside*"))
+        (unwind-protect
+            (progn
+              (spy-on 'neocaml-repl--project-id :and-return-value nil)
+              (expect (start 'dune-utop outside) :to-throw 'error)
+              (expect (get-buffer "*neocaml-utop-outside*") :to-be nil))
+          (delete-directory outside t))))
+
     (it "starts in the source's directory when reusing a transcript outside a project"
       ;; Both sources map to the base `*utop*' buffer.
       (let ((first (file-name-as-directory (make-temp-file "neocaml-utop-a" t)))
             (second (file-name-as-directory (make-temp-file "neocaml-utop-b" t))))
         (unwind-protect
             (progn
-              (start 'dune-utop first)
-              (start 'dune-utop second)
+              (start 'utop first)
+              (start 'utop second)
               (expect started-in :to-equal second))
           (delete-directory first t)
           (delete-directory second t))))
