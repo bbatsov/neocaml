@@ -797,10 +797,10 @@ Interactively, complete over the installed findlib packages."
     (define-key map (kbd "C-c C-c") #'neocaml-utop-send-definition)
     (define-key map (kbd "C-c C-r") #'neocaml-utop-send-region)
     (define-key map (kbd "C-c C-b") #'neocaml-utop-send-buffer)
-    (define-key map (kbd "C-c C-p") #'neocaml-utop-send-phrase)
-    (define-key map (kbd "C-c C-n") #'neocaml-utop-send-phrase-and-step)
-    (define-key map (kbd "C-c C-l") #'neocaml-utop-load-file)
-    (define-key map (kbd "C-c C-i") #'neocaml-utop-interrupt)
+    (define-key map (kbd "C-c C-e") #'neocaml-utop-send-phrase)
+    (define-key map (kbd "C-c C-s") #'neocaml-utop-send-phrase-and-step)
+    (define-key map (kbd "C-c C-u") #'neocaml-utop-load-file)
+    (define-key map (kbd "C-c C-q") #'neocaml-utop-interrupt)
     (define-key map (kbd "C-c C-k") #'neocaml-utop-clear-buffer)
     (easy-menu-define neocaml-utop-minor-mode-menu map "utop Menu"
       '("utop"

@@ -8,7 +8,9 @@
 
 (eldev-use-plugin 'autoloads)
 
-(eldev-add-extra-dependencies 'test 'buttercup)
+;; ocaml-eglot and merlin are only needed to check that our keys don't
+;; clash with theirs.
+(eldev-add-extra-dependencies 'test 'buttercup 'ocaml-eglot 'merlin)
 (eldev-add-loading-roots 'test "test")
 
 ;; configuration for the default linters

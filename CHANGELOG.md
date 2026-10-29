@@ -14,13 +14,16 @@
 - [#77](https://github.com/bbatsov/neocaml/pull/77): Add `neocaml-mlx-mode`, a major mode for `.mlx` files (OCaml with embedded JSX, as used by Melange/React), with JSX highlighting via `tsx` grammar injection (Emacs 30+).
 - [#95](https://github.com/bbatsov/neocaml/pull/95): Complete findlib package names in `neocaml-repl-require` and `neocaml-utop-require`, using the packages `ocamlfind list` reports for the project's opam switch.
 - [#96](https://github.com/bbatsov/neocaml/pull/96): Add commands for working with the current file's tests:
-  - `neocaml-dune-test-file` (`C-c C-d T`) runs a cram test on its own, or the tests of the file's directory for other files.
-  - `neocaml-dune-promotion-diff` (`C-c C-d =`) shows the file's pending promotion in a `diff-mode` buffer (with a prefix argument, every pending promotion).
-  - `neocaml-dune-promote-file` (`C-c C-d P`) promotes only that file and reverts its buffer.
+  - `neocaml-dune-test-file` (`C-c C-o T`) runs a cram test on its own, or the tests of the file's directory for other files.
+  - `neocaml-dune-promotion-diff` (`C-c C-o =`) shows the file's pending promotion in a `diff-mode` buffer (with a prefix argument, every pending promotion).
+  - `neocaml-dune-promote-file` (`C-c C-o P`) promotes only that file and reverts its buffer.
   - In `neocaml-cram-mode`, `C-c C-c` runs the test, `C-c C-r` shows its correction and `C-c C-p` promotes it.
 
 ### Changes
 
+- [#99](https://github.com/bbatsov/neocaml/pull/99): Move the keys that clashed with ocaml-eglot and merlin:
+  - In `neocaml-repl-minor-mode` and `neocaml-utop-minor-mode`, sending the phrase at point is now `C-c C-e` (was `C-c C-p`), sending it and moving to the next one `C-c C-s` (was `C-c C-n`), loading the file `C-c C-u` (was `C-c C-l`) and interrupting the toplevel `C-c C-q` (was `C-c C-i`).
+  - The dune commands move from the `C-c C-d` prefix to `C-c C-o`, and live in `neocaml-dune-command-map`, so they can be bound under another prefix.
 - [#80](https://github.com/bbatsov/neocaml/pull/80): Use the hybrid forward-sexp function on every Emacs version, so `C-M-f` moves over whole keyword-led forms (`fun`, `match`, `if`, etc.) on Emacs 31+ instead of stopping after the keyword.
 
 ### Bug fixes

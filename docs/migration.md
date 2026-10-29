@@ -64,17 +64,17 @@ either major mode -- it doesn't depend on `neocaml-dune-mode`.
 
 ## Keybinding differences
 
-Most REPL keybindings (`C-c C-z`, `C-c C-r`, `C-c C-b`, `C-c C-l`)
-work the same way across all three modes. The table below lists the
-bindings that actually differ.
+Most REPL keybindings (`C-c C-z`, `C-c C-e`, `C-c C-r`, `C-c C-b`)
+work the same way in neocaml and tuareg, and so does `C-c C-a`. The
+table below lists the bindings that actually differ.
 
 | Keybinding | neocaml | tuareg / caml-mode |
 |---|---|---|
 | `C-c C-c` | `compile` (or `neocaml-repl-send-definition` with REPL minor mode) | Eval phrase (caml-mode) |
-| `C-c C-a` | Toggle .ml/.mli | Not bound |
-| `C-c C-p` | Send phrase to REPL | Not bound |
-| `C-c C-i` | Interrupt REPL | Not bound |
-| `C-c C-k` | Clear REPL buffer | Not bound |
+| `C-c C-s` | Send phrase to REPL and move to the next one | Start the toplevel |
+| `C-c C-q` | Interrupt REPL | Indent phrase |
+| `C-c C-i` | Not bound (ocaml-eglot uses it) | Interrupt the toplevel |
+| `C-c C-k` | Clear REPL buffer | Kill the toplevel |
 
 !!! note
     neocaml's REPL keybindings require enabling

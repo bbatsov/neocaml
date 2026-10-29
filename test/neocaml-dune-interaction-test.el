@@ -226,18 +226,18 @@ root as `root' and to the visited file as `file'."
 (describe "neocaml-dune-interaction-mode"
   (it "defines the expected keybindings"
     (let ((map neocaml-dune-interaction-mode-map))
-      (expect (lookup-key map (kbd "C-c C-d b")) :to-be #'neocaml-dune-build)
-      (expect (lookup-key map (kbd "C-c C-d t")) :to-be #'neocaml-dune-test)
-      (expect (lookup-key map (kbd "C-c C-d c")) :to-be #'neocaml-dune-clean)
-      (expect (lookup-key map (kbd "C-c C-d p")) :to-be #'neocaml-dune-promote)
-      (expect (lookup-key map (kbd "C-c C-d T")) :to-be #'neocaml-dune-test-file)
-      (expect (lookup-key map (kbd "C-c C-d P")) :to-be #'neocaml-dune-promote-file)
-      (expect (lookup-key map (kbd "C-c C-d =")) :to-be #'neocaml-dune-promotion-diff)
-      (expect (lookup-key map (kbd "C-c C-d f")) :to-be #'neocaml-dune-fmt)
-      (expect (lookup-key map (kbd "C-c C-d u")) :to-be #'neocaml-dune-utop)
-      (expect (lookup-key map (kbd "C-c C-d r")) :to-be #'neocaml-dune-exec)
-      (expect (lookup-key map (kbd "C-c C-d d")) :to-be #'neocaml-dune-command)
-      (expect (lookup-key map (kbd "C-c C-d .")) :to-be #'neocaml-dune-find-dune-file)))
+      (expect (lookup-key map (kbd "C-c C-o b")) :to-be #'neocaml-dune-build)
+      (expect (lookup-key map (kbd "C-c C-o t")) :to-be #'neocaml-dune-test)
+      (expect (lookup-key map (kbd "C-c C-o c")) :to-be #'neocaml-dune-clean)
+      (expect (lookup-key map (kbd "C-c C-o p")) :to-be #'neocaml-dune-promote)
+      (expect (lookup-key map (kbd "C-c C-o T")) :to-be #'neocaml-dune-test-file)
+      (expect (lookup-key map (kbd "C-c C-o P")) :to-be #'neocaml-dune-promote-file)
+      (expect (lookup-key map (kbd "C-c C-o =")) :to-be #'neocaml-dune-promotion-diff)
+      (expect (lookup-key map (kbd "C-c C-o f")) :to-be #'neocaml-dune-fmt)
+      (expect (lookup-key map (kbd "C-c C-o u")) :to-be #'neocaml-dune-utop)
+      (expect (lookup-key map (kbd "C-c C-o r")) :to-be #'neocaml-dune-exec)
+      (expect (lookup-key map (kbd "C-c C-o d")) :to-be #'neocaml-dune-command)
+      (expect (lookup-key map (kbd "C-c C-o .")) :to-be #'neocaml-dune-find-dune-file)))
 
   (it "shows lighter in mode line"
     (with-temp-buffer
