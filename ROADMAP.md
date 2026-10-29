@@ -15,94 +15,254 @@ A few things that shape what belongs here and what doesn't:
   heuristics.
 - **Lean on the LSP stack, don't reinvent it.** For `.ml`/`.mli`, `ocaml-lsp-server`
   plus [`ocaml-eglot`](https://github.com/tarides/ocaml-eglot) already provide
-  completion, type-on-hover, navigation, refactoring, and diagnostics. neocaml's job
-  is to be a great editing substrate underneath that, not to duplicate it.
+  completion, type-on-hover, navigation, type-aware refactoring, and diagnostics.
+  neocaml's job is to be a great editing substrate underneath that, not to
+  duplicate it. Refactorings that only need the syntax tree are a different story:
+  they work without a running server, and they're exactly what tree-sitter is good
+  at.
 - **The auxiliary modes are ours to own.** dune, opam, ocamllex, menhir, cram, and
   the REPL have no language server. That's where neocaml-specific intelligence pays
   off the most.
+- **The build and the environment are ours too.** Running the right tests,
+  promoting their output, and picking the right opam switch are things no language
+  server does for you.
 - **Stay consistent across modes.** Whatever we add (a menu, flymake, a face naming
   scheme) should look and behave the same everywhere.
 
 ## Language support
 
-### 1. Finish OCaml 5.x coverage (in flight)
+### 1. OxCaml
 
-PR #62 moves the grammars to tree-sitter-ocaml v0.25.0, which brings the OCaml 5.5
-syntax. Once that lands (currently parked on the upstream ABI-14 tag), audit
-font-lock for the newer constructs that arrived across 5.x: effect handlers, the
-`effect`/`perform` surface, binding operators, and the 5.5 additions (external
-types, modular explicits, polymorphic parameters). Make sure each gets a sensible
-face and that indentation handles them. **Priority: high (mostly in progress).**
+tree-sitter-ocaml v0.26.0 parses Jane Street's [OxCaml](https://oxcaml.org/)
+extensions, so this is no longer blocked upstream. The grammar is a superset of
+regular OCaml, and the new nodes only show up in code that uses them. The work:
 
-### 2. OxCaml support (blocked on grammar)
+- Move to the `v0.26.0-abi14` grammar (PR #88). Our tests pass on it unchanged, but
+  a couple of things still need doing. `neocaml--check-grammar-compatibility` only
+  recognizes grammars older than v0.25, so it needs a probe for v0.26 (`_` now
+  parses as `any_pattern`). And `_` lost its face in patterns, types and
+  expressions, because it now has node types of its own (`any_pattern`,
+  `any_type`, `hole_expression`) that our rules don't mention.
+- Decide how to treat older grammars. A font-lock query that names a v0.26-only
+  node or token doesn't just fail to match on v0.25: Emacs disables the whole
+  feature. So either every OxCaml rule gets gated with `treesit-query-valid-p` (as
+  we do for `shebang`), or neocaml requires v0.26 and leans on the compatibility
+  warning. The second is a lot less code.
+- Font-lock for modes and modalities (`@ local`, `@@ portable`), kinds
+  (`type t : immediate`, `kind_` definitions, mod bounds), the allocation and
+  uniqueness keywords (`stack_`, `exclave_`, `local_`, `global_`, `borrow_`),
+  immutable arrays (`[: ... :]`), and unboxed types and literals (`float#`,
+  `#1.0`, `#true`, `#( ... )`, `#{ ... }`, `.#field`). The new builtin types
+  (`float32`, `int8`, `int16` and the `#` variants) belong in the builtin list.
+  Upstream's highlights make `mod` a keyword, but for us that would also change
+  how `x mod 2` looks, so it's better matched only inside kinds.
+- Indentation for the bodies of `exclave_`, `stack_`, `local_` and `borrow_` when
+  they start on the next line, kind definitions, mod bounds, and the `for`/`when`
+  clauses of comprehensions. Nothing matches those today, so lines are left as
+  typed.
+- Kind definitions in imenu, defun navigation and sentence motion (at `kind_ k`,
+  `forward-sexp` currently jumps to the end of the buffer), immutable arrays as
+  list things, and `@`/`@@` handled in sexp motion.
+- Test fixtures taken from real OxCaml code. Upstream checked the grammar against a
+  set of OxCaml repositories, which are a good source of samples.
+- A section in the docs on using neocaml with an OxCaml switch.
 
-Jane Street's OxCaml adds a substantial set of extensions (modes, kinds, unboxed
-and layout-annotated types, locality, and more). Supporting it well needs the
-upstream grammar to grow those constructs first. Track the grammar work, and once
-it's available, extend font-lock and indentation, ideally gated so the extra rules
-only kick in when the OxCaml-aware grammar is installed. **Priority: later (blocked
-upstream).**
-
-## Diagnostics and editing intelligence
-
-### 3. flymake backends for the tool modes
-
-Today only `neocaml-opam-mode` has a flymake backend (it shells out to `opam lint`).
-Extend that same pattern to the other modes that have no language server behind them:
-
-- **dune**: validate via `dune build` output or a dune-file check.
-- **ocamllex / menhir**: run the respective tool and surface parse/grammar errors.
-- **cram**: basic structural checks on `.t` files.
-
-There's good precedent for shipping a built-in backend rather than leaving it to the
-user: `rust-ts-mode` defines `rust-ts-flymake-command` (defaulting to
-`clippy-driver`). For `.ml`/`.mli`, diagnostics already come from eglot + ocamllsp,
-so the only thing worth considering there is an optional non-LSP fallback (for
-example via `ocamlc -i` or merlin) for users who don't run a language server.
 **Priority: high.**
 
-### 4. ocamlformat integration
+### 2. OCaml 5.x font-lock audit
 
-There's a `neocaml-dune-format-buffer` for dune files, but nothing for OCaml source.
-A `neocaml-format-buffer` that drives `ocamlformat` (respecting `.ocamlformat`), with
-an opt-in format-on-save mirroring the dune mode, would be one of the highest-value
-practical additions. Following `haskell-ts-mode`'s `C-c C-f` (which formats the
-active region or the current function with ormolu), we should support formatting a
-region or single definition, not just the whole buffer. It should work whether or
-not a language server is running, and play nicely with `apheleia`/`format-all` for
-people who prefer those. **Priority: high.**
+The OCaml 5.5 grammar has shipped. What's left is an audit of the constructs that
+arrived across 5.x (effect handlers, binding operators, external types, modular
+explicits, polymorphic parameters), making sure each gets a sensible face and
+indents well. It touches the same rules as the OxCaml work, so it's best done
+alongside it, together with dropping the node names our rules mention that
+neither grammar version has (`infix_operator` and the `*_binding_pattern`
+types). **Priority: medium.**
 
-### 5. completion-at-point for the auxiliary modes
+## Refactoring
 
-The LSP stack handles completion for OCaml source. What it doesn't cover is the
-surrounding files: dune stanza and field names, opam fields, and findlib package
-names. A small set of `capf` functions for `neocaml-dune-mode`, `neocaml-opam-mode`,
-and the dune `(libraries ...)` field would make those modes feel much more alive,
-and they'd plug straight into `completion-preview-mode` (see item 17).
+### 3. Syntactic refactorings
+
+clojure-mode and clj-refactor show how far you can get with rewrites that only need
+the syntax tree. Structural editing in general (wrapping code in a form, dragging
+parameters and match arms around) is already covered by
+[combobulate](https://github.com/mickeynp/combobulate), which supports our modes.
+What's left are rewrites specific to OCaml, and ocamllsp offers none of these:
+
+- Thread and unwind pipelines: `List.map f (List.filter p xs)` ↔
+  `xs |> List.filter p |> List.map f`.
+- Convert `let f x = match x with ...` ↔ `let f = function ...`.
+- Switch between `|>` and `@@`.
+- Convert binding operators: `let* x = e in body` ↔ `e >>= fun x -> body`.
+- Eta reduce and expand: `List.map (fun x -> f x) l` ↔ `List.map f l`.
+- Flip an `if`: negate the condition and swap the branches.
+- Convert `let open M in e` ↔ `M.(e)`.
+- Pun and unpun record fields and labels: `{ x = x }` ↔ `{ x }`, `~x:x` ↔ `~x`.
+- Turn a string into a quoted string (`"a\"b"` ↔ `{|a"b|}`) and back.
+- Comment out the node at point. OCaml comments nest, so this toggles cleanly.
+- Convert between lists and arrays, and toggle `mutable` on a record field.
+
+Some reach into a second file, but are still purely syntactic:
+
+- Add a `[@@deriving ...]` attribute together with the matching ppx in the
+  stanza's `(preprocess (pps ...))`.
+- Jump to (or create) the doc comment of the definition at point, in the `.ml` or
+  in the `.mli`, like `go-ts-mode-docstring`.
+- Generate stubs for the `.mli` declarations the `.ml` doesn't implement yet, and a
+  stub for a function called at point that doesn't exist yet.
+
+clojure-ts-mode is a good template for building these: find the node with
+`treesit-thing-at-point`, edit through markers from the end backwards, reindent the
+result, signal a `user-error` for shapes we don't handle, and test every refactoring
+with before/after specs. They'd get their own prefix, `C-c C-m` as in clj-refactor
+(`C-c C-r` is taken by the REPL's send-region). Before building the punning toggle,
+check what ocamlformat does with puns. If it normalizes them anyway, the toggle is
+pointless for most people. **Priority: high for the pipeline and
+`match`/`function` conversions, medium for the rest.**
+
+### 4. Make ocamllsp's code actions easier to reach
+
+ocamllsp already provides extracting a local or a function, inlining, adding and
+removing type annotations, combining match cases, qualifying an `open`, adding a
+missing `rec`, removing unused code, and updating the `.mli`. ocaml-eglot has
+commands only for destruct, construct and inferring an interface, so the rest are
+reachable only through `eglot-code-actions`, with no keys, and extract leaves a
+placeholder name behind that you rename afterwards. Named commands (with a prompt
+for the new name, which ocamllsp's `ocamllsp/refactorExtract` request accepts)
+would fix that. They belong in ocaml-eglot rather than here, so step one is
+proposing them there. **Priority: medium (upstream).**
+
+## Tests, builds and the environment
+
+### 5. A test and promotion workflow
+
+Expect tests and cram tests both work by promoting dune's output into the source.
+neocaml can run the current file's tests, show its pending promotion as a diff,
+and promote just that file. What's still missing:
+
+- A list of the files with pending promotions (`dune promotion list`), to review
+  and promote them one by one.
+- Rerun the last test command from anywhere in the project.
+- Run the single `let%expect_test` or `let%test` at point. dune doesn't pass a
+  location through to the test runner, so this needs the inline test runner's
+  `-only-test` flag and some investigation.
+- A `transient` menu over the dune commands.
+
+**Priority: high.**
+
+### 6. Use the project's opam switch automatically
+
+Getting Emacs to use the right opam switch for a project comes up again and again
+on discuss.ocaml.org. VS Code and Zed detect a dune-managed toolchain (dune package
+management), a local `_opam` switch, or the switch opam itself picks for the
+directory, and run ocamllsp, ocamlformat and the toplevel from it. Emacs users get
+by with the global `opam-switch-mode` or with envrc. neocaml could set
+`process-environment` and `exec-path` buffer-locally per project, so Eglot,
+`compile`, the REPLs and the formatter all agree on the switch, and react to
+`opam-switch-mode` by restarting the REPLs and flushing the library and package
+caches. The completion code already detects a local `_opam` switch, so there's a
+starting point. **Priority: high.**
+
+### 7. A setup checker
+
+Bug reports about a broken setup tend to need the same answers. A `neocaml-doctor`
+command could collect them up front: whether the grammars are installed and
+loadable, which `ocamllsp`, `ocamlformat`, `dune` and `utop` are on the `PATH` and
+which switch they come from, whether Eglot knows about our modes, whether there are
+stale `.elc` files around, and what merlin configuration dune hands out for the
+current file (`dune ocaml merlin dump-config`). It grows naturally out of
+`neocaml-bug-report-info`. **Priority: medium-high.**
+
+### 8. Add a missing library
+
+On "Unbound module Yojson", offer to add `yojson` to the `libraries` of the nearest
+`dune` stanza, add the package to the `depends` in `dune-project` (or the `.opam`
+file), and install it with opam if it's not there. I don't know of an editor that
+does this today, and neocaml already has the pieces: the library list from the dune
+completion, the dune grammar, and the opam package list. **Priority: medium.**
+
+### 9. See what the preprocessor did
+
+ppx-heavy code is hard to follow when you can't see the expansion. `dune describe
+pp FILE` prints a file after preprocessing, and `ocamlc -dparsetree` shows the
+parsetree. Commands that show either in a read-only buffer, with locations you can
+jump back from, would help a lot. VS Code has both. **Priority: medium.**
+
+### 10. Documentation for the symbol at point
+
+`neocaml-browse-ocaml-docs` opens the ocaml.org docs, but not for the thing at
+point. Knowing the module path (from the parse tree, or from ocamllsp), we can
+build the URL with an anchor (`/manual/5.4/api/List.html#VALmap` for the stdlib,
+`/p/PKG/latest/doc/...` for packages), fall back to `odig` for offline docs, and
+wrap `dune ocaml doc` for the project's own. **Priority: medium.**
+
+### 11. dune conveniences
+
+Smaller things around `neocaml-dune-interaction-mode`:
+
+- `dune exec` with completion of the project's executables (via `dune describe`),
+  run in a comint buffer so programs that read from stdin work.
+- Completion of aliases for `dune build @...`, and a `dune init` wrapper.
+- `dune diagnostics` against a running watch build, and a watch buffer that keeps
+  only the output of the latest build.
+- flymake for `dune` files, and basic structural checks for cram tests, the way
+  `neocaml-opam-mode` does it with `opam lint`.
+
 **Priority: medium.**
 
-### 6. First-class ocaml-eglot interop
+## REPL
 
-`ocaml-eglot` is becoming the standard way to drive ocamllsp from Emacs, and it
-exposes OCaml-specific niceties (type-enclosing sessions, construct, jump-to-*). We
-already register the modes with `eglot-server-programs`; the next step is to make
-sure neocaml and ocaml-eglot compose cleanly out of the box, document the pairing,
-and avoid keybinding or menu clashes. **Priority: medium.**
+### 12. More REPL helpers
 
-## Font-lock and syntax correctness
+The REPLs cover a lot by now (two backends, per-project sessions, completion,
+restart, send-and-step, `#require` with package completion). Room to grow:
 
-### 7. A `syntax-propertize-function` for OCaml's tricky lexemes
+- Load the current module into the plain toplevel with `dune ocaml top-module`,
+  which prints the directives that load a module without its `.mli` hiding
+  anything. That would be a big upgrade for the `ocaml` flavor.
+- Map errors in `neocaml-repl` that refer to a sent phrase (`Line 1, characters
+  4-7`) back to the source, as `neocaml-utop` already does.
+- Insert the result of an evaluation as a comment below the form
+  (`(* val x : int = 3 *)`).
+- `#trace` and `#show` the identifier at point, and a scratch buffer.
 
-OCaml has a few constructs that a static syntax table can't classify correctly,
-most notably the clash between a character literal (`'a'`) and a type variable
-(`'a`), plus quoted string literals (`{id|...|id}`). The grammar parses these
-fine, but everything keyed on the *syntax table* (sexp motion, `electric-pair`,
-`delete-pair`, string/comment detection, `forward-word`) can still trip over them.
-`rust-ts-mode` solves the analogous char-vs-lifetime and raw-string problem with a
-`syntax-propertize-function`; neocaml should do the same so the lower-level
-machinery agrees with the parse tree. **Priority: medium-high (correctness).**
+**Priority: medium.**
 
-### 8. Prettify and font-lock refinements
+## Editing ergonomics
+
+### 13. Electric delimiters and keyword reindentation
+
+- When `electric-pair-mode` is on, close `[|` and `{<` with `|]` and `>}`.
+  (Comments stay with `M-;`, see the FAQ.)
+- Reindent the current line on typing `|`, `end`, `done`, `with` or `in`, like
+  tuareg does.
+
+**Priority: medium.**
+
+### 14. Skeletons and templates
+
+tuareg ships insert-helpers for `match`, `let ... in`, `module`, `try ... with`, and
+friends, and dune's own Emacs mode has skeletons for most stanzas. neocaml has
+neither. Skeletons for the common OCaml forms, for dune stanzas and for an opam
+file, plus `auto-insert` templates for empty files (a new `dune` file could start
+out as a `library` stanza named after its directory), would cover it.
+**Priority: medium.**
+
+### 15. Jump between code and its tests
+
+`C-c C-a` already toggles between `.ml` and `.mli`. `find-sibling-rules` (Emacs 29)
+could handle `lib/foo.ml` ↔ `test/test_foo.ml` the same way. **Priority: low.**
+
+### 16. Selectable indentation styles
+
+`c-ts-mode` exposes `c-ts-mode-indent-style` (a defcustom of named styles plus a
+command to switch them live). OCaml indentation is famously contentious (ocp-indent
+vs ocamlformat vs personal taste), so a small set of named neocaml indent presets,
+switchable at runtime, could let people get closer to their preferred look without
+hand-tuning rules. Worth prototyping before committing to it, since each style is a
+maintenance surface. **Priority: later, exploratory.**
+
+### 17. Prettify and font-lock refinements
 
 Two smaller polish items inspired by sibling modes:
 
@@ -113,81 +273,19 @@ Two smaller polish items inspired by sibling modes:
 
 **Priority: medium / low.**
 
-## REPL
-
-### 9. A smarter REPL
-
-The REPL (`neocaml-repl-mode`) covers the basics today: send region/buffer/phrase/
-definition, `#use` a file, history persistence, prompt and error fontification, and
-error navigation back to source. Room to grow:
-
-- **Completion** in the REPL buffer (via the toplevel's own completion or merlin).
-- **Restart** command, and a cleaner story for switching between the plain toplevel,
-  utop, and `dune utop`.
-- **Send-and-step** (evaluate the current phrase and advance to the next).
-- **Result handling**: optional pretty-printing, folding long output, and quick
-  jump from a REPL error straight to the offending source location.
-- **Helpers** for `#require`/`#use`/findlib package loading.
-
-**Priority: medium-high.**
-
-## Tooling and project integration
-
-### 10. project.el backend
-
-The dune interaction mode already finds the project root with
-`locate-dominating-file`, but neocaml doesn't teach `project.el` about OCaml
-projects. A small backend keyed on `dune-project` would give users project-wide
-commands (find file, search, compile, test) for free, and a sensible
-`compile-command` per project. **Priority: medium.**
-
-### 11. dune-interaction polish
-
-`neocaml-dune-interaction-mode` already wraps build/test/clean/promote/fmt/exec with
-watch-mode support. Natural follow-ups: a `transient` menu, a test runner with
-rerun-last and failure navigation, and tighter integration with the compilation
-buffer's error parsing. **Priority: medium.**
-
-## Editing ergonomics
-
-### 12. Skeletons and templates for common forms
-
-tuareg ships insert-helpers for `match`, `let ... in`, `module`, `try ... with`, and
-friends. neocaml has none. A small set of skeletons (or first-class snippet
-definitions) for the common OCaml forms would smooth out everyday editing, and they
-compose well with the structural commands we already document. **Priority: medium.**
-
-### 13. Structural editing helpers
-
-We lean hard on the built-in structural commands (see the navigation docs), but
-there's room for OCaml-aware editing built on the same tree-sitter framework, in the
-spirit of combobulate: wrap a region in `begin ... end`, toggle a module between
-`struct` and `sig`, move a function argument left/right, or transpose match arms.
-These are exactly the operations the parse tree makes reliable. **Priority: medium,
-exploratory.**
-
-### 14. Selectable indentation styles
-
-`c-ts-mode` exposes `c-ts-mode-indent-style` (a defcustom of named styles plus a
-command to switch them live). OCaml indentation is famously contentious (ocp-indent
-vs ocamlformat vs personal taste), so a small set of named neocaml indent presets,
-switchable at runtime, could let people get closer to their preferred look without
-hand-tuning rules. Worth prototyping before committing to it, since each style is a
-maintenance surface. **Priority: later, exploratory.**
-
 ## Adopting newer Emacs features (29 / 30 / 31)
 
 Emacs keeps moving capabilities into core. Several map onto things neocaml either
-hand-rolls or doesn't expose yet. None of these are tree-sitter specific.
+hand-rolls or doesn't expose yet.
 
-### 15. Grammar install via the Emacs 31 built-ins
+### 18. Grammar install via the Emacs 31 built-ins
 
 Emacs 31 adds `treesit-auto-install-grammar` (offer to fetch and build a missing
 grammar instead of erroring) and `treesit-enabled-modes`. We can lean on these to
 slim down `neocaml-install-grammars` and the "grammar not installed" prompt on 31+,
 while keeping the current path for 29/30. **Priority: medium.**
 
-### 16. Evaluate `define-treesit-generic-mode` and `.scm` font-lock
+### 19. Evaluate `define-treesit-generic-mode` and `.scm` font-lock
 
 Emacs 31 introduces `define-treesit-generic-mode` and the ability to drive
 font-locking from `.scm` query files. Worth evaluating whether the simpler auxiliary
@@ -195,61 +293,72 @@ modes (cram, objinfo) could be expressed more compactly this way, and whether pa
 of our font-lock could move closer to the upstream `highlights.scm`.
 **Priority: later, evaluate.**
 
-### 17. Opt into the newer built-in minor modes
-
-A cluster of smaller, non-tree-sitter improvements worth wiring up or recommending:
+### 20. Opt into the newer built-in minor modes
 
 - **`completion-preview-mode`** (Emacs 30): inline preview of the top completion.
-  It's `capf`-driven, so it benefits directly from item 5 and from eglot.
+  It's `capf`-driven, so it works with Eglot and with the completion in the dune
+  and opam modes.
 - **`flymake-show-diagnostics-at-end-of-line`** (Emacs 30): nothing to implement,
-  but worth recommending in the docs alongside the flymake work.
-- **`bug-reference-prog-mode` and `goto-address-prog-mode`**: linkify issue
-  references and URLs in comments across all our modes. Cheap, broadly useful.
+  but worth recommending in the docs.
 - **Multiple eldoc backends** via `eldoc-documentation-strategy`: if we ever add a
   neocaml-owned eldoc source (say, doc-comment or REPL-backed), it should compose
-  with eglot's rather than replace it.
+  with Eglot's rather than replace it.
 
-**Priority: medium / low, mostly low-effort.**
+**Priority: low, mostly docs.**
 
-### 18. Track upstream tree-sitter fixes and injection improvements
+### 21. Track upstream tree-sitter fixes and injection improvements
 
 Retire neocaml's `treesit-forward-comment` off-by-one workaround once the upstream
 fix is in a release we depend on, and revisit the language-injection setup (used by
-ocamllex and menhir, and by the pending odoc mode) against the newer multi-language
-support, including the `markdown-ts-mode` approach of injecting real language modes
-into code blocks. **Priority: ongoing.**
+ocamllex, menhir, odoc and mlx) against the newer multi-language support, including
+the `markdown-ts-mode` approach of injecting real language modes into code blocks.
+**Priority: ongoing.**
 
 ## Smaller items and nice-to-haves
 
-- **odoc mode** (PR #46): land `.mld` support once the open review points are
-  resolved (notably finishing or dropping the sh/bash injection).
-- **ocamldoc rendering**: prettier handling of doc comments in source, and applying
-  the odoc grammar to code comments and LSP hovers.
+- **Doc comments in hovers**: apply the odoc grammar to LSP hovers and eldoc, now
+  that doc comments in the source are rendered.
 - **Face audit**: make sure every mode exposes customizable, per-feature faces with
-  reasonable `font-lock-*` defaults (this came up in the odoc review).
+  reasonable `font-lock-*` defaults.
 - **More file coverage**: a mode or sensible defaults for `META` files and other
   stragglers in the ecosystem.
+- **menhir**: support for `.messages` files and for the `.conflicts` file that
+  `--explain` writes.
 - **Performance and robustness**: behavior on very large files, and good defaults
   for `treesit-font-lock-level`.
 
-## Lessons from sibling tree-sitter modes
+## Not planned
+
+- **flymake for ocamllex and menhir.** Running the tools on the buffer only catches
+  structural errors, since the OCaml in the actions never gets type-checked. dune
+  does the real checking on build, and `compile` already runs it in dune projects.
+- **Coverage overlays, profiler integration, a package explorer.** All doable, but
+  few people would reach for them from the editor.
+
+## Lessons from sibling modes
 
 A few patterns worth stealing, noted next to the items they informed:
 
-- **`rust-ts-mode`**: ships its own flymake backend (`clippy-driver`, item 3), uses a
-  `syntax-propertize-function` for char/string/lifetime edge cases (item 7), and a
-  `prettify-symbols-compose-predicate` (item 8).
-- **`c-ts-mode`**: offers selectable indentation styles via a defcustom and a live
-  switch command (item 14), and factors comment filling/indentation into the shared
-  `c-ts-common` library.
-- **`haskell-ts-mode`**: formats the active region or current function with one key
-  (item 4), and highlights only the pattern variables that are actually usable
-  (item 8).
+- **clojure-ts-mode and clj-refactor**: refactoring commands built on the parse
+  tree, and a test style for them (item 3).
+- **`go-ts-mode`**: creating and jumping to the doc comment of a definition
+  (item 3).
+- **VS Code's OCaml Platform and Zed**: automatic switch detection (item 6), and
+  viewers for the preprocessed source and the parsetree (item 9).
+- **`rust-ts-mode`**: a `prettify-symbols-compose-predicate` (item 17).
+- **`c-ts-mode`**: selectable indentation styles via a defcustom and a live switch
+  command (item 16).
+- **`haskell-ts-mode`**: highlighting only the pattern variables that are actually
+  usable (item 17).
 
 ## References
 
 - [Tree-sitter Major Modes (Emacs Lisp manual)](https://www.gnu.org/software/emacs/manual/html_node/elisp/Tree_002dsitter-Major-Modes.html)
 - [ocaml-eglot](https://github.com/tarides/ocaml-eglot)
+- [OxCaml documentation](https://oxcaml.org/documentation/)
+- [tree-sitter-ocaml v0.26.0 release notes](https://github.com/tree-sitter/tree-sitter-ocaml/releases/tag/v0.26.0)
+- [combobulate](https://github.com/mickeynp/combobulate)
+- [clj-refactor](https://github.com/clojure-emacs/clj-refactor.el)
 - [haskell-ts-mode](https://codeberg.org/pranshu/haskell-ts-mode)
 - [What's New in Emacs 30.1 (Mastering Emacs)](https://www.masteringemacs.org/article/whats-new-in-emacs-301)
 - [Building Emacs Major Modes with Tree-sitter: Lessons Learned](https://batsov.com/articles/2026/02/27/building-emacs-major-modes-with-treesitter-lessons-learned/)
