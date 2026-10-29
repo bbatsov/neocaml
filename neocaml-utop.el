@@ -782,8 +782,9 @@ Works whether or not the toplevel is still running."
 
 ;;;###autoload
 (defun neocaml-utop-require (package)
-  "Load the findlib PACKAGE into utop via the `#require' directive."
-  (interactive (list (read-string "Require package: ")))
+  "Load the findlib PACKAGE into utop via the `#require' directive.
+Interactively, complete over the installed findlib packages."
+  (interactive (list (neocaml-repl--read-package)))
   (let ((proc (neocaml-utop--ensure-process)))
     (neocaml-utop--set-error-target nil)
     (neocaml-utop--send-eval proc (format "#require %S" package))))
