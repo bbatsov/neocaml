@@ -103,7 +103,7 @@ Probes for the newest node type `neocaml-dune-mode' relies on."
   (unless neocaml-dune--grammar-compatibility-checked
     (setq neocaml-dune--grammar-compatibility-checked t)
     (unless (treesit-search-subtree
-             (treesit-parse-string "(rule (deps %{x}))" 'dune) "interpolation")
+             (treesit-parse-string "(package (tags (a)))" 'dune) "tag_name")
       (display-warning
        'neocaml
        "The installed tree-sitter dune grammar appears older than the \
@@ -162,7 +162,8 @@ text with the formatted output, touching only the parts that changed
    '((module_name) @font-lock-type-face
      (library_name) @font-lock-type-face
      (package_name) @font-lock-type-face
-     (public_name) @font-lock-type-face)
+     (public_name) @font-lock-type-face
+     (tag_name) @font-lock-type-face)
 
    :language 'dune
    :feature 'operator
