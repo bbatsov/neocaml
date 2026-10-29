@@ -19,6 +19,7 @@
   - `neocaml-dune-promote-file` (`C-c C-o P`) promotes only that file and reverts its buffer.
   - In `neocaml-cram-mode`, `C-c C-c` runs the test, `C-c C-r` shows its correction and `C-c C-p` promotes it.
 - [#102](https://github.com/bbatsov/neocaml/pull/102): Fontify [OxCaml](https://oxcaml.org/) syntax: the `stack_`, `exclave_`, `local_`, `global_`, `borrow_`, `kind_` and `kind_of_` keywords, modes and modalities, kinds, immutable arrays, unboxed types and literals (`float#`, `#1.0`, `#true`, `#(...)`, `#{...}`, `.#field`), and the new builtin types (`float32`, `int8`, `int16`, `or_null` and the unboxed `#` variants).
+- [#102](https://github.com/bbatsov/neocaml/pull/102): Indent OxCaml code: the bodies of `exclave_`, `stack_`, `local_` and `borrow_` on the next line, kind definitions, `mod` bounds, and the `for` and `when` clauses of comprehensions.
 
 ### Changes
 

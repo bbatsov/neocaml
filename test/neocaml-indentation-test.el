@@ -149,6 +149,59 @@ done")
     "type t =
   external \"caml_foo\"")
 
+  (when-indenting-it "puts the body of an OxCaml exclave_ where the exclave_ would go"
+    "let f x = exclave_
+  let y = x in
+  y"
+    "let g = fun x -> exclave_
+  x"
+    "let h x =
+  exclave_
+  (x, x)")
+
+  (when-indenting-it "indents OxCaml stack_, local_ and borrow_ bodies on the next line"
+    "let g x =
+  stack_
+    (Some x)"
+    "let h () =
+  local_
+    [1; 2]"
+    "let k x =
+  borrow_
+    x")
+
+  (when-indenting-it "indents OxCaml kind definitions and aligns mod with its kind"
+    "kind_ k =
+  value mod global"
+    "kind_ k =
+  value
+  mod global portable"
+    "type t :
+  value
+  mod portable")
+
+  (when-indenting-it "aligns OxCaml comprehension clauses with their expression"
+    "let evens =
+  [ x
+    for x = 1 to 10
+    when x mod 2 = 0 ]"
+    "let squares =
+  [|
+    x * x
+    for x in xs
+  |]"
+    "let pairs =
+  [ (x, y)
+    for x = 1 to 3
+    and y in ys
+    when x > y ]")
+
+  (when-indenting-it "indents OxCaml immutable arrays like arrays"
+    "let a = [:
+  1;
+  2;
+:]")
+
   ;; ---- Empty-line indentation (no-node) -----------------------------------
 
   (describe "empty-line indentation"
@@ -194,6 +247,14 @@ done")
       ("module M = struct\n  let x =" 4)
       ("module M = struct\n  let x = 42" 2)
       ("module type S = sig\n  val x : int" 2))
+
+    (when-newline-indenting-it "indents after OxCaml exclave_, stack_, local_ and borrow_"
+      ("let f x = exclave_" 2)
+      ("let f x =\n  exclave_" 2)
+      ("let f x =\n  let y = x in exclave_" 2)
+      ("let f x =\n  stack_" 4)
+      ("let f x = local_" 2)
+      ("let f x = borrow_" 2))
 
     (when-newline-indenting-it "does not indent after in"
       ("let x = 1 in" 0)))
@@ -310,6 +371,10 @@ end")
   (when-indenting-interface-it "indents an external type declaration"
     "type t =
   external \"caml_foo\"")
+
+  (when-indenting-interface-it "indents OxCaml kind definitions"
+    "kind_ k =
+  value mod global")
 
   (when-indenting-interface-it "indents multiple top-level declarations"
     "type t = int
