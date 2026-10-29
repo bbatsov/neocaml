@@ -103,7 +103,7 @@ Probes for the newest node type `neocaml-dune-mode' relies on."
   (unless neocaml-dune--grammar-compatibility-checked
     (setq neocaml-dune--grammar-compatibility-checked t)
     (unless (treesit-search-subtree
-             (treesit-parse-string "(library (name x))" 'dune) "stanza_field")
+             (treesit-parse-string "(rule (deps %{x}))" 'dune) "interpolation")
       (display-warning
        'neocaml
        "The installed tree-sitter dune grammar appears older than the \
@@ -151,6 +151,11 @@ text with the formatted output, touching only the parts that changed
    :language 'dune
    :feature 'constant
    '(["true" "false"] @font-lock-constant-face)
+
+   ;; Before `type' so pforms keep their face inside e.g. library names.
+   :language 'dune
+   :feature 'variable
+   '((interpolation) @font-lock-variable-use-face)
 
    :language 'dune
    :feature 'type
@@ -511,7 +516,7 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
   (setq-local treesit-font-lock-feature-list
               '((comment keyword)
                 (string property)
-                (constant type)
+                (constant type variable)
                 (operator bracket)))
 
   ;; Indentation
