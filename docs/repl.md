@@ -43,17 +43,17 @@ The following keybindings are available when `neocaml-repl-minor-mode` is active
 | `C-c C-c` | `neocaml-repl-send-definition` | Send the current definition to the REPL |
 | `C-c C-r` | `neocaml-repl-send-region` | Send the selected region to the REPL |
 | `C-c C-b` | `neocaml-repl-send-buffer` | Send the entire buffer to the REPL |
-| `C-c C-l` | `neocaml-repl-load-file` | Load the current file into the REPL via `#use` |
-| `C-c C-p` | `neocaml-repl-send-phrase` | Send the current phrase (code up to next `;;`) to the REPL |
-| `C-c C-n` | `neocaml-repl-send-phrase-and-step` | Send the current phrase, then move to the next one |
-| `C-c C-i` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
+| `C-c C-u` | `neocaml-repl-load-file` | Load the current file into the REPL via `#use` |
+| `C-c C-e` | `neocaml-repl-send-phrase` | Send the current phrase (code up to next `;;`) to the REPL |
+| `C-c C-s` | `neocaml-repl-send-phrase-and-step` | Send the current phrase, then move to the next one |
+| `C-c C-q` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
 | `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
 
 !!! tip
     In the REPL buffer itself, `C-c C-z` switches back to the source
     buffer you came from, so you can quickly bounce between source and REPL.
 
-`C-c C-n` (`neocaml-repl-send-phrase-and-step`) is handy for working
+`C-c C-s` (`neocaml-repl-send-phrase-and-step`) is handy for working
 through a buffer: it sends the phrase at point and then advances to the
 start of the next one, so you can evaluate a file phrase by phrase with
 repeated presses.
@@ -216,10 +216,10 @@ The keybindings mirror `neocaml-repl-minor-mode`:
 | `C-c C-c` | `neocaml-utop-send-definition` | Send the definition at point |
 | `C-c C-r` | `neocaml-utop-send-region` | Send the active region |
 | `C-c C-b` | `neocaml-utop-send-buffer` | Send the whole buffer |
-| `C-c C-p` | `neocaml-utop-send-phrase` | Send the phrase at point (code up to `;;`) |
-| `C-c C-n` | `neocaml-utop-send-phrase-and-step` | Send the phrase, then move to the next one |
-| `C-c C-l` | `neocaml-utop-load-file` | Load the current file via `#use` |
-| `C-c C-i` | `neocaml-utop-interrupt` | Interrupt the utop process |
+| `C-c C-e` | `neocaml-utop-send-phrase` | Send the phrase at point (code up to `;;`) |
+| `C-c C-s` | `neocaml-utop-send-phrase-and-step` | Send the phrase, then move to the next one |
+| `C-c C-u` | `neocaml-utop-load-file` | Load the current file via `#use` |
+| `C-c C-q` | `neocaml-utop-interrupt` | Interrupt the utop process |
 | `C-c C-k` | `neocaml-utop-clear-buffer` | Clear the transcript buffer |
 
 Choose between plain utop and `dune utop` with `neocaml-utop-flavor`

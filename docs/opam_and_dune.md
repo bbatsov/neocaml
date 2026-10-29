@@ -43,36 +43,46 @@ Or in all neocaml-related buffers (including dune and opam files):
   (add-hook hook #'neocaml-dune-interaction-mode))
 ```
 
-Available commands (all under the `C-c C-d` prefix):
+Available commands (all under the `C-c C-o` prefix):
 
 | Keybinding | Command | Description |
 |---|---|---|
-| `C-c C-d b` | `neocaml-dune-build` | Build the project |
-| `C-c C-d t` | `neocaml-dune-test` | Run tests |
-| `C-c C-d c` | `neocaml-dune-clean` | Clean build artifacts |
-| `C-c C-d p` | `neocaml-dune-promote` | Promote test corrections |
-| `C-c C-d T` | `neocaml-dune-test-file` | Run the tests for the current file |
-| `C-c C-d =` | `neocaml-dune-promotion-diff` | Show the current file's pending promotion as a diff |
-| `C-c C-d P` | `neocaml-dune-promote-file` | Promote the current file's test corrections only |
-| `C-c C-d f` | `neocaml-dune-fmt` | Format code |
-| `C-c C-d u` | `neocaml-dune-utop` | Launch utop with project libraries |
-| `C-c C-d r` | `neocaml-dune-exec` | Run an executable (prompts for name) |
-| `C-c C-d d` | `neocaml-dune-command` | Run any dune command (with history) |
-| `C-c C-d .` | `neocaml-dune-find-dune-file` | Find the nearest dune file |
+| `C-c C-o b` | `neocaml-dune-build` | Build the project |
+| `C-c C-o t` | `neocaml-dune-test` | Run tests |
+| `C-c C-o c` | `neocaml-dune-clean` | Clean build artifacts |
+| `C-c C-o p` | `neocaml-dune-promote` | Promote test corrections |
+| `C-c C-o T` | `neocaml-dune-test-file` | Run the tests for the current file |
+| `C-c C-o =` | `neocaml-dune-promotion-diff` | Show the current file's pending promotion as a diff |
+| `C-c C-o P` | `neocaml-dune-promote-file` | Promote the current file's test corrections only |
+| `C-c C-o f` | `neocaml-dune-fmt` | Format code |
+| `C-c C-o u` | `neocaml-dune-utop` | Launch utop with project libraries |
+| `C-c C-o r` | `neocaml-dune-exec` | Run an executable (prompts for name) |
+| `C-c C-o d` | `neocaml-dune-command` | Run any dune command (with history) |
+| `C-c C-o .` | `neocaml-dune-find-dune-file` | Find the nearest dune file |
 
 With a prefix argument (`C-u`), build, test, and fmt commands run in **watch
 mode** (`--watch`), rebuilding automatically when files change. For example,
-`C-u C-c C-d b` runs `dune build --watch`.
+`C-u C-c C-o b` runs `dune build --watch`.
+
+The prefix is a keymap of its own, `neocaml-dune-command-map`, so you
+can move the dune commands to another key:
+
+```emacs-lisp
+(with-eval-after-load 'neocaml-dune-interaction
+  (keymap-unset neocaml-dune-interaction-mode-map "C-c C-o" t)
+  (keymap-set neocaml-dune-interaction-mode-map "C-c d"
+              'neocaml-dune-command-map))
+```
 
 The project root is determined by walking up from the current file to find
 `dune-project`.
 
-The uppercase variants work on the current file. `C-c C-d T` runs a cram
+The uppercase variants work on the current file. `C-c C-o T` runs a cram
 test on its own, and for any other file runs the tests of its directory
 (but not of the directories below it), since dune only accepts cram tests
-by file name. `C-c C-d =` shows what promoting the file's corrections
+by file name. `C-c C-o =` shows what promoting the file's corrections
 would change, in a `diff-mode` buffer (with `C-u`, every pending
-promotion in the project), and `C-c C-d P` promotes just that file and
+promotion in the project), and `C-c C-o P` promotes just that file and
 reverts its buffer. Together they make a quick loop for expect and cram
 tests: run, review, promote.
 
@@ -95,7 +105,7 @@ automatic formatting on save:
 ```
 
 Note: this formats individual dune files via `dune format-dune-file`, which is
-different from `dune fmt` (available via `C-c C-d f`) that formats the entire
+different from `dune fmt` (available via `C-c C-o f`) that formats the entire
 project.
 
 ## Completion

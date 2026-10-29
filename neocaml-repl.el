@@ -464,10 +464,10 @@ buffer, preserving the toplevel flavor it was launched with (so e.g. a
     (define-key map (kbd "C-c C-c") #'neocaml-repl-send-definition)
     (define-key map (kbd "C-c C-r") #'neocaml-repl-send-region)
     (define-key map (kbd "C-c C-b") #'neocaml-repl-send-buffer)
-    (define-key map (kbd "C-c C-p") #'neocaml-repl-send-phrase)
-    (define-key map (kbd "C-c C-n") #'neocaml-repl-send-phrase-and-step)
-    (define-key map (kbd "C-c C-l") #'neocaml-repl-load-file)
-    (define-key map (kbd "C-c C-i") #'neocaml-repl-interrupt)
+    (define-key map (kbd "C-c C-e") #'neocaml-repl-send-phrase)
+    (define-key map (kbd "C-c C-s") #'neocaml-repl-send-phrase-and-step)
+    (define-key map (kbd "C-c C-u") #'neocaml-repl-load-file)
+    (define-key map (kbd "C-c C-q") #'neocaml-repl-interrupt)
     (define-key map (kbd "C-c C-k") #'neocaml-repl-clear-buffer)
 
     (easy-menu-define neocaml-repl-minor-mode-menu map "OCaml REPL Menu"

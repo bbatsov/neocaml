@@ -301,20 +301,34 @@ named `dune'."
 
 ;;; Minor mode
 
+(defvar neocaml-dune-command-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "b" #'neocaml-dune-build)
+    (define-key map "t" #'neocaml-dune-test)
+    (define-key map "c" #'neocaml-dune-clean)
+    (define-key map "p" #'neocaml-dune-promote)
+    (define-key map "T" #'neocaml-dune-test-file)
+    (define-key map "P" #'neocaml-dune-promote-file)
+    (define-key map "=" #'neocaml-dune-promotion-diff)
+    (define-key map "f" #'neocaml-dune-fmt)
+    (define-key map "u" #'neocaml-dune-utop)
+    (define-key map "r" #'neocaml-dune-exec)
+    (define-key map "d" #'neocaml-dune-command)
+    (define-key map "." #'neocaml-dune-find-dune-file)
+    map)
+  "Keymap for the dune commands.
+\\<neocaml-dune-interaction-mode-map>`neocaml-dune-interaction-mode' puts
+it under \\[neocaml-dune-command-map].  To move it to another prefix KEY,
+unbind the current one and bind KEY instead:
+
+  (keymap-unset neocaml-dune-interaction-mode-map CURRENT-KEY t)
+  (keymap-set neocaml-dune-interaction-mode-map KEY
+              \\='neocaml-dune-command-map)")
+(fset 'neocaml-dune-command-map neocaml-dune-command-map)
+
 (defvar neocaml-dune-interaction-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-d b") #'neocaml-dune-build)
-    (define-key map (kbd "C-c C-d t") #'neocaml-dune-test)
-    (define-key map (kbd "C-c C-d c") #'neocaml-dune-clean)
-    (define-key map (kbd "C-c C-d p") #'neocaml-dune-promote)
-    (define-key map (kbd "C-c C-d T") #'neocaml-dune-test-file)
-    (define-key map (kbd "C-c C-d P") #'neocaml-dune-promote-file)
-    (define-key map (kbd "C-c C-d =") #'neocaml-dune-promotion-diff)
-    (define-key map (kbd "C-c C-d f") #'neocaml-dune-fmt)
-    (define-key map (kbd "C-c C-d u") #'neocaml-dune-utop)
-    (define-key map (kbd "C-c C-d r") #'neocaml-dune-exec)
-    (define-key map (kbd "C-c C-d d") #'neocaml-dune-command)
-    (define-key map (kbd "C-c C-d .") #'neocaml-dune-find-dune-file)
+    (define-key map (kbd "C-c C-o") 'neocaml-dune-command-map)
     (easy-menu-define neocaml-dune-interaction-menu map
       "Dune interaction menu."
       '("Dune Interaction"
@@ -332,13 +346,13 @@ named `dune'."
         ("Watch (rebuild on changes)"
          ["Build --watch"
           (let ((current-prefix-arg '(4))) (call-interactively #'neocaml-dune-build))
-          :keys "C-u C-c C-d b"]
+          :keys "C-u \\[neocaml-dune-build]"]
          ["Test --watch"
           (let ((current-prefix-arg '(4))) (call-interactively #'neocaml-dune-test))
-          :keys "C-u C-c C-d t"]
+          :keys "C-u \\[neocaml-dune-test]"]
          ["Format --watch"
           (let ((current-prefix-arg '(4))) (call-interactively #'neocaml-dune-fmt))
-          :keys "C-u C-c C-d f"])
+          :keys "C-u \\[neocaml-dune-fmt]"])
         "--"
         ["Find dune file" neocaml-dune-find-dune-file]
         "--"
