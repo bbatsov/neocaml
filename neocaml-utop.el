@@ -236,11 +236,11 @@ In a transcript buffer that is the buffer itself; in a source buffer it
 is the per-project session derived from `neocaml-utop-buffer-name'."
   (cond
    ((derived-mode-p 'neocaml-utop-mode) (buffer-name))
-   ((neocaml-repl--project-id)
-    (let ((base (if (string-suffix-p "*" neocaml-utop-buffer-name)
-                    (substring neocaml-utop-buffer-name 0 -1)
-                  neocaml-utop-buffer-name)))
-      (format "%s: %s*" base (neocaml-repl--project-id))))
+   ((when-let* ((id (neocaml-repl--project-id)))
+      (let ((base (if (string-suffix-p "*" neocaml-utop-buffer-name)
+                      (substring neocaml-utop-buffer-name 0 -1)
+                    neocaml-utop-buffer-name)))
+        (format "%s: %s*" base id))))
    (t neocaml-utop-buffer-name)))
 
 (declare-function neocaml-dune--utop-command "neocaml-dune-interaction" ())

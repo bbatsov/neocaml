@@ -25,6 +25,7 @@
   - In `neocaml-repl-minor-mode` and `neocaml-utop-minor-mode`, sending the phrase at point is now `C-c C-e` (was `C-c C-p`), sending it and moving to the next one `C-c C-s` (was `C-c C-n`), loading the file `C-c C-u` (was `C-c C-l`) and interrupting the toplevel `C-c C-q` (was `C-c C-i`).
   - The dune commands move from the `C-c C-d` prefix to `C-c C-o`, and live in `neocaml-dune-command-map`, so they can be bound under another prefix.
 - [#80](https://github.com/bbatsov/neocaml/pull/80): Use the hybrid forward-sexp function on every Emacs version, so `C-M-f` moves over whole keyword-led forms (`fun`, `match`, `if`, etc.) on Emacs 31+ instead of stopping after the keyword.
+- [#100](https://github.com/bbatsov/neocaml/pull/100): Give each dune project in a monorepo its own REPL session, named with its path below the `project.el` root (e.g. `*OCaml: mono/pkgs/core*`), so `dune utop` loads the libraries of the project you're working in.
 
 ### Bug fixes
 
@@ -33,6 +34,7 @@
 - [#94](https://github.com/bbatsov/neocaml/pull/94): Make `neocaml-format-buffer` and `neocaml-dune-format-buffer` replace only the text that changed, so point, markers and window positions stay put and an already formatted buffer isn't marked modified.
 - [#91](https://github.com/bbatsov/neocaml/issues/91): Fix the `dune-utop` flavor of `neocaml-utop` failing to start - it passed the project root to `dune utop` as an absolute path, which dune rejects, so it now runs `dune utop .` from the project root instead.
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Make the `dune-utop` flavor of both REPL backends run `dune utop` with `neocaml-dune-program` and `neocaml-dune-use-opam-exec`, and make `neocaml-repl-flavor` set to `dune-utop` (e.g. from `.dir-locals.el`) run `dune utop` from the project root instead of the plain toplevel.
+- [#100](https://github.com/bbatsov/neocaml/pull/100): Make `neocaml-dune-project-root-files` pick the nearest directory containing any of the listed files, as documented, instead of trying the files in order and taking the first match at any depth, and honor it in library and package completion too.
 
 ## 0.10.0 (2026-07-10)
 
