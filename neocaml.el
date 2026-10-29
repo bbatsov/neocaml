@@ -286,13 +286,17 @@ matched whole from their opening delimiter."
     "else" "end" "exception" "external" "for" "fun" "function" "functor" "if" "in"
     "include" "inherit" "initializer" "lazy" "let" "match" "method" "module"
     "mutable" "new" "nonrec" "object" "of" "open" "private" "rec" "sig" "struct"
-    "then" "to" "try" "type" "val" "virtual" "when" "while" "with")
+    "then" "to" "try" "type" "val" "virtual" "when" "while" "with"
+    ;; OxCaml
+    "borrow_" "exclave_" "global_" "kind_" "kind_of_" "local_" "stack_")
   "OCaml keywords for tree-sitter font-locking.
 
-List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/master/queries/highlights.scm.")
+The list in the upstream highlights.scm, plus the OxCaml keywords it
+leaves out (`exclave_', `global_' and `kind_of_').  See
+https://github.com/tree-sitter/tree-sitter-ocaml/blob/master/queries/highlights.scm.")
 
 (defvar neocaml-mode--constants
-  '((unit) "true" "false")
+  '((unit) (boolean))
   "OCaml constants for tree-sitter font-locking.")
 
 (defvar neocaml-mode--builtin-ids
@@ -310,7 +314,11 @@ List taken directly from https://github.com/tree-sitter/tree-sitter-ocaml/blob/m
 
 (defvar neocaml-mode--builtin-types
   '("int" "char" "bytes" "string" "float" "bool" "unit" "exn"
-    "array" "iarray" "list" "option" "int32" "int64" "nativeint" "format6" "lazy_t")
+    "array" "iarray" "list" "option" "int32" "int64" "nativeint" "format6" "lazy_t"
+    ;; OxCaml, with the unboxed versions of builtin types
+    "float32" "int8" "int16" "or_null"
+    "float#" "float32#" "int8#" "int16#" "int32#" "int64#" "nativeint#"
+    "char#" "bool#" "unit#")
   "OCaml builtin type names for tree-sitter font-locking.
 List taken from the upstream highlights.scm.")
 
@@ -566,7 +574,9 @@ The return value is suitable for `treesit-font-lock-settings'."
      (type_binding ["="] @font-lock-keyword-face)
      (let_binding ["="] @font-lock-keyword-face)
      (field_expression ["="] @font-lock-keyword-face)
-     (for_expression ["="] @font-lock-keyword-face))
+     (for_expression ["="] @font-lock-keyword-face)
+     (comprehension_binding ["="] @font-lock-keyword-face)
+     (kind_definition ["="] @font-lock-keyword-face))
 
    ;; Upgrade function-typed `val' specifications (in .mli files) to the
    ;; function face, mirroring how function `let' bindings are highlighted
@@ -584,7 +594,9 @@ The return value is suitable for `treesit-font-lock-settings'."
      (fun_expression "->" @font-lock-keyword-face)
      (match_case "->" @font-lock-keyword-face)
      (value_definition [(let_operator) (let_and_operator)] @font-lock-keyword-face)
-     (match_expression (match_operator) @font-lock-keyword-face))
+     (match_expression (match_operator) @font-lock-keyword-face)
+     ;; Only in kinds: `x mod 2' uses the same token as an operator
+     (mod_bounded_kind "mod" @font-lock-keyword-face))
 
    ;; See https://ocaml.org/manual/5.3/attributes.html
    ;; and https://ocaml.org/manual/5.3/extensionnodes.html
@@ -630,7 +642,10 @@ The return value is suitable for `treesit-font-lock-settings'."
       (:match ,(concat "\\`" (regexp-opt neocaml-mode--builtin-ids) "\\'") @font-lock-builtin-face))
      ;; Builtin types (int, string, bool, etc.)
      ((type_constructor) @font-lock-builtin-face
-      (:match ,(concat "\\`" (regexp-opt neocaml-mode--builtin-types) "\\'") @font-lock-builtin-face)))
+      (:match ,(concat "\\`" (regexp-opt neocaml-mode--builtin-types) "\\'") @font-lock-builtin-face))
+     ;; OxCaml's block index types
+     ((block_access_type) @font-lock-builtin-face
+      (:match "\\`idx_\\(?:imm\\|mut\\)\\'" @font-lock-builtin-face)))
 
    ;; See https://ocaml.org/manual/5.3/const.html
    :language language
@@ -645,12 +660,16 @@ The return value is suitable for `treesit-font-lock-settings'."
      (tag) @font-lock-constant-face
      [(type_constructor) (type_variable) (hash_type) (any_type)
       (class_name) (class_type_name)] @font-lock-type-face
+      ;; OxCaml modes, modalities and kinds
+      [(mode) (modality) (kind_name) (any_kind) (scannable_axis)
+       (block_access_type)] @font-lock-type-face
+      (product_kind "&" @font-lock-type-face)
       (function_type "->" @font-lock-type-face)
-      (tuple_type "*" @font-lock-type-face)
+      (tuple_type ["*" "#(" ")"] @font-lock-type-face)
       (polymorphic_variant_type ["[>" "[<" ">" "|" "[" "]"] @font-lock-type-face)
       (object_type ["<" ">" ";" ".."] @font-lock-type-face)
       (constructor_declaration ["->" "*"] @font-lock-type-face)
-      (record_declaration ["{" "}" ";"] @font-lock-type-face)
+      (record_declaration ["{" "#{" "}" ";"] @font-lock-type-face)
       (parenthesized_type ["(" ")"] @font-lock-type-face)
       (polymorphic_type "." @font-lock-type-face)
       (module_name) @font-lock-type-face
@@ -668,11 +687,12 @@ The return value is suitable for `treesit-font-lock-settings'."
 
    :language language
    :feature 'bracket
-   '((["(" ")" "[" "]" "{" "}" "[|" "|]" "[<" "[>"]) @font-lock-bracket-face)
+   '((["(" ")" "[" "]" "{" "}" "[|" "|]" "[<" "[>" "[:" ":]" "#(" "#{"])
+     @font-lock-bracket-face)
 
    :language language
    :feature 'delimiter
-   '((["," "." ";" ":" ";;"]) @font-lock-delimiter-face)
+   '((["," "." ";" ":" ";;" ".#" "@" "@@"]) @font-lock-delimiter-face)
 
    :language language
    :feature 'variable
