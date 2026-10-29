@@ -192,6 +192,36 @@ neocaml also registers sensible modes for a few other OCaml-related files:
 - `.ocamlformat` and `.ocp-indent` open in `conf-unix-mode` (key = value config files with `#` comments)
 - `.eliom` / `.eliomi` (Ocsigen) are handled by `ff-find-other-file` for toggling between implementation and interface
 
+## OxCaml
+
+neocaml understands the syntax of [OxCaml](https://oxcaml.org/), Jane
+Street's extensions to OCaml: modes and modalities (`x @ local`,
+`@@ portable`), kinds (`type t : immediate`, `kind_` definitions, `mod`
+bounds), the `stack_`, `exclave_`, `local_`, `global_` and `borrow_`
+keywords, unboxed types and literals (`float#`, `#1.0`, `#(...)`,
+`#{...}`), immutable arrays (`[: ... :]`) and comprehensions. They all
+get font-lock and indentation, and kind definitions show up in imenu and
+defun navigation. The extensions only appear in code that uses them, so
+plain OCaml looks the same as before.
+
+This needs tree-sitter-ocaml 0.26 or newer, which is what
+`M-x neocaml-install-grammars` installs. If you installed the grammars
+with an older neocaml, upgrade them with `C-u M-x neocaml-install-grammars`.
+
+There's nothing to turn on in neocaml itself. The tooling comes from an
+OxCaml switch, created as the
+[OxCaml installation guide](https://oxcaml.org/get-oxcaml/) describes:
+
+```shell
+opam switch create 5.2.0+ox \
+  --repos ox=git+https://github.com/oxcaml/opam-repository.git,default
+eval $(opam env --switch 5.2.0+ox)
+opam install ocaml-lsp-server merlin ocamlformat
+```
+
+With that switch on Emacs's `PATH`, `M-x eglot` starts its `ocamllsp`
+and `M-x neocaml-format-buffer` runs its `ocamlformat`.
+
 ## Useful Commands
 
 | Command | Description |

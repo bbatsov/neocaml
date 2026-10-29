@@ -31,53 +31,33 @@ A few things that shape what belongs here and what doesn't:
 
 ## Language support
 
-### 1. OxCaml
+### 1. OxCaml polish
 
-tree-sitter-ocaml v0.26.0 parses Jane Street's [OxCaml](https://oxcaml.org/)
-extensions, so this is no longer blocked upstream. The grammar is a superset of
-regular OCaml, and the new nodes only show up in code that uses them. The work:
+neocaml handles the OxCaml syntax that tree-sitter-ocaml v0.26.0 parses: font-lock,
+indentation and navigation for modes, kinds, stack allocation, unboxed types,
+immutable arrays and comprehensions. What's left is smaller:
 
-- Move to the `v0.26.0-abi14` grammar (PR #88). Our tests pass on it unchanged, but
-  a couple of things still need doing. `neocaml--check-grammar-compatibility` only
-  recognizes grammars older than v0.25, so it needs a probe for v0.26 (`_` now
-  parses as `any_pattern`). And `_` lost its face in patterns, types and
-  expressions, because it now has node types of its own (`any_pattern`,
-  `any_type`, `hole_expression`) that our rules don't mention.
-- Decide how to treat older grammars. A font-lock query that names a v0.26-only
-  node or token doesn't just fail to match on v0.25: Emacs disables the whole
-  feature. So either every OxCaml rule gets gated with `treesit-query-valid-p` (as
-  we do for `shebang`), or neocaml requires v0.26 and leans on the compatibility
-  warning. The second is a lot less code.
-- Font-lock for modes and modalities (`@ local`, `@@ portable`), kinds
-  (`type t : immediate`, `kind_` definitions, mod bounds), the allocation and
-  uniqueness keywords (`stack_`, `exclave_`, `local_`, `global_`, `borrow_`),
-  immutable arrays (`[: ... :]`), and unboxed types and literals (`float#`,
-  `#1.0`, `#true`, `#( ... )`, `#{ ... }`, `.#field`). The new builtin types
-  (`float32`, `int8`, `int16` and the `#` variants) belong in the builtin list.
-  Upstream's highlights make `mod` a keyword, but for us that would also change
-  how `x mod 2` looks, so it's better matched only inside kinds.
-- Indentation for the bodies of `exclave_`, `stack_`, `local_` and `borrow_` when
-  they start on the next line, kind definitions, mod bounds, and the `for`/`when`
-  clauses of comprehensions. Nothing matches those today, so lines are left as
-  typed.
-- Kind definitions in imenu, defun navigation and sentence motion (at `kind_ k`,
-  `forward-sexp` currently jumps to the end of the buffer), immutable arrays as
-  list things, and `@`/`@@` handled in sexp motion.
-- Test fixtures taken from real OxCaml code. Upstream checked the grammar against a
-  set of OxCaml repositories, which are a good source of samples.
-- A section in the docs on using neocaml with an OxCaml switch.
+- Builtin kinds (`value`, `immediate`, `float64`, `bits64`, `any` and friends) and
+  the SIMD vector types (`int8x16#` etc.) could get the builtin face, as the
+  builtin types do.
+- Typed holes (`_` as an expression) have no face.
+- Modes broken onto lines of their own after `mod`, and `with` bounds on a line of
+  their own, are left as typed. ocamlformat's layout for them isn't one worth
+  copying, but a sensible default would be nice.
+- More real-world samples. The Jane Street libraries that upstream parses
+  (`parallel`, `portable`, `unboxed`, `unique`) were the reference for the
+  current rules, and `base` and `core` use OxCaml more and more.
 
-**Priority: high.**
+**Priority: low.**
 
 ### 2. OCaml 5.x font-lock audit
 
 The OCaml 5.5 grammar has shipped. What's left is an audit of the constructs that
 arrived across 5.x (effect handlers, binding operators, external types, modular
 explicits, polymorphic parameters), making sure each gets a sensible face and
-indents well. It touches the same rules as the OxCaml work, so it's best done
-alongside it, together with dropping the node names our rules mention that
-neither grammar version has (`infix_operator` and the `*_binding_pattern`
-types). **Priority: medium.**
+indents well. While at it, drop the node names our rules mention that the
+grammar doesn't have (`infix_operator` and the `*_binding_pattern` types).
+**Priority: medium.**
 
 ## Refactoring
 
