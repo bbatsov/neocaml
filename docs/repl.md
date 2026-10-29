@@ -59,7 +59,9 @@ start of the next one, so you can evaluate a file phrase by phrase with
 repeated presses.
 
 `M-x neocaml-repl-require` loads a findlib package into the REPL via
-`#require` (the toplevel needs findlib, e.g. via `topfind` or utop).
+`#require` (the toplevel needs findlib, e.g. via `topfind` or utop). It
+completes over the packages `ocamlfind list` reports for the project's
+opam switch, though any name is accepted.
 
 `M-x neocaml-repl-restart` kills the running toplevel and starts a fresh
 one in the same buffer. These, along with the commands above, are also
@@ -223,7 +225,8 @@ The keybindings mirror `neocaml-repl-minor-mode`:
 Choose between plain utop and `dune utop` with `neocaml-utop-flavor`
 (`utop` or `dune-utop`), set globally or per project via `.dir-locals.el`;
 `dune-utop` makes the project's own libraries available in the toplevel.
-`M-x neocaml-utop-require` loads a findlib package via `#require`.
+`M-x neocaml-utop-require` loads a findlib package via `#require`, with
+the same package completion as `neocaml-repl-require`.
 
 Sending a phrase or definition from a source buffer also shows its
 result (or error) two ways, SLIME/CIDER style, while the full output

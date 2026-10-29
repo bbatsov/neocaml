@@ -13,6 +13,7 @@
 
 (require 'neocaml-test-helpers)
 (require 'neocaml-repl)
+(require 'neocaml-dune)
 (require 'cl-lib)
 
 (describe "neocaml-repl prompt regex"
@@ -280,6 +281,18 @@
               (lambda (_proc input) (setq sent input)))
       (neocaml-repl-require "lwt")
       (expect sent :to-equal "#require \"lwt\""))))
+
+(describe "neocaml-repl--read-package"
+  (it "completes over the findlib packages of the current project"
+    (spy-on 'neocaml-common-dune-project-root :and-return-value "/proj/")
+    (spy-on 'neocaml-dune--ocamlfind-libraries
+            :and-return-value '("lwt" "lwt.unix"))
+    (spy-on 'completing-read :and-return-value "lwt.unix")
+    (expect (neocaml-repl--read-package) :to-equal "lwt.unix")
+    (expect 'neocaml-dune--ocamlfind-libraries :to-have-been-called-with "/proj/")
+    ;; No REQUIRE-MATCH, so a package ocamlfind doesn't list can be entered.
+    (expect (spy-calls-args-for 'completing-read 0)
+            :to-equal '("Require package: " ("lwt" "lwt.unix")))))
 
 (describe "neocaml-repl--command"
   (it "uses the program vars for the ocaml flavor"

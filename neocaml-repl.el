@@ -33,6 +33,7 @@
 (require 'comint)
 (require 'pulse)
 (require 'neocaml)
+(require 'neocaml-common)
 
 (defgroup neocaml-repl nil
   "OCaml REPL (toplevel) integration for neocaml."
@@ -402,11 +403,23 @@ through the buffer."
   (neocaml-repl--input-sender (neocaml-repl--process)
                                (format "#use %S" file)))
 
+(declare-function neocaml-dune--ocamlfind-libraries "neocaml-dune" (root))
+
+(defun neocaml-repl--read-package ()
+  "Read a findlib package name, completing over the installed packages.
+The candidates come from `ocamlfind list' in the current project's opam
+switch.  Any name can be entered, so this works without ocamlfind too."
+  (require 'neocaml-dune)
+  (completing-read "Require package: "
+                   (neocaml-dune--ocamlfind-libraries
+                    (neocaml-common-dune-project-root))))
+
 ;;;###autoload
 (defun neocaml-repl-require (package)
   "Load the findlib PACKAGE into the OCaml REPL via the `#require' directive.
-This needs the toplevel to have findlib loaded (e.g. via topfind or utop)."
-  (interactive (list (read-string "Require package: ")))
+This needs the toplevel to have findlib loaded (e.g. via topfind or utop).
+Interactively, complete over the installed findlib packages."
+  (interactive (list (neocaml-repl--read-package)))
   (neocaml-repl--ensure-repl-running)
   (neocaml-repl--input-sender (neocaml-repl--process)
                                (format "#require %S" package)))
