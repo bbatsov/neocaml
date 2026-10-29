@@ -313,6 +313,23 @@ bindings, module structures, etc.):
          ("C--" . expreg-contract)))
 ```
 
+## Structural Editing
+
+[combobulate](https://github.com/mickeynp/combobulate) supports
+`neocaml-mode` and `neocaml-interface-mode` out of the box. On top of
+moving around by syntax node, it can wrap the code at point in `let`,
+`match`, `if`, `try ... with`, `begin ... end`, `fun` and other forms,
+drag parameters, match cases and list elements past their neighbors, and
+splice or clone them. It isn't on an ELPA, so install it from its
+repository:
+
+```emacs-lisp
+;; Emacs 30+; on Emacs 29, install it with `package-vc-install' instead.
+(use-package combobulate
+  :vc (:url "https://github.com/mickeynp/combobulate" :rev :newest)
+  :hook (neocaml-base-mode . combobulate-mode))
+```
+
 ## Eglot (LSP)
 
 Eglot is auto-configured - neocaml registers both modes with the correct
