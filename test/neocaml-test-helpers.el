@@ -38,6 +38,22 @@ query-on-exit prompt)."
       (kill-buffer buffer)))
   (setq neocaml-test--buffers nil))
 
+;;;; Process stubs
+
+(defun neocaml-test-stub-formatter (output &optional exit-code stderr)
+  "Make `call-process-region' act like a formatter printing OUTPUT.
+It exits with EXIT-CODE (0 when nil) after writing STDERR, if any, to
+the error file of its (STDOUT-BUFFER ERROR-FILE) destination."
+  (spy-on 'call-process-region :and-call-fake
+          (lambda (_start _end _program _delete destination &rest _args)
+            (pcase-let ((`(,out ,err) destination))
+              (with-current-buffer out
+                (insert output))
+              (when stderr
+                (with-temp-file err
+                  (insert stderr))))
+            (or exit-code 0))))
+
 ;;;; String helpers
 
 (defun neocaml-test--dedent (string)

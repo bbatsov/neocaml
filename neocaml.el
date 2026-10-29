@@ -41,6 +41,7 @@
 (require 'treesit)
 (require 'seq)
 (require 'project)
+(require 'neocaml-common)
 
 (defgroup neocaml nil
   "Major mode for editing OCaml code with tree-sitter."
@@ -913,31 +914,12 @@ source from stdin (the trailing \"-\")."
 (defun neocaml-format-buffer ()
   "Format the current buffer using `ocamlformat'.
 Pipes the buffer through `neocaml-ocamlformat-program' and replaces the
-buffer text with the formatted output, preserving point.  ocamlformat
-formats whole compilation units, so there is no region/defun variant."
+buffer text with the formatted output, touching only the parts that
+changed (see `neocaml-common-format-buffer').  ocamlformat formats
+whole compilation units, so there is no region/defun variant."
   (interactive)
-  (let ((outbuf (generate-new-buffer " *neocaml-ocamlformat*"))
-        (errfile (make-temp-file "neocaml-ocamlformat-err"))
-        (orig-point (point))
-        (orig-window-start (window-start)))
-    (unwind-protect
-        (let ((exit-code (apply #'call-process-region
-                                (point-min) (point-max)
-                                neocaml-ocamlformat-program nil
-                                (list outbuf errfile) nil
-                                (neocaml--ocamlformat-args))))
-          (if (zerop exit-code)
-              (progn
-                (erase-buffer)
-                (insert-buffer-substring outbuf)
-                (goto-char (min orig-point (point-max)))
-                (set-window-start (selected-window) orig-window-start))
-            (user-error "Running ocamlformat failed: %s"
-                        (with-temp-buffer
-                          (insert-file-contents errfile)
-                          (string-trim (buffer-string))))))
-      (kill-buffer outbuf)
-      (delete-file errfile))))
+  (neocaml-common-format-buffer "ocamlformat" neocaml-ocamlformat-program
+                                (neocaml--ocamlformat-args)))
 
 (defun neocaml--format-before-save ()
   "Format the buffer before saving when `neocaml-format-on-save' is non-nil."
