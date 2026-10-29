@@ -1031,7 +1031,8 @@ a `dune-project' file."
                 "module_binding"
                 "module_type_definition"
                 "class_binding"
-                "class_type_binding"))
+                "class_type_binding"
+                "kind_definition"))
   "Regex matching tree-sitter node types treated as defun-like.
 Used as the value of `treesit-defun-type-regexp'.")
 
@@ -1087,7 +1088,9 @@ Return nil if there is no name or if NODE is not a defun node."
     ("method_specification"
      (neocaml--subtree-text node "method_name"))
     ("instance_variable_specification"
-     (neocaml--subtree-text node "instance_variable_name"))))
+     (neocaml--subtree-text node "instance_variable_name"))
+    ("kind_definition"
+     (neocaml--subtree-text node "kind_name"))))
 
 
 ;;;; imenu integration
@@ -1110,6 +1113,8 @@ Joins ancestor defun names with `treesit-add-log-defun-delimiter'."
 (defvar neocaml--imenu-settings
   `(("Type" "\\`type_binding\\'"
      neocaml--defun-valid-p neocaml--imenu-name)
+    ("Kind" "\\`kind_definition\\'"
+     neocaml--defun-valid-p neocaml--imenu-name)
     ("Spec" "\\`\\(value_specification\\|method_specification\\)\\'"
      neocaml--defun-valid-p neocaml--imenu-name)
     ("Exception" "\\`exception_definition\\'"
@@ -1127,6 +1132,8 @@ Joins ancestor defun names with `treesit-add-log-defun-delimiter'."
 
 (defvar neocaml--interface-imenu-settings
   `(("Type" "\\`type_binding\\'"
+     neocaml--defun-valid-p neocaml--imenu-name)
+    ("Kind" "\\`kind_definition\\'"
      neocaml--defun-valid-p neocaml--imenu-name)
     ("Val" "\\`value_specification\\'"
      neocaml--defun-valid-p neocaml--imenu-name)
@@ -1154,6 +1161,7 @@ Joins ancestor defun names with `treesit-add-log-defun-delimiter'."
                 "typed_expression"
                 "external_declaration"
                 "array_expression"
+                "iarray_expression"
                 "list_expression"
                 "parenthesized_expression"
                 "parenthesized_pattern"
@@ -1173,6 +1181,7 @@ Joins ancestor defun names with `treesit-add-log-defun-delimiter'."
                 "infix_operator"
                 "number" "boolean" "unit"
                 "type_definition"
+                "kind_definition"
                 "type_constructor"
                 ;; "module_definition"
                 "package_expression"
@@ -1249,6 +1258,8 @@ ARG is as in `forward-sexp-function'."
     "array_expression"
     "array_pattern"
     "array_binding_pattern"
+    "iarray_expression"
+    "iarray_pattern"
     "record_expression"
     "record_pattern"
     "record_binding_pattern"
@@ -1281,10 +1292,13 @@ This makes commands like `delete-pair' work correctly."
   `((,language
      (sexp (not ,(rx (or "{" "}" "(" ")" "[" "]" "[|" "|]"
                          "," "." ";" ";;" ":" "::" ":>" "->"
-                         "<-" "=" "|" ".." "\"" "'"))))
+                         "<-" "=" "|" ".." "\"" "'"
+                         ;; OxCaml modes and modalities
+                         "@" "@@"))))
      (list ,neocaml--list-node-regex)
      (sentence ,(regexp-opt '("value_definition"
                               "type_definition"
+                              "kind_definition"
                               "exception_definition"
                               "module_definition"
                               "module_type_definition"
