@@ -32,6 +32,7 @@
 - [#79](https://github.com/bbatsov/neocaml/pull/79): Fix a segfault on Emacs 31.1 when font-locking a buffer containing a builtin type or value (`let x : int = 42` was enough to trigger it).
 - [#94](https://github.com/bbatsov/neocaml/pull/94): Make `neocaml-format-buffer` and `neocaml-dune-format-buffer` replace only the text that changed, so point, markers and window positions stay put and an already formatted buffer isn't marked modified.
 - [#91](https://github.com/bbatsov/neocaml/issues/91): Fix the `dune-utop` flavor of `neocaml-utop` failing to start - it passed the project root to `dune utop` as an absolute path, which dune rejects, so it now runs `dune utop .` from the project root instead.
+- [#100](https://github.com/bbatsov/neocaml/pull/100): Make the `dune-utop` flavor of both REPL backends run `dune utop` with `neocaml-dune-program` and `neocaml-dune-use-opam-exec`, and make `neocaml-repl-flavor` set to `dune-utop` (e.g. from `.dir-locals.el`) run `dune utop` from the project root instead of the plain toplevel.
 
 ## 0.10.0 (2026-07-10)
 

@@ -144,8 +144,11 @@ You can configure this with `neocaml-repl-history-file` (set to
   `neocaml-repl-program-name` and `neocaml-repl-program-args`.
 - `utop` - [utop](https://github.com/ocaml-community/utop), an improved
   toplevel with auto-completion, syntax highlighting, and a rich history.
-- `dune-utop` - `dune utop` for the current project, launched via
-  `M-x neocaml-dune-utop`, so the project's libraries are available.
+- `dune-utop` - `dune utop` for the current dune project, so the
+  project's libraries are available. It runs from the project root and
+  follows `neocaml-dune-program` and `neocaml-dune-use-opam-exec`, like
+  the other dune commands. `M-x neocaml-dune-utop` starts one whatever
+  this is set to.
 
 Set it globally or per project via `.dir-locals.el`; the REPL reads it
 when it starts (restart an existing one with `M-x neocaml-repl-restart`
@@ -224,7 +227,8 @@ The keybindings mirror `neocaml-repl-minor-mode`:
 
 Choose between plain utop and `dune utop` with `neocaml-utop-flavor`
 (`utop` or `dune-utop`), set globally or per project via `.dir-locals.el`;
-`dune-utop` makes the project's own libraries available in the toplevel.
+`dune-utop` makes the project's own libraries available in the toplevel,
+and runs dune the same way as the `neocaml-repl` flavor of that name.
 `M-x neocaml-utop-require` loads a findlib package via `#require`, with
 the same package completion as `neocaml-repl-require`.
 

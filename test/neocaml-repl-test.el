@@ -14,6 +14,7 @@
 (require 'neocaml-test-helpers)
 (require 'neocaml-repl)
 (require 'neocaml-dune)
+(require 'neocaml-dune-interaction)
 (require 'cl-lib)
 
 (describe "neocaml-repl prompt regex"
@@ -197,13 +198,27 @@
     (spy-on 'make-comint-in-buffer :and-call-fake
             (lambda (_name buffer &rest _) (get-buffer-create buffer)))
     (spy-on 'neocaml-repl-mode)
-    (let ((buf (neocaml-test-track-buffer
-                (neocaml-repl--start-command "*neocaml-repl-startcmd-test*"
-                                             '("utop") 'utop))))
+    (let* ((dir default-directory)
+           (buf (neocaml-test-track-buffer
+                 (neocaml-repl--start-command "*neocaml-repl-startcmd-test*"
+                                              (list dir "utop") 'utop))))
       (with-current-buffer buf
         (expect neocaml-repl--flavor :to-equal 'utop)
-        (expect neocaml-repl--command-line :to-equal '("utop"))
-        (expect mode-name :to-equal "OCaml-REPL[utop]")))))
+        ;; The directory it ran in is recorded too, for restarts.
+        (expect neocaml-repl--command-line :to-equal (list dir "utop"))
+        (expect mode-name :to-equal "OCaml-REPL[utop]"))))
+
+  (it "runs the toplevel in the directory the command names"
+    (let (started-in)
+      (spy-on 'make-comint-in-buffer :and-call-fake
+              (lambda (&rest _) (setq started-in default-directory)))
+      (spy-on 'neocaml-repl-mode)
+      (neocaml-test-track-buffer
+       (neocaml-repl--start-command "*neocaml-repl-startcmd-test*"
+                                    '("/tmp/proj/" "dune" "utop" ".") 'dune-utop))
+      (expect started-in :to-equal "/tmp/proj/")
+      (expect (nthcdr 2 (spy-calls-args-for 'make-comint-in-buffer 0))
+              :to-equal '("dune" nil "utop" ".")))))
 
 (describe "neocaml-repl restart"
   (after-each (neocaml-test-kill-tracked-buffers))
@@ -213,7 +228,7 @@
                  (get-buffer-create "*neocaml-repl-restart-test*"))))
       (with-current-buffer repl
         (setq-local neocaml-repl--flavor 'utop)
-        (setq-local neocaml-repl--command-line '("utop")))
+        (setq-local neocaml-repl--command-line '("/tmp/" "utop")))
       (spy-on 'neocaml-repl--buffer :and-return-value "*neocaml-repl-restart-test*")
       (spy-on 'neocaml-repl--kill)
       (spy-on 'neocaml-repl--start-command)
@@ -221,7 +236,8 @@
       (expect 'neocaml-repl--kill
               :to-have-been-called-with "*neocaml-repl-restart-test*")
       (expect 'neocaml-repl--start-command
-              :to-have-been-called-with "*neocaml-repl-restart-test*" '("utop") 'utop)))
+              :to-have-been-called-with "*neocaml-repl-restart-test*"
+              '("/tmp/" "utop") 'utop)))
 
   (it "falls back to a fresh start when nothing was recorded"
     (spy-on 'neocaml-repl--buffer :and-return-value "*neocaml-repl-absent*")
@@ -295,20 +311,71 @@
             :to-equal '("Require package: " ("lwt" "lwt.unix")))))
 
 (describe "neocaml-repl--command"
+  :var (root lib)
+  (before-each
+    (setq root (file-name-as-directory (make-temp-file "neocaml-repl-proj" t))
+          lib (expand-file-name "lib/" root))
+    (write-region "" nil (expand-file-name "dune-project" root) nil 'silent)
+    (make-directory lib))
+  (after-each
+    (neocaml-test-kill-tracked-buffers)
+    (delete-directory root t))
+
   (it "uses the program vars for the ocaml flavor"
     (let ((neocaml-repl-flavor 'ocaml)
           (neocaml-repl-program-name "ocaml")
           (neocaml-repl-program-args '("-nopromptcont")))
-      (expect (neocaml-repl--command) :to-equal '("ocaml" "-nopromptcont"))))
+      (expect (neocaml-repl--command)
+              :to-equal (list default-directory "ocaml" "-nopromptcont"))))
 
   (it "uses utop for the utop flavor"
     (let ((neocaml-repl-flavor 'utop))
-      (expect (neocaml-repl--command) :to-equal '("utop"))))
+      (expect (neocaml-repl--command) :to-equal (list default-directory "utop"))))
 
-  (it "uses the program vars for the dune-utop flavor"
+  (it "runs dune utop from the project root for the dune-utop flavor"
     (let ((neocaml-repl-flavor 'dune-utop)
-          (neocaml-repl-program-name "dune")
-          (neocaml-repl-program-args '("utop" ".")))
-      (expect (neocaml-repl--command) :to-equal '("dune" "utop" ".")))))
+          (neocaml-dune-program "dune")
+          (neocaml-dune-use-opam-exec nil)
+          (default-directory lib))
+      (expect (neocaml-repl--command) :to-equal (list root "dune" "utop" "."))))
+
+  (it "honors the dune settings for the dune-utop flavor"
+    (let ((neocaml-repl-flavor 'dune-utop)
+          (neocaml-dune-program "/opt/dune")
+          (neocaml-dune-use-opam-exec t)
+          (default-directory lib))
+      (expect (neocaml-repl--command)
+              :to-equal (list root "opam" "exec" "--" "/opt/dune" "utop" "."))))
+
+  (it "starts dune utop for a dune-utop flavor set in .dir-locals.el"
+    (let (started-in)
+      (spy-on 'make-comint-in-buffer
+              :and-call-fake (lambda (&rest _) (setq started-in default-directory)))
+      (spy-on 'pop-to-buffer)
+      (let ((neocaml-repl-history-file nil)
+            (neocaml-repl-fontify-input nil)
+            (neocaml-dune-program "dune")
+            (neocaml-dune-use-opam-exec nil))
+        (with-temp-buffer
+          (setq default-directory lib)
+          ;; What a directory-local `neocaml-repl-flavor' amounts to.
+          (setq-local neocaml-repl-flavor 'dune-utop)
+          (neocaml-test-track-buffer (get-buffer-create (neocaml-repl--buffer)))
+          (neocaml-repl-start)))
+      (expect started-in :to-equal root)
+      (expect (nthcdr 2 (spy-calls-args-for 'make-comint-in-buffer 0))
+              :to-equal '("dune" nil "utop" "."))))
+
+  (it "fails outside a dune project before creating a REPL buffer"
+    (let* ((outside (file-name-as-directory (make-temp-file "neocaml-repl-none" t)))
+           (default-directory outside)
+           (neocaml-repl-flavor 'dune-utop)
+           (neocaml-repl-buffer-name "*neocaml-repl-outside*"))
+      (unwind-protect
+          (progn
+            (spy-on 'neocaml-repl--project-id :and-return-value nil)
+            (expect (neocaml-repl-start) :to-throw 'error)
+            (expect (get-buffer "*neocaml-repl-outside*") :to-be nil))
+        (delete-directory outside t)))))
 
 ;;; neocaml-repl-test.el ends here

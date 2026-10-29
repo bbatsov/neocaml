@@ -223,6 +223,44 @@ root as `root' and to the visited file as `file'."
       (neocaml-dune-promote-file)
       (expect (buffer-string) :to-equal "  $ echo hello\n  hello\n"))))
 
+(describe "neocaml-dune--utop-command"
+  :var (root lib)
+  (before-each
+    (setq root (file-name-as-directory (make-temp-file "neocaml-dune-test" t))
+          lib (expand-file-name "lib/" root))
+    (write-region "" nil (expand-file-name "dune-project" root) nil 'silent)
+    (make-directory lib))
+  (after-each (delete-directory root t))
+
+  (it "runs dune utop on . from the project root"
+    (let ((default-directory lib)
+          (neocaml-dune-program "dune")
+          (neocaml-dune-use-opam-exec nil))
+      (expect (neocaml-dune--utop-command)
+              :to-equal (list root "dune" "utop" "."))))
+
+  (it "follows neocaml-dune-program and neocaml-dune-use-opam-exec"
+    (let ((default-directory lib)
+          (neocaml-dune-program "/opt/dune")
+          (neocaml-dune-use-opam-exec t))
+      (expect (neocaml-dune--utop-command)
+              :to-equal (list root "opam" "exec" "--" "/opt/dune" "utop" "."))))
+
+  (it "signals an error outside a dune project"
+    (let ((default-directory (file-name-as-directory
+                              (make-temp-file "neocaml-dune-none" t))))
+      (unwind-protect
+          (expect (neocaml-dune--utop-command) :to-throw 'error)
+        (delete-directory default-directory t)))))
+
+(describe "neocaml-dune-utop"
+  (it "switches to a dune-utop REPL"
+    (let (flavor)
+      (spy-on 'neocaml-repl-switch-to-repl
+              :and-call-fake (lambda () (setq flavor neocaml-repl-flavor)))
+      (neocaml-dune-utop)
+      (expect flavor :to-be 'dune-utop))))
+
 (describe "neocaml-dune-interaction-mode"
   (it "defines the expected keybindings"
     (let ((map neocaml-dune-interaction-mode-map))
