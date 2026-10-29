@@ -85,6 +85,14 @@ its own toplevel, and the send commands always reach the right one. It
 also means `M-x neocaml-dune-utop` (see below) and the regular send
 commands target the same per-project REPL.
 
+In a monorepo, where several dune projects live below the `project.el`
+root, each dune project gets its own REPL, named with its path inside
+the repository, e.g. `*OCaml: mono/pkgs/core*`. That matters for
+`dune utop`, which only loads the libraries of the dune project it runs
+in.
+The dune project root is the nearest directory containing one of the
+files in `neocaml-dune-project-root-files` (by default `dune-project`).
+
 ## Input Syntax Highlighting
 
 By default, code you type in the REPL is fontified using tree-sitter

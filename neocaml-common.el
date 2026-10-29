@@ -36,6 +36,8 @@
 
 ;;; Code:
 
+(require 'seq)
+
 (defun neocaml-common-capf (start end candidates annotation kind)
   "Build a `completion-at-point' result for CANDIDATES over START..END.
 ANNOTATION is appended after each candidate and KIND is the
@@ -46,12 +48,25 @@ completion functions still run."
         :company-kind (lambda (_) kind)
         :exclusive 'no))
 
-(defun neocaml-common-dune-project-root ()
-  "Return the dune project root, or nil when not in a dune project.
-The root is the nearest ancestor directory containing a
-`dune-project' file."
-  (when-let* ((root (locate-dominating-file default-directory "dune-project")))
-    (expand-file-name root)))
+(defcustom neocaml-dune-project-root-files '("dune-project")
+  "Files that indicate a dune project root.
+The nearest ancestor directory containing any of these files is used
+as the project root for dune commands, completion and REPL sessions."
+  :type '(repeat string)
+  :group 'neocaml-dune-interaction
+  :package-version '(neocaml . "0.6.0"))
+
+(defun neocaml-common-dune-project-root (&optional dir)
+  "Return the dune project root for DIR, or nil when not in a dune project.
+DIR defaults to `default-directory'.  The root is the nearest ancestor
+directory containing one of `neocaml-dune-project-root-files'."
+  (when-let* ((root (locate-dominating-file
+                     (or dir default-directory)
+                     (lambda (d)
+                       (seq-some (lambda (file)
+                                   (file-exists-p (expand-file-name file d)))
+                                 neocaml-dune-project-root-files)))))
+    (file-name-as-directory (expand-file-name root))))
 
 (defun neocaml-common-local-switch-p (dir)
   "Non-nil when DIR is a project with a local opam switch (an `_opam').

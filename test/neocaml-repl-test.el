@@ -263,6 +263,63 @@
         ;; point should now sit at the start of the second phrase
         (expect (looking-at "let y") :to-be-truthy)))))
 
+(describe "neocaml-repl--project-id"
+  :var (mono)
+  (before-each
+    (setq mono (file-name-as-directory (make-temp-file "mono" t)))
+    (make-directory (expand-file-name "pkgs/a/lib/" mono) t)
+    (write-region "" nil (expand-file-name "pkgs/a/dune-project" mono) nil 'silent))
+  (after-each (delete-directory mono t))
+
+  (cl-flet ((id-in (dir &optional project-root)
+              (let ((default-directory (expand-file-name dir mono)))
+                (spy-on 'project-current
+                        :and-return-value (and project-root
+                                               (cons 'transient project-root)))
+                (neocaml-repl--project-id))))
+
+    (it "adds the path of a dune project nested below the project.el root"
+      (expect (id-in "pkgs/a/lib/" mono)
+              :to-equal (concat (file-name-nondirectory (directory-file-name mono))
+                                "/pkgs/a")))
+
+    (it "uses the project name when the dune project is the project root"
+      (write-region "" nil (expand-file-name "dune-project" mono) nil 'silent)
+      (expect (id-in "./" mono)
+              :to-equal (file-name-nondirectory (directory-file-name mono))))
+
+    (it "uses the project name outside any dune project"
+      (expect (id-in "pkgs/" mono)
+              :to-equal (file-name-nondirectory (directory-file-name mono))))
+
+    (it "falls back to the dune project's name without a project.el project"
+      (expect (id-in "pkgs/a/lib/") :to-equal "a"))
+
+    (it "is nil outside both"
+      (expect (id-in "pkgs/") :to-be nil))
+
+    (it "adds the path when the roots are spelled differently"
+      ;; Reach the dune project through a symlink to the project root.
+      (let ((link (concat (directory-file-name mono) "-link")))
+        (make-symbolic-link (directory-file-name mono) link)
+        (unwind-protect
+            (let ((default-directory (expand-file-name "pkgs/a/lib/" link)))
+              (spy-on 'project-current :and-return-value (cons 'transient mono))
+              (expect (neocaml-repl--project-id)
+                      :to-equal (concat (file-name-nondirectory
+                                         (directory-file-name mono))
+                                        "/pkgs/a")))
+          (delete-file link))))
+
+    (it "names the REPL buffer after the nested dune project"
+      (spy-on 'project-current :and-return-value (cons 'transient mono))
+      (let ((neocaml-repl-buffer-name "*OCaml*")
+            (default-directory (expand-file-name "pkgs/a/lib/" mono)))
+        (expect (neocaml-repl--buffer)
+                :to-equal (format "*OCaml: %s/pkgs/a*"
+                                  (file-name-nondirectory
+                                   (directory-file-name mono))))))))
+
 (describe "neocaml-repl per-project buffer name"
   (it "derives a per-project name from the base name"
     (spy-on 'neocaml-repl--project-id :and-return-value "myproj")

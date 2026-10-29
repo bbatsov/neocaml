@@ -35,8 +35,8 @@
 
 ;;; Code:
 
-(require 'cl-lib)
 (require 'ansi-color)
+(require 'neocaml-common)
 
 (declare-function neocaml-repl-switch-to-repl "neocaml-repl")
 (defvar neocaml-repl-flavor)
@@ -63,29 +63,14 @@ e.g. when launched from a desktop shortcut on macOS."
   :group 'neocaml-dune-interaction
   :package-version '(neocaml . "0.6.0"))
 
-(defcustom neocaml-dune-project-root-files '("dune-project")
-  "Files that indicate a dune project root.
-The first ancestor directory containing any of these files is
-used as the project root for dune commands."
-  :type '(repeat string)
-  :group 'neocaml-dune-interaction
-  :package-version '(neocaml . "0.6.0"))
-
 ;;; Project root detection
 
 (defun neocaml-dune--project-root ()
   "Find the dune project root by walking up from the current directory.
-Returns the directory containing `dune-project', or signals an
-error if none is found."
-  (or (neocaml-dune--locate-project-root default-directory)
-      (error "Not inside a dune project (no dune-project file found)")))
-
-(defun neocaml-dune--locate-project-root (dir)
-  "Find the nearest ancestor of DIR containing a dune project file."
-  (cl-some (lambda (marker)
-             (when-let* ((found (locate-dominating-file dir marker)))
-               (file-name-as-directory (expand-file-name found))))
-           neocaml-dune-project-root-files))
+Returns the nearest directory containing one of
+`neocaml-dune-project-root-files', or signals an error if none is found."
+  (or (neocaml-common-dune-project-root)
+      (error "Not inside a dune project")))
 
 ;;; Running dune commands
 

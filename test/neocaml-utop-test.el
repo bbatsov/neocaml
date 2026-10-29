@@ -123,7 +123,24 @@
   (it "derives a per-project name from the base"
     (spy-on 'neocaml-repl--project-id :and-return-value "proj")
     (let ((neocaml-utop-buffer-name "*utop*"))
-      (expect (neocaml-utop--buffer-name) :to-equal "*utop: proj*"))))
+      (expect (neocaml-utop--buffer-name) :to-equal "*utop: proj*")))
+
+  (it "gives each dune project in a monorepo its own session"
+    (let* ((mono (file-name-as-directory (make-temp-file "mono" t)))
+           (lib (expand-file-name "pkgs/a/lib/" mono))
+           (neocaml-utop-buffer-name "*utop*"))
+      (unwind-protect
+          (progn
+            (make-directory lib t)
+            (write-region "" nil (expand-file-name "pkgs/a/dune-project" mono)
+                          nil 'silent)
+            (spy-on 'project-current :and-return-value (cons 'transient mono))
+            (let ((default-directory lib))
+              (expect (neocaml-utop--buffer-name)
+                      :to-equal (format "*utop: %s/pkgs/a*"
+                                        (file-name-nondirectory
+                                         (directory-file-name mono))))))
+        (delete-directory mono t)))))
 
 (describe "neocaml-utop input sender protocol"
   ;; Spy on `process-send-string' to capture the bytes sent to the process.

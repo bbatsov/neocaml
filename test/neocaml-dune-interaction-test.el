@@ -19,16 +19,35 @@
           (progn
             (make-directory subdir t)
             (write-region "" nil (expand-file-name "dune-project" dir) nil 'silent)
-            (expect (neocaml-dune--locate-project-root subdir)
+            (expect (neocaml-common-dune-project-root subdir)
                     :to-equal (file-name-as-directory dir)))
         (delete-directory dir t))))
 
   (it "returns nil when no dune-project is found"
     (let ((dir (make-temp-file "neocaml-dune-test" t)))
       (unwind-protect
-          (expect (neocaml-dune--locate-project-root dir)
+          (expect (neocaml-common-dune-project-root dir)
                   :to-be nil)
-        (delete-directory dir t)))))
+        (delete-directory dir t))))
+
+  (it "picks the nearest directory containing any of the root files"
+    ;; A far-away dune-workspace must not win over a nearer dune-project,
+    ;; whatever order the files are listed in.
+    (let* ((outer (file-name-as-directory (make-temp-file "neocaml-dune-test" t)))
+           (inner (expand-file-name "pkg/" outer))
+           (lib (expand-file-name "lib/" inner))
+           (neocaml-dune-project-root-files '("dune-workspace" "dune-project")))
+      (unwind-protect
+          (progn
+            (make-directory lib t)
+            (write-region "" nil (expand-file-name "dune-workspace" outer) nil 'silent)
+            (write-region "" nil (expand-file-name "dune-project" inner) nil 'silent)
+            (expect (neocaml-common-dune-project-root lib) :to-equal inner)
+            (let ((default-directory lib))
+              (expect (neocaml-dune--project-root) :to-equal inner))
+            (let ((neocaml-dune-project-root-files '("dune-workspace")))
+              (expect (neocaml-common-dune-project-root lib) :to-equal outer)))
+        (delete-directory outer t)))))
 
 (describe "neocaml-dune find dune file"
   (it "finds nearest dune file in current directory"

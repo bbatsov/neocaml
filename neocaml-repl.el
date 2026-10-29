@@ -131,13 +131,24 @@ Used by `neocaml-repl-switch-to-source' to return to the source buffer.")
 
 (defun neocaml-repl--project-id ()
   "Return a short identifier for the current buffer's project, or nil.
-Uses `project.el' when available, falling back to the directory that
-contains a `dune-project' file."
-  (when-let* ((root (or (and (fboundp 'project-current)
-                             (when-let* ((proj (project-current)))
-                               (project-root proj)))
-                        (locate-dominating-file default-directory "dune-project"))))
-    (file-name-nondirectory (directory-file-name root))))
+That's the name of the `project.el' project, or failing that of the
+dune project.  When the dune project sits below the `project.el' root,
+as in a monorepo, its path is appended (e.g. \"mono/pkg/a\"), so each
+dune project gets a session of its own."
+  (let ((project (when-let* ((proj (project-current)))
+                   (file-name-as-directory (expand-file-name (project-root proj)))))
+        (dune (neocaml-common-dune-project-root)))
+    (when-let* ((root (or project dune)))
+      (let ((name (file-name-nondirectory (directory-file-name root))))
+        ;; Compare true names, since the two roots can be spelled
+        ;; differently (through a symlink, say).
+        (if (and project dune
+                 (not (file-equal-p project dune))
+                 (file-in-directory-p dune project))
+            (concat name "/" (directory-file-name
+                              (file-relative-name (file-truename dune)
+                                                  (file-truename project))))
+          name)))))
 
 (defun neocaml-repl--buffer ()
   "Return the name of the REPL buffer for the current context.
@@ -146,11 +157,11 @@ the per-project REPL derived from `neocaml-repl-buffer-name' and the
 project identifier (or the base name when there is no project)."
   (cond
    ((derived-mode-p 'neocaml-repl-mode) (buffer-name))
-   ((neocaml-repl--project-id)
-    (let ((base (if (string-suffix-p "*" neocaml-repl-buffer-name)
-                    (substring neocaml-repl-buffer-name 0 -1)
-                  neocaml-repl-buffer-name)))
-      (format "%s: %s*" base (neocaml-repl--project-id))))
+   ((when-let* ((id (neocaml-repl--project-id)))
+      (let ((base (if (string-suffix-p "*" neocaml-repl-buffer-name)
+                      (substring neocaml-repl-buffer-name 0 -1)
+                    neocaml-repl-buffer-name)))
+        (format "%s: %s*" base id))))
    (t neocaml-repl-buffer-name)))
 
 (defvar-local neocaml-repl--flavor nil
