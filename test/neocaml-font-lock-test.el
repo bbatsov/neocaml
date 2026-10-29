@@ -203,6 +203,12 @@ Lets a spec inspect the matcher's own outcome without failing itself."
       ("type t = int"
        (8 8 font-lock-keyword-face)))
 
+    (when-fontifying-it "fontifies = in OxCaml comprehensions and kind definitions"
+      ("[| x for x = 1 to 5 |]"
+       (12 12 font-lock-keyword-face))
+      ("kind_ k = value"
+       ("=" font-lock-keyword-face)))
+
     (when-fontifying-it "fontifies = in for expression as keyword"
       ("for i = 1 to 10 do () done"
        (7 7 font-lock-keyword-face))))
@@ -241,6 +247,26 @@ Lets a spec inspect the matcher's own outcome without failing itself."
        ("let*" font-lock-keyword-face)
        ("and*" font-lock-keyword-face)))
 
+    (when-fontifying-it "fontifies OxCaml keywords"
+      ("let f x = exclave_ stack_ (x, x)"
+       ("exclave_" font-lock-keyword-face)
+       ("stack_" font-lock-keyword-face))
+      ("let g () = local_ [1]"
+       ("local_" font-lock-keyword-face))
+      ("let h x = borrow_ x"
+       ("borrow_" font-lock-keyword-face))
+      ("type r = { global_ g : int }"
+       ("global_" font-lock-keyword-face))
+      ("kind_ k = kind_of_ t"
+       ("kind_" font-lock-keyword-face)
+       ("kind_of_" font-lock-keyword-face)))
+
+    (when-fontifying-it "fontifies mod as a keyword only in kinds"
+      ("type t : value mod portable"
+       ("mod" font-lock-keyword-face))
+      ("let x = y mod 2"
+       ("mod" font-lock-operator-face)))
+
     (when-fontifying-it "fontifies match+ binding operator as keyword"
       ("match+ x with\n| Some y -> y\n| None -> 0"
        ("match+" font-lock-keyword-face))))
@@ -271,6 +297,39 @@ Lets a spec inspect the matcher's own outcome without failing itself."
     (when-fontifying-it "fontifies the _ wildcard in types"
       ("let f (x : _ list) = x"
        ("_" font-lock-type-face)))
+
+    (when-fontifying-it "fontifies OxCaml modes"
+      ("let f (x @ local unique) = x"
+       ("local" font-lock-type-face)
+       ("unique" font-lock-type-face))
+      ("let g x : t @ local -> t @ global = x"
+       ("local" font-lock-type-face)
+       ("global" font-lock-type-face)))
+
+    (when-fontifying-it "fontifies OxCaml modalities"
+      ("type t = A of int @@ global many"
+       ("global" font-lock-type-face)
+       ("many" font-lock-type-face)))
+
+    (when-fontifying-it "fontifies OxCaml kinds"
+      ("type t : immediate"
+       ("immediate" font-lock-type-face))
+      ("kind_ k = value mod global & float64"
+       ("k" font-lock-type-face)
+       ("value" font-lock-type-face)
+       ("global" font-lock-type-face)
+       ("&" font-lock-type-face)
+       ("float64" font-lock-type-face))
+      ("type ('a : any) t"
+       ("any" font-lock-type-face)))
+
+    (when-fontifying-it "fontifies OxCaml unboxed tuple and record types"
+      ("type t = #(int * string)"
+       ("#(" font-lock-type-face)
+       (")" font-lock-type-face))
+      ("type r = #{ f : int }"
+       ("#{" font-lock-type-face)
+       ("}" font-lock-type-face)))
 
     (when-fontifying-it "fontifies type variables"
       ("type 'a t = 'a my_list"
@@ -369,6 +428,21 @@ Lets a spec inspect the matcher's own outcome without failing itself."
       ("type t = int iarray"
        ("iarray" font-lock-builtin-face)))
 
+    (when-fontifying-it "fontifies OxCaml builtin types"
+      ("type t = float32 * int8 * int16 * int or_null"
+       ("float32" font-lock-builtin-face)
+       ("int8" font-lock-builtin-face)
+       ("int16" font-lock-builtin-face)
+       ("or_null" font-lock-builtin-face))
+      ("type t = float# * int64# * nativeint#"
+       ("float#" font-lock-builtin-face)
+       ("int64#" font-lock-builtin-face)
+       ("nativeint#" font-lock-builtin-face))
+      ("type t = my_type#"
+       ("my_type#" font-lock-type-face))
+      ("let i = (.idx_mut(0).#y)"
+       ("idx_mut" font-lock-builtin-face)))
+
     (when-fontifying-it "does not fontify user types as builtin"
       ("type t = my_type"
        ("my_type" font-lock-type-face))))
@@ -382,7 +456,14 @@ Lets a spec inspect the matcher's own outcome without failing itself."
 
     (when-fontifying-it "fontifies unit"
       ("let _ = ()"
-       ("()" font-lock-constant-face))))
+       ("()" font-lock-constant-face))
+      ("let _ = #()"
+       ("#()" font-lock-constant-face)))
+
+    (when-fontifying-it "fontifies OxCaml unboxed booleans"
+      ("let _ = #true && #false"
+       ("#true" font-lock-constant-face)
+       ("#false" font-lock-constant-face))))
 
   (describe "escape-sequence feature"
     (when-fontifying-it "fontifies escape sequences in strings"
@@ -415,6 +496,11 @@ Lets a spec inspect the matcher's own outcome without failing itself."
     (when-fontifying-it "fontifies hex literals"
       ("let x = 0xFF"
        ("0xFF" font-lock-number-face)))
+
+    (when-fontifying-it "fontifies OxCaml unboxed numbers"
+      ("let x = #1.0 +. #42n"
+       ("#1.0" font-lock-number-face)
+       ("#42n" font-lock-number-face)))
 
     (when-fontifying-it "fontifies underscore-separated numbers"
       ("let x = 1_000_000"
@@ -482,7 +568,14 @@ Lets a spec inspect the matcher's own outcome without failing itself."
     (when-fontifying-it "fontifies array brackets"
       ("[| 1; 2 |]"
        (1 2 font-lock-bracket-face)
-       (9 10 font-lock-bracket-face))))
+       (9 10 font-lock-bracket-face)))
+
+    (when-fontifying-it "fontifies OxCaml immutable array and unboxed tuple brackets"
+      ("[: 1; 2 :]"
+       ("[:" font-lock-bracket-face)
+       (":]" font-lock-bracket-face))
+      ("let p = #(1, 2)"
+       ("#(" font-lock-bracket-face))))
 
   (describe "delimiter feature"
     (when-fontifying-it "fontifies semicolons"
@@ -504,7 +597,15 @@ Lets a spec inspect the matcher's own outcome without failing itself."
 
     (when-fontifying-it "fontifies dot in module path"
       ("List.length xs"
-       ("." font-lock-delimiter-face))))
+       ("." font-lock-delimiter-face)))
+
+    (when-fontifying-it "fontifies OxCaml mode and unboxed field delimiters"
+      ("let x @ local = 1"
+       ("@" font-lock-delimiter-face))
+      ("type t = A of int @@ global"
+       ("@@" font-lock-delimiter-face))
+      ("let g x = x.#s"
+       (".#" font-lock-delimiter-face))))
 
   (describe "variable feature"
     (when-fontifying-it "fontifies variable uses"
@@ -639,6 +740,15 @@ Lets a spec inspect the matcher's own outcome without failing itself."
     (when-fontifying-interface-it "fontifies -> in function types"
       ("val f : int -> int"
        ("->" font-lock-type-face)))
+
+    (when-fontifying-interface-it "fontifies OxCaml modalities and kinds"
+      ("val x : t @@ portable"
+       ("@@" font-lock-delimiter-face)
+       ("portable" font-lock-type-face))
+      ("type t : immediate"
+       ("immediate" font-lock-type-face))
+      ("include S @@ portable"
+       ("portable" font-lock-type-face)))
 
     (when-fontifying-interface-it "fontifies module names"
       ("module M : sig end"
