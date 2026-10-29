@@ -1,4 +1,4 @@
-;;; neocaml-common.el --- Shared helpers for neocaml tool modes -*- lexical-binding: t; -*-
+;;; neocaml-common.el --- Shared helpers for neocaml's modes -*- lexical-binding: t; -*-
 
 ;; Copyright © 2025-2026 Bozhidar Batsov
 ;;
@@ -11,11 +11,11 @@
 
 ;;; Commentary:
 
-;; Small, dependency-free helpers shared by neocaml's auxiliary tool
-;; modes (dune and opam): completion-at-point result construction,
-;; dune project-root detection, opam local-switch detection, a
-;; per-key memoization helper, and running an external program from a
-;; given directory.
+;; Small, dependency-free helpers shared by neocaml's modes:
+;; completion-at-point result construction, dune project-root
+;; detection, opam local-switch detection, a per-key memoization
+;; helper, running an external program from a given directory, and
+;; replacing a buffer's text with a formatter's output.
 
 ;;; License:
 
@@ -82,6 +82,56 @@ is not found, or the command exits non-zero.  DIR may be nil, meaning
           (with-temp-buffer
             (when (zerop (apply #'call-process program nil '(t nil) nil args))
               (buffer-string))))))))
+
+(defconst neocaml-common--format-max-secs 1
+  "Seconds `neocaml-common-format-buffer' may spend diffing the output.")
+
+;; A primitive taking a buffer since Emacs 31.  Older versions only use the
+;; `replace-buffer-contents' fallback below.
+(declare-function replace-region-contents "editfns.c")
+
+(defun neocaml-common--replace-text (source)
+  "Replace the current buffer's text with that of buffer SOURCE.
+Only the parts that differ are replaced, so point and markers stay on
+the same text, and nothing happens when the texts are equal.  When
+diffing takes longer than `neocaml-common--format-max-secs', the whole
+text is replaced instead, and point and the window start are put back
+at their old positions."
+  (let ((case-fold-search nil)
+        (pos (point))
+        (start (window-start)))
+    (unless (or (zerop (compare-buffer-substrings nil nil nil source nil nil))
+                (if (>= emacs-major-version 31)
+                    (replace-region-contents (point-min) (point-max) source
+                                             neocaml-common--format-max-secs)
+                  (with-suppressed-warnings ((obsolete replace-buffer-contents))
+                    (replace-buffer-contents source
+                                             neocaml-common--format-max-secs))))
+      (goto-char (min pos (point-max)))
+      (set-window-start nil start))))
+
+(defun neocaml-common-format-buffer (name program args)
+  "Replace the current buffer's text with the output of PROGRAM on it.
+The buffer is piped to PROGRAM, called with ARGS, and only the text
+that changed is replaced (see `neocaml-common--replace-text').
+PROGRAM's stderr goes to a separate file, so its messages never end up
+in the buffer.  When PROGRAM fails, signal a `user-error' with NAME
+\(the command as the user knows it) and the error output."
+  (let ((outbuf (generate-new-buffer " *neocaml-format*"))
+        ;; dune 3.21+ prints `Entering directory' / `Leaving directory'
+        ;; on stderr when run inside a project, which would otherwise end
+        ;; up around the formatted text.
+        (errfile (make-temp-file "neocaml-format-err")))
+    (unwind-protect
+        (if (zerop (apply #'call-process-region (point-min) (point-max)
+                          program nil (list outbuf errfile) nil args))
+            (neocaml-common--replace-text outbuf)
+          (user-error "Running %s failed: %s" name
+                      (with-temp-buffer
+                        (insert-file-contents errfile)
+                        (string-trim (buffer-string)))))
+      (kill-buffer outbuf)
+      (delete-file errfile))))
 
 (provide 'neocaml-common)
 

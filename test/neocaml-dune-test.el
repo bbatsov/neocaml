@@ -237,17 +237,9 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
     ;; prints `Entering directory' / `Leaving directory' markers on stderr
     ;; (issue #53).  Verify the call separates stderr from stdout so those
     ;; markers never end up in the formatted buffer.
-    (spy-on 'call-process-region :and-call-fake
-            (lambda (_start _end _program &optional _delete buffer
-                            _display &rest _args)
-              (pcase-let ((`(,real-dest ,error-dest) buffer))
-                (with-current-buffer real-dest
-                  (insert "(library\n (name foo))\n"))
-                (with-temp-buffer
-                  (insert "Entering directory '/some/proj'\n"
-                          "Leaving directory '/some/proj'\n")
-                  (write-region nil nil error-dest nil 'no-message)))
-              0))
+    (neocaml-test-stub-formatter "(library\n (name foo))\n" 0
+                                 (concat "Entering directory '/some/proj'\n"
+                                         "Leaving directory '/some/proj'\n"))
     (with-temp-buffer
       (insert "(library (name foo))")
       (neocaml-dune-mode)

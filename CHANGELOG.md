@@ -21,6 +21,7 @@
 
 - [#78](https://github.com/bbatsov/neocaml/pull/78): Don't treat `"` and `'` delimiter nodes as sexps, so `treesit-thing-at` before a string or char literal returns the whole literal instead of the bare quote.
 - [#79](https://github.com/bbatsov/neocaml/pull/79): Fix a segfault on Emacs 31.1 when font-locking a buffer containing a builtin type or value (`let x : int = 42` was enough to trigger it).
+- [#94](https://github.com/bbatsov/neocaml/pull/94): Make `neocaml-format-buffer` and `neocaml-dune-format-buffer` replace only the text that changed, so point, markers and window positions stay put and an already formatted buffer isn't marked modified.
 - [#91](https://github.com/bbatsov/neocaml/issues/91): Fix the `dune-utop` flavor of `neocaml-utop` failing to start - it passed the project root to `dune utop` as an absolute path, which dune rejects, so it now runs `dune utop .` from the project root instead.
 
 ## 0.10.0 (2026-07-10)

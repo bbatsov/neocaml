@@ -220,7 +220,8 @@ To use tuareg's SMIE-based indentation:
 neocaml can format OCaml source with
 [ocamlformat](https://github.com/ocaml-ppx/ocamlformat). `C-c C-f`
 (`neocaml-format-buffer`) pipes the buffer through `ocamlformat` and
-replaces it with the result, preserving point. The buffer's file name is
+replaces only the parts that changed, so point, markers and window
+positions stay where they were. The buffer's file name is
 passed to ocamlformat, so it picks up the right `.ocamlformat` profile and
 applies the correct implementation vs. interface rules.
 
