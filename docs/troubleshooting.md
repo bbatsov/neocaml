@@ -62,6 +62,17 @@ the OCaml and OCaml-interface grammars. For dune, opam, OCamllex, and
 Menhir files, each mode has its own install command (see
 [Installation](installation.md)).
 
+## Highlighting is missing after upgrading neocaml
+
+neocaml's font-lock rules follow the node types of the tree-sitter-ocaml
+version it installs, so a grammar installed by an older neocaml can be
+too old for them. neocaml warns about that when you open an OCaml file
+("The installed tree-sitter OCaml grammars appear older than the version
+required by neocaml"), and Emacs turns off the font-lock features it
+can't compile, with a `treesit-font-lock-rules-mismatch` warning listing
+them. Upgrade the grammars with `C-u M-x neocaml-install-grammars` and
+reopen your OCaml buffers.
+
 ## Conflicting mode from tuareg or caml-mode
 
 If another OCaml major mode is installed, it may claim `.ml`/`.mli`
