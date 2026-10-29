@@ -94,6 +94,22 @@ With prefix argument FORCE, reinstall even if already installed."
     (let ((treesit-language-source-alist neocaml-dune-grammar-recipes))
       (treesit-install-language-grammar 'dune))))
 
+(defvar neocaml-dune--grammar-compatibility-checked nil
+  "Non-nil if the dune grammar has already been checked this session.")
+
+(defun neocaml-dune--check-grammar-compatibility ()
+  "Warn if the installed dune grammar is older than neocaml expects.
+Probes for the newest node type `neocaml-dune-mode' relies on."
+  (unless neocaml-dune--grammar-compatibility-checked
+    (setq neocaml-dune--grammar-compatibility-checked t)
+    (unless (treesit-search-subtree
+             (treesit-parse-string "(library (name x))" 'dune) "stanza_field")
+      (display-warning
+       'neocaml
+       "The installed tree-sitter dune grammar appears older than the \
+version required by neocaml.  Run C-u M-x neocaml-dune-install-grammar \
+to reinstall."))))
+
 ;;; Formatting
 
 (defun neocaml-dune-format-buffer ()
@@ -154,16 +170,10 @@ text with the formatted output, touching only the parts that changed
 
 ;;; Indentation
 
-;; Known limitation: the grammar flattens field-value pairs into
-;; direct stanza children (no wrapper node for e.g. "(action (run ...))").
-;; This means field values on continuation lines indent at the same
-;; level as the field name rather than one deeper:
+;; Each field is a `stanza_field' node, so a field's value on a
+;; continuation line indents one deeper than the field name:
 ;;   (action
-;;   (run foo))     ; actual — both at stanza indent + 1
-;; instead of the conventional:
-;;   (action
-;;    (run foo))    ; expected — value at stanza indent + 2
-;; See https://github.com/tmcgilchrist/tree-sitter-dune/issues/9
+;;    (run foo))
 
 (defvar neocaml-dune--indent-rules
   `((dune
@@ -173,6 +183,7 @@ text with the formatted output, touching only the parts that changed
      ((parent-is "quoted_string") no-indent 0)
      ((parent-is "multiline_string") no-indent 0)
      ;; All parenthesized constructs: indent 1 from parent bol
+     ((parent-is "stanza_field") parent-bol neocaml-dune-indent-offset)
      ((parent-is "stanza") parent-bol neocaml-dune-indent-offset)
      ((parent-is "sexp") parent-bol neocaml-dune-indent-offset)
      ((parent-is "action") parent-bol neocaml-dune-indent-offset)
@@ -339,16 +350,24 @@ Run the listing from ROOT so a project-local switch is picked up via
        (not (or (member name '("_build" "_opam"))
                 (string-prefix-p "." name)))))))
 
+(defun neocaml-dune--field-value (stanza field)
+  "Return the first value node of the FIELD field of STANZA, or nil."
+  (seq-some (lambda (child)
+              (and (equal (treesit-node-type child) "stanza_field")
+                   (equal (treesit-node-text
+                           (treesit-node-child-by-field-name child "name") t)
+                          field)
+                   (treesit-node-child-by-field-name child "value")))
+            (treesit-node-children stanza t)))
+
 (defun neocaml-dune--stanza-library-names (stanza)
   "Return the `name' and `public_name' values of a library STANZA node."
   (let ((child (treesit-node-child stanza 0 t))
         names)
     (when (and child (string= (treesit-node-text child t) "library"))
-      (while (setq child (treesit-node-next-sibling child t))
-        (when (and (string= (treesit-node-type child) "field_name")
-                   (member (treesit-node-text child t) '("name" "public_name")))
-          (when-let* ((value (treesit-node-next-sibling child t)))
-            (push (treesit-node-text value t) names)))))
+      (dolist (field '("name" "public_name"))
+        (when-let* ((value (neocaml-dune--field-value stanza field)))
+          (push (treesit-node-text value t) names))))
     names))
 
 (defun neocaml-dune--local-libraries (root)
@@ -440,22 +459,12 @@ For stanzas, returns the stanza type and its name field if present."
                                  (string= (treesit-node-type first-child) "stanza_name"))
                         (treesit-node-text first-child t))))
     (when stanza-name
-      ;; Try to find a name-like field for a more descriptive label.
-      ;; First check named fields, then scan for a (name ...) field.
+      ;; Try to find a name-like field for a more descriptive label:
+      ;; dune-project's (name ...) stanza, then a (name ...) field.
       (let ((name-value
-             (or (let ((n (treesit-node-child-by-field-name node "project_name")))
-                   (when n (treesit-node-text n t)))
-                 (let ((n (treesit-node-child-by-field-name node "alias_name")))
-                   (when n (treesit-node-text n t)))
-                 (let ((child first-child)
-                       (result nil))
-                   (while (and (not result) (setq child (treesit-node-next-sibling child t)))
-                     (when (and (string= (treesit-node-type child) "field_name")
-                                (string= (treesit-node-text child t) "name"))
-                       (let ((next (treesit-node-next-sibling child t)))
-                         (when next
-                           (setq result (treesit-node-text next t))))))
-                   result))))
+             (or (treesit-node-text
+                  (treesit-node-child-by-field-name node "project_name") t)
+                 (treesit-node-text (neocaml-dune--field-value node "name") t))))
         (if name-value
             (format "%s %s" stanza-name name-value)
           stanza-name)))))
@@ -489,6 +498,7 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
       (neocaml-dune-install-grammar))
     (unless (treesit-ready-p 'dune)
       (error "Cannot activate neocaml-dune-mode without the dune grammar")))
+  (neocaml-dune--check-grammar-compatibility)
   (treesit-parser-create 'dune)
 
   ;; Comments

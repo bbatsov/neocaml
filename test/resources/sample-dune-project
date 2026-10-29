@@ -24,6 +24,6 @@
  (synopsis "My awesome library")
  (description "A longer description of mylib")
  (depends
- (ocaml (>= 4.14))
- (dune (>= 3.0))
- (alcotest :with-test)))
+  (ocaml (>= 4.14))
+  (dune (>= 3.0))
+  (alcotest :with-test)))

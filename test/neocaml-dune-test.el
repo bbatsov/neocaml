@@ -45,6 +45,12 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
               :to-equal expected)))
         code-strings)))
 
+(defun neocaml-dune-test--wraps-fields-p ()
+  "Return non-nil if the dune grammar wraps each field in `stanza_field'."
+  (string-match-p "stanza_field"
+                  (treesit-node-string
+                   (treesit-parse-string "(library (name x))" 'dune))))
+
 ;;;; Tests
 
 (describe "neocaml-dune font-lock"
@@ -135,25 +141,22 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
 (executable
  (name main))")
 
-  ;; Disabled until #93 adapts neocaml-dune to tree-sitter-dune's stanza_field nodes.
-  (xit "indents action fields"
+  (when-indenting-dune-it "indents action fields"
     "(rule
  (action
- (bash \"echo hi\")))")
+  (bash \"echo hi\")))")
 
-  ;; Disabled until #93 adapts neocaml-dune to tree-sitter-dune's stanza_field nodes.
-  (xit "indents enabled_if with blang"
+  (when-indenting-dune-it "indents enabled_if with blang"
     "(library
  (enabled_if
- (>= %{ocaml_version} 4.14)))"))
+  (>= %{ocaml_version} 4.14)))"))
 
 (describe "neocaml-dune integration"
   (before-all
     (unless (treesit-language-available-p 'dune)
       (signal 'buttercup-pending "tree-sitter dune grammar not available")))
 
-  ;; Disabled until #93 adapts neocaml-dune to tree-sitter-dune's stanza_field nodes.
-  (xit "preserves correct indentation of sample-dune"
+  (it "preserves correct indentation of sample-dune"
     (let* ((file (expand-file-name "test/resources/sample-dune"
                                    (file-name-directory (or load-file-name
                                                             buffer-file-name
@@ -167,8 +170,7 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
         (indent-region (point-min) (point-max))
         (expect (buffer-string) :to-equal original))))
 
-  ;; Disabled until #93 adapts neocaml-dune to tree-sitter-dune's stanza_field nodes.
-  (xit "preserves correct indentation of sample-dune-project"
+  (it "preserves correct indentation of sample-dune-project"
     (let* ((file (expand-file-name "test/resources/sample-dune-project"
                                    (file-name-directory (or load-file-name
                                                             buffer-file-name
@@ -206,6 +208,32 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
         (search-forward "; A sample")
         (expect (get-text-property (match-beginning 0) 'face)
                 :to-equal 'font-lock-comment-face)))))
+
+(describe "neocaml-dune defun-name"
+  (before-all
+    (unless (treesit-language-available-p 'dune)
+      (signal 'buttercup-pending "tree-sitter dune grammar not available")))
+
+  (it "names stanzas by their type and name field"
+    (with-temp-buffer
+      (insert "(library\n (name mylib))\n(executable\n (name main))\n"
+              "(alias\n (name docs))\n(rule\n (target out.txt))\n")
+      (neocaml-dune-mode)
+      (expect (mapcar #'neocaml-dune--defun-name
+                      (treesit-node-children (treesit-buffer-root-node) t))
+              :to-equal '("library mylib" "executable main" "alias docs"
+                          "rule")))))
+
+(describe "neocaml-dune grammar compatibility"
+  (before-all
+    (unless (treesit-language-available-p 'dune)
+      (signal 'buttercup-pending "tree-sitter dune grammar not available")))
+
+  (it "does not warn with the required grammar"
+    (spy-on 'display-warning)
+    (let ((neocaml-dune--grammar-compatibility-checked nil))
+      (neocaml-dune--check-grammar-compatibility))
+    (expect 'display-warning :not :to-have-been-called)))
 
 (describe "neocaml-dune-format-buffer"
   (before-all
