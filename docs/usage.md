@@ -111,6 +111,34 @@ more. It works with neocaml out of the box:
   (ocaml-eglot . eglot-ensure))
 ```
 
+### ocamllsp settings
+
+`ocamllsp` takes its settings from Eglot's `eglot-workspace-configuration`.
+A few useful ones are off by default:
+
+- `inlayHints` - besides parameter names, show the inferred types of `let`
+  bindings (`hintLetBindings`) and pattern variables
+  (`hintPatternVariables`) inline.
+- `syntaxDocumentation` - explain the syntax under point on hover, with a
+  link to the relevant part of the manual.
+- `merlinJumpCodeActions` - code actions that jump to the enclosing `fun`,
+  `let`, `match`, module or module type, and between match cases.
+
+Set them per project in `.dir-locals.el`:
+
+```emacs-lisp
+((nil . ((eglot-workspace-configuration
+          . (:inlayHints (:hintLetBindings t :hintPatternVariables t)
+             :syntaxDocumentation (:enable t)
+             :merlinJumpCodeActions (:enable t))))))
+```
+
+The settings go at the top level, not under an `:ocamllsp` key. Inlay
+hints are shown by `eglot-inlay-hints-mode`, which Eglot enables on its
+own. ocamllsp can also show the type of each binding as a code lens, but
+Eglot has no support for code lenses, so inlay hints are the closest
+thing.
+
 ### Semantic highlighting
 
 On Emacs 31, Eglot enables `eglot-semantic-tokens-mode` whenever the
@@ -184,6 +212,7 @@ These packages work well with neocaml:
 - [ocaml-eglot](https://github.com/tarides/ocaml-eglot) - OCaml-specific LSP extensions (type enclosing, case analysis, etc.)
 - [exec-path-from-shell](https://github.com/purcell/exec-path-from-shell) - inherit shell PATH in GUI Emacs (needed on macOS)
 - [expreg](https://github.com/casouri/expreg) - tree-sitter-aware expand-region (see [Configuration](configuration.md#structural-selection))
+- [combobulate](https://github.com/mickeynp/combobulate) - structural editing and navigation (see [Configuration](configuration.md#structural-editing))
 - [treesit-fold](https://github.com/emacs-tree-sitter/treesit-fold) - tree-sitter-aware code folding
 - [dape](https://github.com/svaante/dape) - debugging via Debug Adapter Protocol (see [Debugging](debugging.md))
 
