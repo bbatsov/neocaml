@@ -770,9 +770,24 @@ delimiter."
         (forward-char))
       (point))))
 
+(defun neocaml--exclave-body-anchor (_node parent bol &rest _)
+  "Return the anchor for the line at BOL in the body of PARENT, an `exclave_'.
+`exclave_' doesn't nest: as ocamlformat lays it out, its body goes
+where the `exclave_' expression itself would, whether that follows a
+`=' or `->' or starts a line of its own.  So the indentation rules are
+applied to PARENT in place of the line's node."
+  (car (treesit-simple-indent parent (treesit-node-parent parent) bol)))
+
+(defun neocaml--exclave-body-offset (_node parent bol &rest _)
+  "Return the offset for the line at BOL in the body of PARENT, an `exclave_'.
+See `neocaml--exclave-body-anchor'."
+  (cdr (treesit-simple-indent parent (treesit-node-parent parent) bol)))
+
 (defvar neocaml--indent-body-tokens
   '("=" "->" "then" "else" "do" "struct" "sig"
-    "begin" "object" "with" "fun" "function" "try")
+    "begin" "object" "with" "fun" "function" "try"
+    ;; OxCaml (`exclave_' doesn't nest, see `neocaml--empty-line-offset')
+    "stack_" "local_" "borrow_")
   "Tokens that expect a body on the next line.
 Used by `neocaml--empty-line-offset' to decide whether an empty line
 should be indented relative to the previous line.")
@@ -781,7 +796,8 @@ should be indented relative to the previous line.")
   "Compute extra indentation offset for an empty line at BOL.
 If the last token on the previous line expects a body (e.g., `=',
 `->', `then'), return `neocaml-indent-offset'.  Otherwise return 0,
-which preserves the previous line's indentation level."
+which preserves the previous line's indentation level.  A trailing
+`exclave_' doesn't nest, so the token before it decides."
   (save-excursion
     (goto-char bol)
     (if (and (zerop (forward-line -1))
@@ -790,6 +806,11 @@ which preserves the previous line's indentation level."
                (skip-chars-backward " \t")
                (> (point) (line-beginning-position)))
              (let ((node (treesit-node-at (1- (point)))))
+               (when (and node (equal (treesit-node-type node) "exclave_"))
+                 (goto-char (treesit-node-start node))
+                 (skip-chars-backward " \t")
+                 (setq node (and (> (point) (line-beginning-position))
+                                 (treesit-node-at (1- (point))))))
                (and node
                     (member (treesit-node-type node)
                             neocaml--indent-body-tokens))))
@@ -875,7 +896,9 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; try/with
      ((parent-is "try_expression") parent-bol neocaml-indent-offset)
 
-     ;; Compound expressions
+     ;; Compound expressions.  parent-is matches anywhere in the node
+     ;; type, so array_expression covers OxCaml's iarray_expression too,
+     ;; as the "]" rule above covers its closing ":]".
      ((parent-is "parenthesized_expression") parent-bol neocaml-indent-offset)
      ((parent-is "record_expression") parent-bol neocaml-indent-offset)
      ((parent-is "list_expression") parent-bol neocaml-indent-offset)
@@ -891,6 +914,23 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Object-oriented features
      ((parent-is "object_expression") parent-bol neocaml-indent-offset)
      ((parent-is "class_body_type") parent-bol neocaml-indent-offset)
+
+     ;; OxCaml.  No other rule matches these parents, so they come last,
+     ;; where lines of plain OCaml don't have to try them.
+     ;; Kind definitions, and a mod bound starting a line, which aligns
+     ;; with the kind it bounds, as ocamlformat does
+     ((parent-is "\\`kind_definition\\'") parent-bol neocaml-indent-offset)
+     ((match "\\`mod\\'" "\\`mod_bounded_kind\\'") parent 0)
+     ;; Allocation and borrowing with the body on the next line: stack_,
+     ;; local_ and borrow_ indent it like an argument, while exclave_
+     ;; leaves it where the exclave_ itself would go
+     ((parent-is "\\`exclave_expression\\'")
+      neocaml--exclave-body-anchor neocaml--exclave-body-offset)
+     ((parent-is "\\`\\(?:stack\\|local\\|borrow\\)_expression\\'")
+      parent-bol neocaml-indent-offset)
+     ;; Comprehensions: for and when clauses align with the expression
+     ;; they build, and parallel and clauses with their for
+     ((parent-is "\\`comprehension\\(?:_iterator\\)?\\'") parent 0)
 
      ;; Error recovery
      ((parent-is "ERROR") parent-bol neocaml-indent-offset)
