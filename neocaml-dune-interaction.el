@@ -13,7 +13,8 @@
 
 ;; Minor mode for running dune commands from any neocaml buffer.
 ;; Provides keybindings for common dune operations (build, test,
-;; clean, promote, fmt, utop, exec) and navigation to dune files.
+;; clean, promote, fmt, utop, exec), for running and promoting the
+;; tests of the current file, and navigation to dune files.
 
 ;;; License:
 
@@ -35,6 +36,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'ansi-color)
 
 (declare-function neocaml-repl-switch-to-repl "neocaml-repl")
 (defvar neocaml-repl-program-name)
@@ -98,23 +100,56 @@ When `neocaml-dune-use-opam-exec' is non-nil, returns
       (concat "opam exec -- " (shell-quote-argument neocaml-dune-program))
     (shell-quote-argument neocaml-dune-program)))
 
+(defun neocaml-dune--command-line (command args)
+  "Return the shell command line for dune COMMAND with ARGS."
+  (concat (neocaml-dune--command-prefix) " "
+          (mapconcat #'shell-quote-argument (cons command args) " ")))
+
 (defun neocaml-dune--run (command &rest args)
   "Run a dune COMMAND with ARGS via `compile' in the project root.
 When called with a prefix argument, appends `--watch' and runs in
 comint mode so the process stays alive and rebuilds on file changes."
-  (let* ((watch current-prefix-arg)
-         (default-directory (neocaml-dune--project-root))
-         (all-args (if watch (append args '("--watch")) args))
-         (cmd (concat (neocaml-dune--command-prefix) " "
-                      (mapconcat #'shell-quote-argument
-                                 (cons command all-args) " "))))
-    (compile cmd (and watch t))))
+  (let ((watch current-prefix-arg)
+        (default-directory (neocaml-dune--project-root)))
+    (compile (neocaml-dune--command-line
+              command (if watch (append args '("--watch")) args))
+             (and watch t))))
 
 (defun neocaml-dune--run-no-watch (command &rest args)
   "Run a dune COMMAND with ARGS via `compile' in the project root.
 Like `neocaml-dune--run' but ignores the prefix argument."
   (let ((current-prefix-arg nil))
     (apply #'neocaml-dune--run command args)))
+
+(defun neocaml-dune--call (command &rest args)
+  "Run a dune COMMAND with ARGS in `default-directory' and return its output.
+Standard output and standard error are returned together.  When dune
+fails, signal a `user-error' with its output."
+  (with-temp-buffer
+    (let ((status (process-file-shell-command
+                   (neocaml-dune--command-line command args) nil t)))
+      (unless (eql status 0)
+        (user-error "Running dune %s failed: %s"
+                    command (string-trim (buffer-string))))
+      (buffer-string))))
+
+(defun neocaml-dune--current-file (root)
+  "Return the file the current buffer visits, relative to ROOT."
+  (file-relative-name
+   (or buffer-file-name (user-error "Buffer is not visiting a file"))
+   root))
+
+(defun neocaml-dune--test-args (file)
+  "Return the dune command and arguments to test FILE.
+dune only takes cram tests by name, so a `.t' file, or any file in a
+`.t' directory test, runs that test.  Any other file runs the `runtest'
+alias of its own directory, without the directories below it."
+  (let ((dir (file-name-directory file)))
+    (cond
+     ((and dir (string-suffix-p ".t/" dir))
+      (list "test" (directory-file-name dir)))
+     ((string-suffix-p ".t" file) (list "test" file))
+     (t (list "build" (concat "@@" dir "runtest"))))))
 
 ;;;###autoload
 (defun neocaml-dune-build ()
@@ -142,6 +177,64 @@ With prefix argument, run in watch mode."
 Promotes test corrections (replaces expected output with actual)."
   (interactive)
   (neocaml-dune--run-no-watch "promote"))
+
+;;;###autoload
+(defun neocaml-dune-test-file ()
+  "Run the current file's test suite.
+A cram test (`.t' file) runs on its own.  For any other file, run the
+tests of its directory, such as the inline and expect tests of the
+library defined there.  With prefix argument, run in watch mode."
+  (interactive)
+  (apply #'neocaml-dune--run
+         (neocaml-dune--test-args
+          (neocaml-dune--current-file (neocaml-dune--project-root)))))
+
+;;;###autoload
+(defun neocaml-dune-promote-file ()
+  "Promote the test corrections for the current file only.
+Accepts the output of the file's failing expect or cram tests, leaves
+the other pending promotions alone, and reverts the buffer to show the
+result.  A buffer with unsaved changes has to be saved first."
+  (interactive)
+  (when (buffer-modified-p)
+    (if (y-or-n-p (format "Save %s first? " (buffer-name)))
+        (save-buffer)
+      (user-error "Promoting would overwrite the unsaved changes")))
+  (let ((default-directory (neocaml-dune--project-root)))
+    (message "%s" (string-trim
+                   (neocaml-dune--call "promote" (neocaml-dune--current-file
+                                                  default-directory)))))
+  (revert-buffer t t t))
+
+(defconst neocaml-dune--promotion-diff-buffer "*dune promotion diff*"
+  "Name of the buffer `neocaml-dune-promotion-diff' shows the diff in.")
+
+;;;###autoload
+(defun neocaml-dune-promotion-diff (&optional all)
+  "Show what promoting the test corrections for the current file would do.
+With prefix argument ALL, show every pending promotion in the project.
+The diff is shown in `diff-mode', where \\[diff-goto-source] jumps to
+the source file rather than to dune's staging copy."
+  (interactive "P")
+  (let* ((root (neocaml-dune--project-root))
+         (default-directory root)
+         (output (ansi-color-filter-apply
+                  (apply #'neocaml-dune--call "promotion" "diff"
+                         (unless all (list (neocaml-dune--current-file root)))))))
+    (if (string-match-p "^@@ " output)
+        (with-current-buffer (get-buffer-create
+                              neocaml-dune--promotion-diff-buffer)
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (insert output)
+            (goto-char (point-min))
+            (diff-mode)
+            (setq default-directory root
+                  buffer-read-only t)
+            (setq-local diff-jump-to-old-file t))
+          (pop-to-buffer (current-buffer)))
+      (let ((msg (string-trim output)))
+        (message "%s" (if (equal msg "") "Nothing to promote" msg))))))
 
 ;;;###autoload
 (defun neocaml-dune-fmt ()
@@ -214,6 +307,9 @@ named `dune'."
     (define-key map (kbd "C-c C-d t") #'neocaml-dune-test)
     (define-key map (kbd "C-c C-d c") #'neocaml-dune-clean)
     (define-key map (kbd "C-c C-d p") #'neocaml-dune-promote)
+    (define-key map (kbd "C-c C-d T") #'neocaml-dune-test-file)
+    (define-key map (kbd "C-c C-d P") #'neocaml-dune-promote-file)
+    (define-key map (kbd "C-c C-d =") #'neocaml-dune-promotion-diff)
     (define-key map (kbd "C-c C-d f") #'neocaml-dune-fmt)
     (define-key map (kbd "C-c C-d u") #'neocaml-dune-utop)
     (define-key map (kbd "C-c C-d r") #'neocaml-dune-exec)
@@ -227,6 +323,11 @@ named `dune'."
         ["Clean" neocaml-dune-clean]
         ["Promote" neocaml-dune-promote]
         ["Format" neocaml-dune-fmt]
+        "--"
+        ("Current File"
+         ["Test" neocaml-dune-test-file]
+         ["Show Promotion Diff" neocaml-dune-promotion-diff]
+         ["Promote" neocaml-dune-promote-file])
         "--"
         ("Watch (rebuild on changes)"
          ["Build --watch"

@@ -101,4 +101,13 @@ CONTENT is inserted into a temp buffer with `neocaml-cram-mode'."
     (expect (cdr (assoc "\\.t\\'" auto-mode-alist))
             :to-equal 'neocaml-cram-mode)))
 
+(describe "neocaml-cram-mode-map"
+  (it "runs, reviews and promotes the current test"
+    (expect (lookup-key neocaml-cram-mode-map (kbd "C-c C-c"))
+            :to-be 'neocaml-dune-test-file)
+    (expect (lookup-key neocaml-cram-mode-map (kbd "C-c C-r"))
+            :to-be 'neocaml-dune-promotion-diff)
+    (expect (lookup-key neocaml-cram-mode-map (kbd "C-c C-p"))
+            :to-be 'neocaml-dune-promote-file)))
+
 ;;; neocaml-cram-test.el ends here

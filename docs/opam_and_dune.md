@@ -51,6 +51,9 @@ Available commands (all under the `C-c C-d` prefix):
 | `C-c C-d t` | `neocaml-dune-test` | Run tests |
 | `C-c C-d c` | `neocaml-dune-clean` | Clean build artifacts |
 | `C-c C-d p` | `neocaml-dune-promote` | Promote test corrections |
+| `C-c C-d T` | `neocaml-dune-test-file` | Run the tests for the current file |
+| `C-c C-d =` | `neocaml-dune-promotion-diff` | Show the current file's pending promotion as a diff |
+| `C-c C-d P` | `neocaml-dune-promote-file` | Promote the current file's test corrections only |
 | `C-c C-d f` | `neocaml-dune-fmt` | Format code |
 | `C-c C-d u` | `neocaml-dune-utop` | Launch utop with project libraries |
 | `C-c C-d r` | `neocaml-dune-exec` | Run an executable (prompts for name) |
@@ -63,6 +66,15 @@ mode** (`--watch`), rebuilding automatically when files change. For example,
 
 The project root is determined by walking up from the current file to find
 `dune-project`.
+
+The uppercase variants work on the current file. `C-c C-d T` runs a cram
+test on its own, and for any other file runs the tests of its directory
+(but not of the directories below it), since dune only accepts cram tests
+by file name. `C-c C-d =` shows what promoting the file's corrections
+would change, in a `diff-mode` buffer (with `C-u`, every pending
+promotion in the project), and `C-c C-d P` promotes just that file and
+reverts its buffer. Together they make a quick loop for expect and cram
+tests: run, review, promote.
 
 If Emacs doesn't inherit your opam environment (common when launching
 from a desktop shortcut), you can prefix all dune commands with
@@ -137,9 +149,11 @@ used by dune's expect-test framework. It highlights shell commands, expected
 output, output modifiers (`(re)`, `(glob)`, `(no-eol)`, `(esc)`), exit codes,
 and prose comments.
 
-The mode activates automatically for `.t` files. Use `dune promote` (available
-via `C-c C-d p` with `neocaml-dune-interaction-mode`) to accept corrected test
-output.
+The mode activates automatically for `.t` files. `C-c C-c` runs the test in
+the current buffer (`neocaml-dune-test-file`), `C-c C-r` shows the
+correction dune came up with as a diff (`neocaml-dune-promotion-diff`),
+and `C-c C-p` accepts it (`neocaml-dune-promote-file`), reverting the
+buffer to show the new expected output.
 
 !!! note
     The `.t` extension is also used by Perl test files. If you work with
