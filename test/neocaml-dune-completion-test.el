@@ -136,8 +136,7 @@ Resolves both plain lists and dynamic completion tables."
                       :to-equal "opam"))
           (delete-directory root t))))
 
-    ;; Disabled until #93 adapts neocaml-dune to tree-sitter-dune's stanza_field nodes.
-    (xit "scans local dune files for library and public_name values"
+    (it "scans local dune files for library and public_name values"
       (let ((root (file-name-as-directory (make-temp-file "neocaml-dune" t))))
         (unwind-protect
             (progn
