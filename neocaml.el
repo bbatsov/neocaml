@@ -195,22 +195,25 @@ version that requires a newer grammar."
 Emit a warning if an outdated grammar is detected."
   (unless neocaml--grammar-compatibility-checked
     (setq neocaml--grammar-compatibility-checked t)
-    (when (treesit-language-available-p 'ocaml)
-      ;; In v0.25.0, the type_binding "equation" field was renamed to
-      ;; "body".  We parse a snippet and check whether the old field name
-      ;; still exists.  treesit-query-compile doesn't validate field
-      ;; names, so we must check against an actual parse tree.
-      (with-temp-buffer
-        (insert "type t = int")
-        (let* ((parser (treesit-parser-create 'ocaml))
-               (root (treesit-parser-root-node parser))
-               (node (treesit-search-subtree root "type_binding")))
-          (when (and node (treesit-node-child-by-field-name node "equation"))
-            (display-warning
-             'neocaml
-             "The installed tree-sitter OCaml grammar appears older than the \
+    ;; v0.26.0 gave `_' node types of its own (`any_pattern' in
+    ;; patterns, `any_type' in types), and our queries name them, so a
+    ;; grammar that parses `_' differently is too old.
+    (when (seq-some
+           (pcase-lambda (`(,language ,code ,type))
+             (and (treesit-language-available-p language)
+                  (with-temp-buffer
+                    (insert code)
+                    (not (treesit-search-subtree
+                          (treesit-parser-root-node
+                           (treesit-parser-create language))
+                          type)))))
+           '((ocaml "let _ = ()" "\\`any_pattern\\'")
+             (ocaml-interface "val x : _" "\\`any_type\\'")))
+      (display-warning
+       'neocaml
+       "The installed tree-sitter OCaml grammars appear older than the \
 version required by neocaml.  Run C-u M-x neocaml-install-grammars to \
-reinstall.")))))))
+reinstall."))))
 
 ;; adapted from tuareg-mode
 (defvar neocaml-base-mode-syntax-table
@@ -546,8 +549,9 @@ The return value is suitable for `treesit-font-lock-settings'."
      (let_binding pattern: (value_name) @font-lock-variable-name-face (":" (_)) :? (":>" (_)) :? :anchor body: (_))
      (method_definition (method_name) @font-lock-function-name-face)
      (method_specification (method_name) @font-lock-function-name-face)
-     ;; patterns containing bound variables
+     ;; patterns containing bound variables, and the `_' wildcard
      (value_pattern) @font-lock-variable-name-face
+     (any_pattern) @font-lock-variable-name-face
      (constructor_pattern pattern: (value_name) @font-lock-variable-name-face)
      (tuple_pattern (value_name) @font-lock-variable-name-face)
      ;; punned record fields in patterns
@@ -639,7 +643,7 @@ The return value is suitable for `treesit-font-lock-settings'."
    :feature 'type
    '((constructor_name) @font-lock-constant-face
      (tag) @font-lock-constant-face
-     [(type_constructor) (type_variable) (hash_type)
+     [(type_constructor) (type_variable) (hash_type) (any_type)
       (class_name) (class_type_name)] @font-lock-type-face
       (function_type "->" @font-lock-type-face)
       (tuple_type "*" @font-lock-type-face)

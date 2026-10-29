@@ -51,6 +51,44 @@
       (neocaml-install-grammars)
       (expect captured-alist :to-equal neocaml-grammar-recipes))))
 
+(describe "neocaml--check-grammar-compatibility"
+  :var (checked)
+  (before-each
+    (setq checked neocaml--grammar-compatibility-checked
+          neocaml--grammar-compatibility-checked nil)
+    (spy-on 'display-warning))
+  (after-each
+    (setq neocaml--grammar-compatibility-checked checked))
+
+  (describe "with the grammars installed"
+    (before-all
+      (unless (and (treesit-language-available-p 'ocaml)
+                   (treesit-language-available-p 'ocaml-interface))
+        (signal 'buttercup-pending "tree-sitter OCaml grammars not available")))
+
+    (it "accepts the installed grammars"
+      (neocaml--check-grammar-compatibility)
+      (expect 'display-warning :not :to-have-been-called))
+
+    (it "warns about a grammar that doesn't parse _ as any_pattern"
+      (spy-on 'treesit-search-subtree :and-return-value nil)
+      (neocaml--check-grammar-compatibility)
+      (expect 'display-warning :to-have-been-called))
+
+    (it "warns about an outdated interface grammar too"
+      (spy-on 'treesit-search-subtree :and-call-fake
+              (lambda (node &rest _)
+                (not (eq (treesit-node-language node) 'ocaml-interface))))
+      (neocaml--check-grammar-compatibility)
+      (expect 'display-warning :to-have-been-called)))
+
+  (it "checks only once per session"
+    (spy-on 'treesit-language-available-p :and-return-value nil)
+    (neocaml--check-grammar-compatibility)
+    (spy-calls-reset 'treesit-language-available-p)
+    (neocaml--check-grammar-compatibility)
+    (expect 'treesit-language-available-p :not :to-have-been-called)))
+
 (describe "neocaml--setup-mode grammar prompt"
   (it "prompts the user when grammars are missing"
     (spy-on 'treesit-language-available-p :and-return-value nil)

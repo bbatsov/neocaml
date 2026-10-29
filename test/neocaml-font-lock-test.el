@@ -177,6 +177,14 @@ Lets a spec inspect the matcher's own outcome without failing itself."
       ("match x with\n| Some v -> v"
        (21 21 font-lock-variable-name-face)))
 
+    (when-fontifying-it "fontifies the _ wildcard in patterns"
+      ("match x with\n| _ -> 0"
+       ("_" font-lock-variable-name-face))
+      ("let _ = f ()"
+       ("_" font-lock-variable-name-face))
+      ("let (a, _) = p"
+       ("_" font-lock-variable-name-face)))
+
     (when-fontifying-it "fontifies tuple_pattern binding"
       ("let (a, b) = (1, 2)"
        ("a" font-lock-variable-name-face)
@@ -259,6 +267,10 @@ Lets a spec inspect the matcher's own outcome without failing itself."
       ("type t = my_type"
        ("t" font-lock-type-face)
        ("my_type" font-lock-type-face)))
+
+    (when-fontifying-it "fontifies the _ wildcard in types"
+      ("let f (x : _ list) = x"
+       ("_" font-lock-type-face)))
 
     (when-fontifying-it "fontifies type variables"
       ("type 'a t = 'a my_list"
