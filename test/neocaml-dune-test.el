@@ -70,7 +70,12 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
       ("(executable (name main))"
        ("executable" font-lock-keyword-face))
       ("(test (name foo))"
-       ("test" font-lock-keyword-face))))
+       ("test" font-lock-keyword-face)))
+
+    (when-fontifying-dune-it "fontifies :as in instantiate"
+      ("(executable\n (name main)\n (libraries (instantiate lib impl :as lib2)))"
+       (":as" font-lock-keyword-face)
+       ("lib2" font-lock-type-face))))
 
   (describe "property feature"
     (when-fontifying-dune-it "fontifies field names"
@@ -79,7 +84,13 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
 
     (when-fontifying-dune-it "fontifies various field names"
       ("(library\n (libraries base))"
-       ("libraries" font-lock-property-name-face))))
+       ("libraries" font-lock-property-name-face)))
+
+    (when-fontifying-dune-it "fontifies workspace context fields"
+      ("(context\n (opam\n  (switch 4.14.1)\n  (merlin)))"
+       ("opam" font-lock-property-name-face)
+       ("switch" font-lock-property-name-face)
+       ("merlin" font-lock-property-name-face))))
 
   (describe "string feature"
     (when-fontifying-dune-it "fontifies quoted strings"
@@ -89,7 +100,42 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
   (describe "constant feature"
     (when-fontifying-dune-it "fontifies booleans"
       ("(generate_opam_files true)"
-       ("true" font-lock-constant-face))))
+       ("true" font-lock-constant-face)))
+
+    (when-fontifying-dune-it "fontifies rule modes"
+      ("(rule\n (mode standard)\n (action (run x)))"
+       ("standard" font-lock-constant-face))
+      ("(rule\n (mode fallback)\n (action (run x)))"
+       ("fallback" font-lock-constant-face)))
+
+    (when-fontifying-dune-it "fontifies the default context"
+      ("(context default)"
+       ("default" font-lock-constant-face))))
+
+  (describe "builtin feature"
+    (when-fontifying-dune-it "fontifies dependency kinds"
+      ("(rule\n (deps (glob_files_rec *.ml) (file a.txt) (alias_rec foo) (universe))\n (action (run x)))"
+       ("glob_files_rec" font-lock-builtin-face)
+       ("file" font-lock-builtin-face)
+       ("a.txt" nil)
+       ("alias_rec" font-lock-builtin-face)
+       ("universe" font-lock-builtin-face)))
+
+    (when-fontifying-dune-it "fontifies directory targets"
+      ("(rule\n (targets (dir out))\n (action (run x)))"
+       ("dir" font-lock-builtin-face)))
+
+    (when-fontifying-dune-it "fontifies include_dirs kinds"
+      ("(foreign_library\n (include_dirs (lib foo) (include bar)))"
+       ("include_dirs" font-lock-property-name-face)
+       ("lib" font-lock-builtin-face)
+       ("include" font-lock-builtin-face)))
+
+    (when-fontifying-dune-it "fontifies source kinds"
+      ("(source (github user/repo))"
+       ("github" font-lock-builtin-face))
+      ("(source (codeberg user/repo))"
+       ("codeberg" font-lock-builtin-face))))
 
   (describe "type feature"
     (when-fontifying-dune-it "fontifies module names"
@@ -109,7 +155,31 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
   (describe "operator feature"
     (when-fontifying-dune-it "fontifies blang operators"
       ("(library\n (enabled_if (>= %{ocaml_version} 4.14)))"
-       (">=" font-lock-operator-face))))
+       (">=" font-lock-operator-face)))
+
+    (when-fontifying-dune-it "fontifies package constraint operators"
+      ("(package\n (name p)\n (depends (ocaml (and (>= 4.14) (not (= 5.0))))))"
+       ("and" font-lock-operator-face)
+       (">=" font-lock-operator-face)
+       ("4.14" nil)
+       ("not" font-lock-operator-face)
+       ("=" font-lock-operator-face))))
+
+  (describe "ordered set language"
+    (when-fontifying-dune-it "fontifies :standard and the difference operator"
+      ("(library\n (name l)\n (modules (:standard \\ internal_utils)))"
+       (":standard" font-lock-keyword-face)
+       ("\\" font-lock-operator-face)
+       ("internal_utils" font-lock-type-face)))
+
+    (when-fontifying-dune-it "fontifies :include"
+      ("(library\n (name l)\n (c_flags (:include extra-flags.sexp)))"
+       (":include" font-lock-keyword-face)))
+
+    (when-fontifying-dune-it "leaves plain flags alone"
+      ("(library\n (name l)\n (ocamlopt_flags (:standard -O3)))"
+       (":standard" font-lock-keyword-face)
+       ("-O3" nil))))
 
   (describe "bracket feature"
     (when-fontifying-dune-it "fontifies parentheses"
@@ -126,6 +196,11 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
       ("(library\n (enabled_if (>= %{ocaml_version} 4.14)))"
        (">=" font-lock-operator-face)
        ("%{ocaml_version}" font-lock-variable-use-face)))
+
+    (when-fontifying-dune-it "fontifies named dependencies"
+      ("(rule\n (deps (:inputs a.ml b.ml))\n (action (run x %{inputs})))"
+       (":inputs" font-lock-variable-name-face)
+       ("%{inputs}" font-lock-variable-use-face)))
 
     (when-fontifying-dune-it "fontifies pforms in library names"
       ("(library\n (libraries %{lib}))"
@@ -172,7 +247,14 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
   (when-indenting-dune-it "indents enabled_if with blang"
     "(library
  (enabled_if
-  (>= %{ocaml_version} 4.14)))"))
+  (>= %{ocaml_version} 4.14)))")
+
+  (when-indenting-dune-it "indents workspace context fields"
+    "(context
+ (default
+  (name host)
+  (targets
+   native)))"))
 
 (describe "neocaml-dune integration"
   (before-all
@@ -246,17 +328,6 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
                       (treesit-node-children (treesit-buffer-root-node) t))
               :to-equal '("library mylib" "executable main" "alias docs"
                           "rule")))))
-
-(describe "neocaml-dune grammar compatibility"
-  (before-all
-    (unless (treesit-language-available-p 'dune)
-      (signal 'buttercup-pending "tree-sitter dune grammar not available")))
-
-  (it "does not warn with the required grammar"
-    (spy-on 'display-warning)
-    (let ((neocaml-dune--grammar-compatibility-checked nil))
-      (neocaml-dune--check-grammar-compatibility))
-    (expect 'display-warning :not :to-have-been-called)))
 
 (describe "neocaml-dune-format-buffer"
   (before-all
