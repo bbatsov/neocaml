@@ -899,6 +899,23 @@ so it's indented.  Everything else aligns (see `neocaml--chain-anchor')."
       neocaml-indent-offset
     0))
 
+(defun neocaml--attribute-anchor (node &rest _)
+  "Return the anchor for NODE, an attribute after an item.
+The grammar makes an attribute that ends an item's body on a line of
+its own, as in
+  let f x =
+    g x
+    [@nontail]
+a sibling of the item, so the anchor is the start of the item's line,
+past any other attributes like it and comments."
+  (let ((item (treesit-node-prev-sibling node t)))
+    (while (member (treesit-node-type item) '("attribute" "comment"))
+      (setq item (treesit-node-prev-sibling item t)))
+    (save-excursion
+      (goto-char (treesit-node-start (or item (treesit-node-parent node))))
+      (back-to-indentation)
+      (point))))
+
 (defun neocaml--leading-semicolon-anchor (_node parent _bol &rest _)
   "Return the anchor for a ; starting a line in PARENT, a record, list or array.
 It goes under the last character of the opening bracket, so the
@@ -996,6 +1013,11 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; node=nil, parent=compilation_unit for empty lines.
      (no-node prev-line neocaml--empty-line-offset)
 
+     ;; An attribute on a line of its own after an item continues the
+     ;; item's body (see `neocaml--attribute-anchor')
+     ((match "\\`attribute\\'" "\\`\\(?:compilation_unit\\|structure\\|attribute_payload\\|item_extension\\)\\'")
+      neocaml--attribute-anchor neocaml-indent-offset)
+
      ;; Top-level definitions: column 0
      ((parent-is "compilation_unit") column-0 0)
 
@@ -1056,7 +1078,9 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((parent-is "record_declaration") parent-bol neocaml-indent-offset)
      ((parent-is "variant_declaration") neocaml--grand-parent-bol neocaml-indent-offset)
 
-     ;; Module structures and signatures
+     ;; Module structures and signatures.  The @@ of an OxCaml sig @@
+     ;; portable starting a line aligns with the sig, as end does
+     ((match "\\`@@\\'" "\\`signature\\'") parent-bol 0)
      ((parent-is "structure") parent-bol neocaml-indent-offset)
      ((parent-is "signature") parent-bol neocaml-indent-offset)
 

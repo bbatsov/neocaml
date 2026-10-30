@@ -22,6 +22,8 @@
 - [#102](https://github.com/bbatsov/neocaml/pull/102): Indent OxCaml code: the bodies of `exclave_`, `stack_`, `local_` and `borrow_` on the next line, kind definitions, `mod` bounds, and the `for` and `when` clauses of comprehensions.
 - [#102](https://github.com/bbatsov/neocaml/pull/102): Treat OxCaml kind definitions as definitions for imenu (under "Kind"), defun navigation, `which-function` and sentence motion, immutable arrays as lists, and the `@`/`@@` of modes and modalities as punctuation in sexp motion.
 - [#107](https://github.com/bbatsov/neocaml/pull/107): Fontify OxCaml's builtin kinds (`value`, `immediate`, `float64`, etc.) and SIMD vector types (`int8x16`, `float64x2#`, etc.) as builtins, and the predefined `floatarray`, `extension_constructor`, `eff`, `continuation`, `atomic_loc` and `lexing_position` types too.
+- [#107](https://github.com/bbatsov/neocaml/pull/107): Indent the `@@` of an OxCaml `sig @@ portable` starting a line like `end`.
+- [#107](https://github.com/bbatsov/neocaml/pull/107): Indent an attribute on a line of its own after a body, like the `[@nontail]` and `[@exclave_if_stack a]` of Jane Street code, like the body.
 
 ### Changes
 
