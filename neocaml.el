@@ -315,12 +315,24 @@ https://github.com/tree-sitter/tree-sitter-ocaml/blob/master/queries/highlights.
 (defvar neocaml-mode--builtin-types
   '("int" "char" "bytes" "string" "float" "bool" "unit" "exn"
     "array" "iarray" "list" "option" "int32" "int64" "nativeint" "format6" "lazy_t"
+    "floatarray" "extension_constructor" "eff" "continuation" "atomic_loc"
     ;; OxCaml, with the unboxed versions of builtin types
-    "float32" "int8" "int16" "or_null"
+    "float32" "int8" "int16" "or_null" "lexing_position"
     "float#" "float32#" "int8#" "int16#" "int32#" "int64#" "nativeint#"
     "char#" "bool#" "unit#")
   "OCaml builtin type names for tree-sitter font-locking.
 List taken from the upstream highlights.scm.")
+
+(defvar neocaml-mode--builtin-kinds
+  '(;; Layouts
+    "any" "value_or_null" "void" "float64" "float32" "word"
+    "bits8" "bits16" "bits32" "bits64" "vec128" "vec256" "vec512"
+    ;; Kind abbreviations
+    "value" "immediate" "immediate_or_null" "immediate64" "immediate64_or_null"
+    "immutable_data" "immutable_data_or_null" "sync_data" "sync_data_or_null"
+    "mutable_data" "mutable_data_or_null" "value_maybe_separable" "value_maybe_null")
+  "OxCaml builtin kind names for tree-sitter font-locking.
+The layouts and kind abbreviations of https://oxcaml.org/documentation/kinds/syntax/.")
 
 ;;;; Ocamldoc markup rendering
 ;;
@@ -643,6 +655,19 @@ The return value is suitable for `treesit-font-lock-settings'."
      ;; Builtin types (int, string, bool, etc.)
      ((type_constructor) @font-lock-builtin-face
       (:match ,(concat "\\`" (regexp-opt neocaml-mode--builtin-types) "\\'") @font-lock-builtin-face))
+     ;; OxCaml's SIMD vectors of 128, 256 and 512 bits, boxed and unboxed
+     ;; (upstream's pattern misses some, tree-sitter/tree-sitter-ocaml#156)
+     ((type_constructor) @font-lock-builtin-face
+      (:match ,(rx bos (or (seq "int8x" (or "16" "32" "64"))
+                           (seq (or "int" "float") "16x" (or "8" "16" "32"))
+                           (seq (or "int" "float") "32x" (or "4" "8" "16"))
+                           (seq (or "int" "float") "64x" (or "2" "4" "8")))
+                   (? "#") eos)
+              @font-lock-builtin-face))
+     ;; OxCaml's builtin kinds (value, immediate, float64, etc.), unless
+     ;; qualified with a module
+     ((kind_path :anchor (kind_name) @font-lock-builtin-face)
+      (:match ,(concat "\\`" (regexp-opt neocaml-mode--builtin-kinds) "\\'") @font-lock-builtin-face))
      ;; OxCaml's block index types
      ((block_access_type) @font-lock-builtin-face
       (:match "\\`idx_\\(?:imm\\|mut\\)\\'" @font-lock-builtin-face)))
