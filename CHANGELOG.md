@@ -33,6 +33,7 @@
 
 ### Bug fixes
 
+- [#103](https://github.com/bbatsov/neocaml/pull/103): Indent with spaces in `neocaml-mode` and `neocaml-interface-mode`, as ocamlformat does, instead of a mix of tabs and spaces past column 8.
 - [#102](https://github.com/bbatsov/neocaml/pull/102): Fontify the `_` wildcard in patterns and types again, which tree-sitter-ocaml v0.26.0 parses as nodes of its own, and warn when the installed OCaml grammars are older than that.
 - [#78](https://github.com/bbatsov/neocaml/pull/78): Don't treat `"` and `'` delimiter nodes as sexps, so `treesit-thing-at` before a string or char literal returns the whole literal instead of the bare quote.
 - [#79](https://github.com/bbatsov/neocaml/pull/79): Fix a segfault on Emacs 31.1 when font-locking a buffer containing a builtin type or value (`let x : int = 42` was enough to trigger it).

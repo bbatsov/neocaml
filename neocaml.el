@@ -1920,6 +1920,8 @@ for .ml files and `neocaml-interface-mode' for .mli files."
                 (operator bracket delimiter variable property label function)))
 
   (setq-local indent-line-function #'treesit-indent)
+  ;; Indent with spaces, as ocamlformat and ocp-indent do.
+  (setq-local indent-tabs-mode nil)
 
   ;; Emacs 29 has no treesit-thing-settings, so treesit-major-mode-setup
   ;; won't configure forward-sexp.  Set the hybrid function directly.

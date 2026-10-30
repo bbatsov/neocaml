@@ -34,6 +34,19 @@ x + y")
   let y = 2 in
   x + y")
 
+  (when-indenting-it "indents with spaces past the tab width"
+    "let a =
+  let b =
+    let c =
+      let d =
+        1
+      in
+      d
+    in
+    c
+  in
+  b")
+
   (when-indenting-it "indents let* binding operator chain"
     "let () =
   let* x = foo in
