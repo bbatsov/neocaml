@@ -215,6 +215,144 @@ done")
   2;
 :]")
 
+  ;; ---- Continuation lines -------------------------------------------------
+
+  (describe "continuation lines"
+    (when-indenting-it "aligns operator chains with their start"
+      "let f xs =
+  xs
+  |> List.map g
+  |> List.filter h"
+      "let ok =
+  a
+  && b
+  && c"
+      "let l =
+  x
+  :: y
+  :: zs")
+
+    (when-indenting-it "aligns right-associative chains with their start"
+      "let s =
+  \"a\"
+  ^ \"b\"
+  ^ \"c\"")
+
+    (when-indenting-it "puts operators of a parenthesized chain under the parenthesis"
+      "let s =
+  f
+    (\"a\"
+    ^ \"b\")"
+      "let ys =
+  f
+    (xs
+    |> g
+    |> h)")
+
+    (when-indenting-it "aligns the operand after a trailing operator"
+      "let ok =
+  a &&
+  b")
+
+    (when-indenting-it "indents the right side of an assignment"
+      "let () =
+  r :=
+    compute x"
+      "let () =
+  r.x <-
+    compute x"
+      "let () =
+  r.x
+  <- compute x")
+
+    (when-indenting-it "aligns tuple elements"
+      "let t =
+  ( 1,
+    2,
+    3 )"
+      "let t =
+  ( 1
+  , 2
+  , 3 )")
+
+    (when-indenting-it "aligns tuple and cons patterns"
+      "let f = function
+  | ( a,
+      b ) -> a"
+      "let f = function
+  | (x
+    :: rest) -> x")
+
+    (when-indenting-it "aligns the and of a nested let rec with its let"
+      "let f () =
+  let rec a x = b x
+  and b x = a x in
+  a 1"
+      "let fields =
+  (let+ a = x
+   and+ b = y in a + b)")
+
+    (when-indenting-it "aligns or-patterns with the case"
+      "let f x =
+  match x with
+  | A
+  | B -> 1
+  | C -> 2")
+
+    (when-indenting-it "puts the | of a parenthesized or-pattern under the parenthesis"
+      "let f x =
+  match x with
+  | Some (A
+         | B) -> 1
+  | _ -> 0")
+
+    (when-indenting-it "aligns a comment between match cases with the cases"
+      "let f x =
+  match x with
+  (* the first case *)
+  | A -> 1
+  | B -> 2")
+
+    (when-indenting-it "aligns the cases of a polymorphic variant type"
+      "type t =
+  [ `A
+  | `B ]")
+
+    (when-indenting-it "indents the fields of a record pattern from the brace"
+      "let f = function
+  | { a;
+      b } -> a + b"
+      "let f = function
+  | { a
+    ; b } -> a + b")
+
+    (when-indenting-it "indents a match or if subject on a line of its own"
+      "let f x =
+  match
+    g x
+  with
+  | A -> 1"
+      "let f x =
+  if
+    a && b
+  then 1
+  else 2")
+
+    (when-indenting-it "indents a labeled argument's value on the next line"
+      "let () =
+  List.iter
+    ~f:
+      (fun x -> print x)
+    xs")
+
+    (when-indenting-it "indents lazy and extension payloads on the next line"
+      "let x =
+  lazy
+    (compute ())"
+      "let%expect_test _ =
+  [%expect
+    {| foo |}]"))
+
   ;; ---- Empty-line indentation (no-node) -----------------------------------
 
   (describe "empty-line indentation"
@@ -388,6 +526,22 @@ end")
   (when-indenting-interface-it "indents OxCaml kind definitions"
     "kind_ k =
   value mod global")
+
+  (when-indenting-interface-it "aligns the lines of a function type"
+    "val f :
+  int ->
+  string ->
+  unit"
+    "val f :
+  (int ->
+  int) ->
+  unit")
+
+  (when-indenting-interface-it "puts a leading -> under the colon that starts its line"
+    "val f
+  :  int
+  -> string
+  -> unit")
 
   (when-indenting-interface-it "indents multiple top-level declarations"
     "type t = int
