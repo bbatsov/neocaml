@@ -132,7 +132,7 @@
       (expect "kind_" :to-have-face 'font-lock-keyword-face)
       (expect "mod" :to-have-face 'font-lock-keyword-face)
       (expect "global_" :to-have-face 'font-lock-keyword-face)
-      (expect "immutable_data" :to-have-face 'font-lock-type-face)
+      (expect "immutable_data" :to-have-face 'font-lock-builtin-face)
       (expect "float#" :to-have-face 'font-lock-builtin-face)
       (expect "#0.0" :to-have-face 'font-lock-number-face)
       (expect "#true" :to-have-face 'font-lock-constant-face)

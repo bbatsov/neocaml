@@ -313,15 +313,19 @@ Lets a spec inspect the matcher's own outcome without failing itself."
 
     (when-fontifying-it "fontifies OxCaml kinds"
       ("type t : immediate"
-       ("immediate" font-lock-type-face))
+       ("immediate" font-lock-builtin-face))
       ("kind_ k = value mod global & float64"
        ("k" font-lock-type-face)
-       ("value" font-lock-type-face)
+       ("value" font-lock-builtin-face)
        ("global" font-lock-type-face)
        ("&" font-lock-type-face)
-       ("float64" font-lock-type-face))
+       ("float64" font-lock-builtin-face))
       ("type ('a : any) t"
-       ("any" font-lock-type-face)))
+       ("any" font-lock-builtin-face))
+      ("type ('a : k) t"
+       ("k" font-lock-type-face))
+      ("type t : M.value"
+       ("value" font-lock-type-face)))
 
     (when-fontifying-it "fontifies OxCaml unboxed tuple and record types"
       ("type t = #(int * string)"
@@ -429,6 +433,10 @@ Lets a spec inspect the matcher's own outcome without failing itself."
        ("iarray" font-lock-builtin-face)))
 
     (when-fontifying-it "fontifies OxCaml builtin types"
+      ("type t = floatarray * extension_constructor * int atomic_loc"
+       ("floatarray" font-lock-builtin-face)
+       ("extension_constructor" font-lock-builtin-face)
+       ("atomic_loc" font-lock-builtin-face))
       ("type t = float32 * int8 * int16 * int or_null"
        ("float32" font-lock-builtin-face)
        ("int8" font-lock-builtin-face)
@@ -438,6 +446,12 @@ Lets a spec inspect the matcher's own outcome without failing itself."
        ("float#" font-lock-builtin-face)
        ("int64#" font-lock-builtin-face)
        ("nativeint#" font-lock-builtin-face))
+      ("type t = int8x16# * float32x4 * float64x8#"
+       ("int8x16#" font-lock-builtin-face)
+       ("float32x4" font-lock-builtin-face)
+       ("float64x8#" font-lock-builtin-face))
+      ("type t = int8x4#"
+       ("int8x4#" font-lock-type-face))
       ("type t = my_type#"
        ("my_type#" font-lock-type-face))
       ("let i = (.idx_mut(0).#y)"
@@ -746,7 +760,7 @@ Lets a spec inspect the matcher's own outcome without failing itself."
        ("@@" font-lock-delimiter-face)
        ("portable" font-lock-type-face))
       ("type t : immediate"
-       ("immediate" font-lock-type-face))
+       ("immediate" font-lock-builtin-face))
       ("include S @@ portable"
        ("portable" font-lock-type-face)))
 
