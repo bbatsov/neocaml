@@ -37,16 +37,13 @@ neocaml handles the OxCaml syntax that tree-sitter-ocaml v0.26.0 parses: font-lo
 indentation and navigation for modes, kinds, stack allocation, unboxed types,
 immutable arrays and comprehensions. What's left is smaller:
 
-- Builtin kinds (`value`, `immediate`, `float64`, `bits64`, `any` and friends) and
-  the SIMD vector types (`int8x16#` etc.) could get the builtin face, as the
-  builtin types do.
-- Typed holes (`_` as an expression) have no face.
 - Modes broken onto lines of their own after `mod`, and `with` bounds on a line of
   their own, are left as typed. ocamlformat's layout for them isn't one worth
   copying, but a sensible default would be nice.
-- More real-world samples. The Jane Street libraries that upstream parses
-  (`parallel`, `portable`, `unboxed`, `unique`) were the reference for the
-  current rules, and `base` and `core` use OxCaml more and more.
+- So are attributes on lines of their own in module types and functor parameters,
+  which ppx_template code is full of (`module%template.portable` followed by
+  `[@modality p] Make (...)`). ocamlformat doesn't place them consistently, so
+  there's no one layout to follow.
 
 **Priority: low.**
 
