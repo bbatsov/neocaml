@@ -14,7 +14,7 @@
 ;; Tree-sitter based major mode for editing dune build files,
 ;; dune-project files, and dune-workspace files.
 ;; For the tree-sitter grammar this mode is based on,
-;; see https://github.com/tmcgilchrist/tree-sitter-dune.
+;; see https://github.com/ocaml-dune/tree-sitter-dune.
 
 ;;; License:
 
@@ -78,8 +78,8 @@ such as `libraries' and `pps'."
 ;;; Grammar installation
 
 (defconst neocaml-dune-grammar-recipes
-  '((dune "https://github.com/tmcgilchrist/tree-sitter-dune"
-          "master"
+  '((dune "https://github.com/ocaml-dune/tree-sitter-dune"
+          "0.1.0"
           "src"))
   "Tree-sitter grammar recipe for dune files.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
@@ -121,7 +121,10 @@ text with the formatted output, touching only the parts that changed
    :language 'dune
    :feature 'keyword
    '((stanza_name) @font-lock-keyword-face
-     (action_name) @font-lock-keyword-face)
+     (action_name) @font-lock-keyword-face
+     (osl_standard) @font-lock-keyword-face
+     (osl_include ":include" @font-lock-keyword-face)
+     (stanza_field ":as" @font-lock-keyword-face))
 
    :language 'dune
    :feature 'property
@@ -134,18 +137,44 @@ text with the formatted output, touching only the parts that changed
 
    :language 'dune
    :feature 'constant
-   '(["true" "false"] @font-lock-constant-face)
+   '(["true" "false"] @font-lock-constant-face
+     ;; Rule modes, e.g. (mode standard), and (context default).
+     (stanza_field ["standard" "fallback" "promote" "promote-until-clean"]
+                   @font-lock-constant-face)
+     (stanza "default" @font-lock-constant-face))
+
+   ;; Dependency and target kinds, e.g. (glob_files *.ml) or (dir d),
+   ;; include_dirs kinds, and source kinds, e.g. (github user/repo).
+   :language 'dune
+   :feature 'builtin
+   '((stanza_field ["universe" "sandbox" "env_var" "alias" "alias_rec"
+                    "source_tree" "package" "glob_files" "glob_files_rec"
+                    "file" "include" "lib" "dir"]
+                   @font-lock-builtin-face)
+     (stanza ["github" "gitlab" "bitbucket" "sourcehut" "codeberg" "tangled"
+              "uri"]
+             @font-lock-builtin-face))
+
+   ;; Before `type' so pforms keep their face inside e.g. library names.
+   :language 'dune
+   :feature 'variable
+   '((interpolation) @font-lock-variable-use-face
+     (named_variable) @font-lock-variable-name-face)
 
    :language 'dune
    :feature 'type
    '((module_name) @font-lock-type-face
      (library_name) @font-lock-type-face
      (package_name) @font-lock-type-face
-     (public_name) @font-lock-type-face)
+     (public_name) @font-lock-type-face
+     (tag_name) @font-lock-type-face)
 
    :language 'dune
    :feature 'operator
-   '((blang_op) @font-lock-operator-face)
+   '((blang_op) @font-lock-operator-face
+     (version_constraint ["=" "<>" ">" "<" ">=" "<=" "and" "or" "not"]
+                         @font-lock-operator-face)
+     (osl_difference) @font-lock-operator-face)
 
    :language 'dune
    :feature 'bracket
@@ -154,16 +183,10 @@ text with the formatted output, touching only the parts that changed
 
 ;;; Indentation
 
-;; Known limitation: the grammar flattens field-value pairs into
-;; direct stanza children (no wrapper node for e.g. "(action (run ...))").
-;; This means field values on continuation lines indent at the same
-;; level as the field name rather than one deeper:
+;; Each field is a `stanza_field' node, so a field's value on a
+;; continuation line indents one deeper than the field name:
 ;;   (action
-;;   (run foo))     ; actual — both at stanza indent + 1
-;; instead of the conventional:
-;;   (action
-;;    (run foo))    ; expected — value at stanza indent + 2
-;; See https://github.com/tmcgilchrist/tree-sitter-dune/issues/9
+;;    (run foo))
 
 (defvar neocaml-dune--indent-rules
   `((dune
@@ -173,6 +196,7 @@ text with the formatted output, touching only the parts that changed
      ((parent-is "quoted_string") no-indent 0)
      ((parent-is "multiline_string") no-indent 0)
      ;; All parenthesized constructs: indent 1 from parent bol
+     ((parent-is "stanza_field") parent-bol neocaml-dune-indent-offset)
      ((parent-is "stanza") parent-bol neocaml-dune-indent-offset)
      ((parent-is "sexp") parent-bol neocaml-dune-indent-offset)
      ((parent-is "action") parent-bol neocaml-dune-indent-offset)
@@ -339,16 +363,24 @@ Run the listing from ROOT so a project-local switch is picked up via
        (not (or (member name '("_build" "_opam"))
                 (string-prefix-p "." name)))))))
 
+(defun neocaml-dune--field-value (stanza field)
+  "Return the first value node of the FIELD field of STANZA, or nil."
+  (seq-some (lambda (child)
+              (and (equal (treesit-node-type child) "stanza_field")
+                   (equal (treesit-node-text
+                           (treesit-node-child-by-field-name child "name") t)
+                          field)
+                   (treesit-node-child-by-field-name child "value")))
+            (treesit-node-children stanza t)))
+
 (defun neocaml-dune--stanza-library-names (stanza)
   "Return the `name' and `public_name' values of a library STANZA node."
   (let ((child (treesit-node-child stanza 0 t))
         names)
     (when (and child (string= (treesit-node-text child t) "library"))
-      (while (setq child (treesit-node-next-sibling child t))
-        (when (and (string= (treesit-node-type child) "field_name")
-                   (member (treesit-node-text child t) '("name" "public_name")))
-          (when-let* ((value (treesit-node-next-sibling child t)))
-            (push (treesit-node-text value t) names)))))
+      (dolist (field '("name" "public_name"))
+        (when-let* ((value (neocaml-dune--field-value stanza field)))
+          (push (treesit-node-text value t) names))))
     names))
 
 (defun neocaml-dune--local-libraries (root)
@@ -440,22 +472,12 @@ For stanzas, returns the stanza type and its name field if present."
                                  (string= (treesit-node-type first-child) "stanza_name"))
                         (treesit-node-text first-child t))))
     (when stanza-name
-      ;; Try to find a name-like field for a more descriptive label.
-      ;; First check named fields, then scan for a (name ...) field.
+      ;; Try to find a name-like field for a more descriptive label:
+      ;; dune-project's (name ...) stanza, then a (name ...) field.
       (let ((name-value
-             (or (let ((n (treesit-node-child-by-field-name node "project_name")))
-                   (when n (treesit-node-text n t)))
-                 (let ((n (treesit-node-child-by-field-name node "alias_name")))
-                   (when n (treesit-node-text n t)))
-                 (let ((child first-child)
-                       (result nil))
-                   (while (and (not result) (setq child (treesit-node-next-sibling child t)))
-                     (when (and (string= (treesit-node-type child) "field_name")
-                                (string= (treesit-node-text child t) "name"))
-                       (let ((next (treesit-node-next-sibling child t)))
-                         (when next
-                           (setq result (treesit-node-text next t))))))
-                   result))))
+             (or (treesit-node-text
+                  (treesit-node-child-by-field-name node "project_name") t)
+                 (treesit-node-text (neocaml-dune--field-value node "name") t))))
         (if name-value
             (format "%s %s" stanza-name name-value)
           stanza-name)))))
@@ -501,7 +523,7 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
   (setq-local treesit-font-lock-feature-list
               '((comment keyword)
                 (string property)
-                (constant type)
+                (constant type variable builtin)
                 (operator bracket)))
 
   ;; Indentation

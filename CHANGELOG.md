@@ -27,6 +27,7 @@
 
 ### Changes
 
+- [#93](https://github.com/bbatsov/neocaml/pull/93): Switch the dune grammar to [ocaml-dune/tree-sitter-dune](https://github.com/ocaml-dune/tree-sitter-dune), the grammar's new home, and fontify more dune syntax: pforms, package tags, the ordered set language, package constraint operators, dependency and source kinds, and rule modes. Reinstall it with `C-u M-x neocaml-dune-install-grammar`.
 - [#88](https://github.com/bbatsov/neocaml/pull/88): Switch the `ocaml` and `ocaml-interface` grammars to tree-sitter-ocaml v0.26.0 (the `v0.26.0-abi14` tag), which parses the OxCaml extensions. Reinstall them with `C-u M-x neocaml-install-grammars`.
 - [#99](https://github.com/bbatsov/neocaml/pull/99): Move the keys that clashed with ocaml-eglot and merlin:
   - In `neocaml-repl-minor-mode` and `neocaml-utop-minor-mode`, sending the phrase at point is now `C-c C-e` (was `C-c C-p`), sending it and moving to the next one `C-c C-s` (was `C-c C-n`), loading the file `C-c C-u` (was `C-c C-l`) and interrupting the toplevel `C-c C-q` (was `C-c C-i`).
