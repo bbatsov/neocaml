@@ -783,6 +783,97 @@ applied to PARENT in place of the line's node."
 See `neocaml--exclave-body-anchor'."
   (cdr (treesit-simple-indent parent (treesit-node-parent parent) bol)))
 
+(defun neocaml--chain-start (parent)
+  "Return the operator chain PARENT belongs to.
+PARENT is an infix expression, a cons expression or pattern, or a
+function type.  A chain like `a |> f |> g' or `a ^ b ^ c' nests one
+node per operator, so climb out through the parents with the same
+operator to the whole chain."
+  (let ((type (treesit-node-type parent))
+        (operator (treesit-node-text
+                   (treesit-node-child-by-field-name parent "operator") t)))
+    (treesit-parent-while
+     parent
+     (lambda (node)
+       (and (equal (treesit-node-type node) type)
+            (equal (treesit-node-text
+                    (treesit-node-child-by-field-name node "operator") t)
+                   operator))))))
+
+(defun neocaml--or-pattern-anchor (_node parent _bol &rest _)
+  "Return the anchor for a | that continues PARENT, an or-pattern.
+It aligns with the | of the match case, or goes under the parenthesis
+of a parenthesized or-pattern, as ocamlformat lays them out:
+  | A
+  | ( B
+    | C ) -> ..."
+  (let* ((pattern (treesit-parent-while
+                   parent
+                   (lambda (node) (equal (treesit-node-type node) "or_pattern"))))
+         (outer (treesit-node-parent pattern)))
+    (if (equal (treesit-node-type outer) "parenthesized_pattern")
+        (treesit-node-start outer)
+      (save-excursion
+        (goto-char (treesit-node-start pattern))
+        (back-to-indentation)
+        (point)))))
+
+(defun neocaml--at-bol-p (node)
+  "Return non-nil if NODE is the first thing on its line."
+  (save-excursion
+    (goto-char (treesit-node-start node))
+    (skip-chars-backward " \t")
+    (bolp)))
+
+(defun neocaml--chain-anchor (node parent _bol &rest _)
+  "Return the anchor for the line at NODE, a continuation of PARENT's chain.
+PARENT is part of the chain (see `neocaml--chain-start' for what
+counts), and the line aligns with the start of the whole chain (see
+`neocaml--chain-start'), as ocamlformat lays it out.  The exceptions:
+- in a chain right inside parentheses, an operator starting the line
+  goes under the parenthesis, and so does every line of a function
+  type:
+    (\"a\"
+    ^ \"b\")
+    (int ->
+    int)
+- a leading -> goes under the : before the type when that starts its
+  line, as in ocamlformat's janestreet profile:
+    val f
+      :  int
+      -> int"
+  (let* ((chain (neocaml--chain-start parent))
+         (outer (treesit-node-parent chain)))
+    (cond
+     ((and (member (treesit-node-type outer)
+                   '("parenthesized_expression" "parenthesized_pattern"
+                     "parenthesized_type"))
+           (= (treesit-node-start chain) (1+ (treesit-node-start outer)))
+           (or (equal (treesit-node-type outer) "parenthesized_type")
+               ;; An operator (:: has no field of its own)
+               (and node
+                    (or (equal (treesit-node-type node) "::")
+                        (equal (treesit-node-field-name node) "operator")))))
+      (treesit-node-start outer))
+     ((and (equal (treesit-node-type node) "->")
+           (let ((before (treesit-node-prev-sibling chain)))
+             (and (equal (treesit-node-type before) ":")
+                  (neocaml--at-bol-p before)
+                  (treesit-node-start before)))))
+     (t (treesit-node-start chain)))))
+
+(defun neocaml--chain-offset (node parent _bol &rest _)
+  "Return the offset for the line at NODE, a continuation of PARENT's chain.
+The right side of an assignment (`r :=' at the end of a line) is a body,
+so it's indented.  Everything else aligns (see `neocaml--chain-anchor')."
+  (if (and node
+           (equal (treesit-node-type
+                   (treesit-node-child-by-field-name parent "operator"))
+                  "assign_operator")
+           (equal (treesit-node-field-name node) "right"))
+      neocaml-indent-offset
+    0))
+
 (defvar neocaml--indent-body-tokens
   '("=" "->" "then" "else" "do" "struct" "sig"
     "begin" "object" "with" "fun" "function" "try"
@@ -867,8 +958,10 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; let...in: body after "in" aligns with "let" (no accumulation)
      ((parent-is "let_expression") parent-bol 0)
 
-     ;; Binding operators: and* / and+ align with let* / let+
-     ((node-is "let_and_operator") parent-bol 0)
+     ;; and, and* and and+ align with their let, let*, let+ or type
+     ((match "\\`\\(?:and\\|let_and_operator\\)\\'"
+             "\\`\\(?:value\\|type\\|module\\|class\\|class_type\\)_definition\\'")
+      parent 0)
 
      ;; Let/type/external bindings: body after = is indented
      ((parent-is "let_binding") parent-bol neocaml-indent-offset)
@@ -914,6 +1007,33 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Object-oriented features
      ((parent-is "object_expression") parent-bol neocaml-indent-offset)
      ((parent-is "class_body_type") parent-bol neocaml-indent-offset)
+
+     ;; Operator chains broken across lines (`|>', `&&', `^', `::' and
+     ;; the arrows of a function type) align with where the chain starts
+     ((parent-is "\\`\\(?:infix_expression\\|cons_\\(?:expression\\|pattern\\)\\|function_type\\)\\'")
+      neocaml--chain-anchor neocaml--chain-offset)
+     ;; Tuple elements align with the first one, and a leading comma
+     ;; (janestreet style) with the parenthesis
+     ((n-p-gp "\\`,\\'" "\\`tuple_\\(?:expression\\|pattern\\)\\'"
+              "\\`parenthesized_\\(?:expression\\|pattern\\)\\'")
+      grand-parent 0)
+     ((parent-is "\\`tuple_\\(?:expression\\|pattern\\)\\'") parent 0)
+     ;; Or-patterns and polymorphic variants broken before a |
+     ((match "\\`|\\'" "\\`or_pattern\\'") neocaml--or-pattern-anchor 0)
+     ((match "\\`|\\'" "\\`polymorphic_variant_type\\'") parent 0)
+     ;; Record patterns: fields indented from the brace, and a leading ;
+     ;; (janestreet style) under it
+     ((match "\\`;\\'" "\\`record_pattern\\'") parent 0)
+     ((parent-is "\\`record_pattern\\'") parent neocaml-indent-offset)
+     ;; A leading <- (janestreet style) aligns with what it sets, and a
+     ;; comment between the cases of a match, or before an else, with them
+     ((match "\\`<-\\'" "\\`set_expression\\'") parent 0)
+     ((match "\\`comment\\'" "\\`\\(?:match\\|if\\)_expression\\'") parent-bol 0)
+     ;; Otherwise these are bodies: the right side of x.f <-, a match or
+     ;; if subject on a line of its own, a labeled argument's value after
+     ;; ~label:, a lazy or extension payload
+     ((parent-is "\\`\\(?:set_expression\\|match_expression\\|if_expression\\|labeled_argument\\|lazy_expression\\|extension\\)\\'")
+      parent-bol neocaml-indent-offset)
 
      ;; OxCaml.  No other rule matches these parents, so they come last,
      ;; where lines of plain OCaml don't have to try them.
