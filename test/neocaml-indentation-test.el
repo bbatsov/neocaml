@@ -326,6 +326,99 @@ done")
   | { a
     ; b } -> a + b")
 
+    (when-indenting-it "puts a leading ; under the opening bracket"
+      "type t =
+  { a : int
+  ; b : string
+  }"
+      "let r =
+  { a = 1
+  ; b = \"x\"
+  }"
+      "let xs =
+  [ 1
+  ; 2
+  ]"
+      "let a =
+  [| 1
+   ; 2
+  |]"
+      "let f = function
+  | [ a
+    ; b ] -> a")
+
+    (when-indenting-it "aligns ;; with the item it ends"
+      "module M = struct
+  let x = 1
+  ;;
+
+  let y = 2 (* two *)
+  ;;
+
+  let f x = g x [@inline]
+  ;;
+end")
+
+    (when-indenting-it "aligns the body of a fun or function after an operator with the chain"
+      "let f x =
+  x >>= function
+  | A -> 1
+  (* B *)
+  | B -> 2"
+      "let f x =
+  x
+  >>= function
+  | A -> 1
+  | B -> 2"
+      "let f x =
+  g (x >>= function
+     | A -> 1
+     | B -> 2)"
+      "let f x =
+  x >>= fun y ->
+  g y")
+
+    (when-indenting-it "indents the body of a fun after :="
+      "let () =
+  r := fun x ->
+    x + 1")
+
+    (when-indenting-it "aligns item attributes on a line of their own with their item"
+      "type t =
+  | A
+  | B
+[@@deriving sexp]"
+      "let f x = x
+[@@inline]"
+      "module M = struct
+  type t = { a : int }
+  [@@deriving sexp]
+end")
+
+    (when-indenting-it "indents attribute and extension payloads on the next line"
+      "let x = 1
+[@@deriving
+  sexp, compare]"
+      "[%%template
+  let f x = x [@@mode m = (global, local)]]")
+
+    (when-indenting-it "leaves the items of a template with several items unindented"
+      "[%%template
+[@@@mode.default m = (global, local)]
+
+let f x = x
+let g x = x]")
+
+    (when-indenting-it "aligns the cases of a function starting its line with it"
+      "let f =
+  let open M in
+  function
+  | A -> 1
+  | B -> 2"
+      "let f = function
+  | A -> 1
+  | B -> 2")
+
     (when-indenting-it "indents a match or if subject on a line of its own"
       "let f x =
   match

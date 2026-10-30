@@ -40,6 +40,12 @@
   - `and` in a nested `let rec` (and `and+` of a `let+` inside parentheses), or-patterns, and polymorphic variant types broken before a `|`
   - a `match` or `if` subject on a line of its own, and a labeled argument's value after `~label:`
   - the leading `,`, `;`, `->` and `<-` of ocamlformat's janestreet profile
+- [#106](https://github.com/bbatsov/neocaml/pull/106): Follow more of ocamlformat's layout when indenting:
+  - a leading `;` in records, lists and arrays goes under the opening bracket
+  - `;;` inside a module aligns with the definition it ends
+  - the body of `x >>= fun y ->` and the cases of `x >>= function` line up with `x`, and the cases of a `function` starting its line with the `function`
+  - item attributes (`[@@deriving ...]`) on a line of their own align with their item
+  - attribute and extension payloads on the next line are indented, except the items of a ppx_template `[%%template ...]` holding several of them
 - [#102](https://github.com/bbatsov/neocaml/pull/102): Fontify the `_` wildcard in patterns and types again, which tree-sitter-ocaml v0.26.0 parses as nodes of its own, and warn when the installed OCaml grammars are older than that.
 - [#78](https://github.com/bbatsov/neocaml/pull/78): Don't treat `"` and `'` delimiter nodes as sexps, so `treesit-thing-at` before a string or char literal returns the whole literal instead of the bare quote.
 - [#79](https://github.com/bbatsov/neocaml/pull/79): Fix a segfault on Emacs 31.1 when font-locking a buffer containing a builtin type or value (`let x : int = 42` was enough to trigger it).
