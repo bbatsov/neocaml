@@ -94,22 +94,6 @@ With prefix argument FORCE, reinstall even if already installed."
     (let ((treesit-language-source-alist neocaml-dune-grammar-recipes))
       (treesit-install-language-grammar 'dune))))
 
-(defvar neocaml-dune--grammar-compatibility-checked nil
-  "Non-nil if the dune grammar has already been checked this session.")
-
-(defun neocaml-dune--check-grammar-compatibility ()
-  "Warn if the installed dune grammar is older than neocaml expects.
-Probes for the newest node type `neocaml-dune-mode' relies on."
-  (unless neocaml-dune--grammar-compatibility-checked
-    (setq neocaml-dune--grammar-compatibility-checked t)
-    (unless (treesit-search-subtree
-             (treesit-parse-string "(package (tags (a)))" 'dune) "tag_name")
-      (display-warning
-       'neocaml
-       "The installed tree-sitter dune grammar appears older than the \
-version required by neocaml.  Run C-u M-x neocaml-dune-install-grammar \
-to reinstall."))))
-
 ;;; Formatting
 
 (defun neocaml-dune-format-buffer ()
@@ -137,7 +121,10 @@ text with the formatted output, touching only the parts that changed
    :language 'dune
    :feature 'keyword
    '((stanza_name) @font-lock-keyword-face
-     (action_name) @font-lock-keyword-face)
+     (action_name) @font-lock-keyword-face
+     (osl_standard) @font-lock-keyword-face
+     (osl_include ":include" @font-lock-keyword-face)
+     (stanza_field ":as" @font-lock-keyword-face))
 
    :language 'dune
    :feature 'property
@@ -150,12 +137,29 @@ text with the formatted output, touching only the parts that changed
 
    :language 'dune
    :feature 'constant
-   '(["true" "false"] @font-lock-constant-face)
+   '(["true" "false"] @font-lock-constant-face
+     ;; Rule modes, e.g. (mode standard), and (context default).
+     (stanza_field ["standard" "fallback" "promote" "promote-until-clean"]
+                   @font-lock-constant-face)
+     (stanza "default" @font-lock-constant-face))
+
+   ;; Dependency and target kinds, e.g. (glob_files *.ml) or (dir d),
+   ;; include_dirs kinds, and source kinds, e.g. (github user/repo).
+   :language 'dune
+   :feature 'builtin
+   '((stanza_field ["universe" "sandbox" "env_var" "alias" "alias_rec"
+                    "source_tree" "package" "glob_files" "glob_files_rec"
+                    "file" "include" "lib" "dir"]
+                   @font-lock-builtin-face)
+     (stanza ["github" "gitlab" "bitbucket" "sourcehut" "codeberg" "tangled"
+              "uri"]
+             @font-lock-builtin-face))
 
    ;; Before `type' so pforms keep their face inside e.g. library names.
    :language 'dune
    :feature 'variable
-   '((interpolation) @font-lock-variable-use-face)
+   '((interpolation) @font-lock-variable-use-face
+     (named_variable) @font-lock-variable-name-face)
 
    :language 'dune
    :feature 'type
@@ -167,7 +171,10 @@ text with the formatted output, touching only the parts that changed
 
    :language 'dune
    :feature 'operator
-   '((blang_op) @font-lock-operator-face)
+   '((blang_op) @font-lock-operator-face
+     (version_constraint ["=" "<>" ">" "<" ">=" "<=" "and" "or" "not"]
+                         @font-lock-operator-face)
+     (osl_difference) @font-lock-operator-face)
 
    :language 'dune
    :feature 'bracket
@@ -504,7 +511,6 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
       (neocaml-dune-install-grammar))
     (unless (treesit-ready-p 'dune)
       (error "Cannot activate neocaml-dune-mode without the dune grammar")))
-  (neocaml-dune--check-grammar-compatibility)
   (treesit-parser-create 'dune)
 
   ;; Comments
@@ -517,7 +523,7 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
   (setq-local treesit-font-lock-feature-list
               '((comment keyword)
                 (string property)
-                (constant type variable)
+                (constant type variable builtin)
                 (operator bracket)))
 
   ;; Indentation
