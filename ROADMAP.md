@@ -233,14 +233,37 @@ out as a `library` stanza named after its directory), would cover it.
 `C-c C-a` already toggles between `.ml` and `.mli`. `find-sibling-rules` (Emacs 29)
 could handle `lib/foo.ml` ↔ `test/test_foo.ml` the same way. **Priority: low.**
 
-### 16. Selectable indentation styles
+### 16. Indentation styles, starting with Jane Street's
 
-`c-ts-mode` exposes `c-ts-mode-indent-style` (a defcustom of named styles plus a
-command to switch them live). OCaml indentation is famously contentious (ocp-indent
-vs ocamlformat vs personal taste), so a small set of named neocaml indent presets,
-switchable at runtime, could let people get closer to their preferred look without
-hand-tuning rules. Worth prototyping before committing to it, since each style is a
-maintenance surface. **Priority: later, exploratory.**
+neocaml's indentation sits between ocamlformat's two main profiles. On about
+130,000 lines of OCaml from opam packages, formatted with each profile, it puts 90%
+of the lines where the conventional profile does and 82% where the janestreet one
+does. Part of the gap needs no option, because the other profile never uses the
+layout in question:
+
+- the janestreet profile's leading `;` in records, lists and arrays (about 6,500
+  lines of the gap)
+- a `;;` after a definition inside a module, which should line up with the
+  definition
+- the cases of a `function` that follows an operator (`x >>= function`), which
+  both profiles line up with the start of the line
+
+The rest are real conflicts:
+
+- match case bodies: conventional indents them 4 columns from the `|`, janestreet
+  2, as neocaml does
+- an operator starting a line inside parentheses: conventional puts it under the
+  `(`, janestreet a column right of it
+- the `|` of a parenthesized `match`, which janestreet puts under the `match`
+- parameters on continuation lines, which janestreet indents by 6
+
+`c-ts-mode` shows the shape: a `c-ts-mode-indent-style` defcustom of named styles
+and a command to switch them live. A `neocaml-indent-style` with `conventional` and
+`janestreet` presets would keep the conflicting rules as overrides in front of the
+shared ones, so each preset stays small. Indentation can only follow ocamlformat's
+line breaks, not choose them, so this is for people who indent as they type and
+format later; with format on save, ocamlformat has the last word anyway.
+**Priority: medium, after the fixes that need no option.**
 
 ### 17. Prettify and font-lock refinements
 
