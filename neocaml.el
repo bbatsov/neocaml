@@ -874,6 +874,54 @@ so it's indented.  Everything else aligns (see `neocaml--chain-anchor')."
       neocaml-indent-offset
     0))
 
+(defun neocaml--leading-semicolon-anchor (_node parent _bol &rest _)
+  "Return the anchor for a ; starting a line in PARENT, a record, list or array.
+It goes under the last character of the opening bracket, so the
+elements line up, as in ocamlformat's janestreet profile:
+  [| a
+   ; b |]"
+  (1- (treesit-node-end (treesit-node-child parent 0))))
+
+(defun neocaml--payload-offset (node parent &rest _)
+  "Return the offset for a line in an attribute or extension payload.
+NODE is the payload, or PARENT is.  Payloads are indented, except for
+a ppx_template [%%template ...] holding several items, which stay
+where they would be without it, as ocamlformat lays them out."
+  (let ((payload (if (equal (treesit-node-type parent) "attribute_payload")
+                     parent
+                   node)))
+    (if (and (> (treesit-node-child-count payload t) 1)
+             (let ((owner (treesit-node-parent payload)))
+               (and (equal (treesit-node-type owner) "item_extension")
+                    (equal (treesit-node-text (treesit-node-child owner 0 t) t)
+                           "template"))))
+        0
+      neocaml-indent-offset)))
+
+(defun neocaml--operand-function-p (_node parent &rest _)
+  "Return non-nil if PARENT is a `fun' or `function' after an operator.
+As in `x >>= fun y ->' or `x >>= function', but not after `:=', whose
+right side is a body (see `neocaml--chain-offset')."
+  (and (member (treesit-node-type parent) '("fun_expression" "function_expression"))
+       (let ((outer (treesit-node-parent parent)))
+         (and (equal (treesit-node-type outer) "infix_expression")
+              (not (equal (treesit-node-type
+                           (treesit-node-child-by-field-name outer "operator"))
+                          "assign_operator"))))))
+
+(defun neocaml--operand-function-anchor (_node parent &rest _)
+  "Return the anchor for a line in the body of PARENT, a `fun' or `function'.
+PARENT follows an operator (see `neocaml--operand-function-p'), so its
+body or cases line up with the start of the operator chain, as
+ocamlformat lays them out."
+  (treesit-node-start (neocaml--chain-start (treesit-node-parent parent))))
+
+(defun neocaml--function-case-offset (_node parent &rest _)
+  "Return the offset for a line in the cases of PARENT, a `function'.
+The cases are indented from the line the `function' is on, unless the
+`function' starts that line, as after `let open M in'."
+  (if (neocaml--at-bol-p parent) 0 neocaml-indent-offset))
+
 (defvar neocaml--indent-body-tokens
   '("=" "->" "then" "else" "do" "struct" "sig"
     "begin" "object" "with" "fun" "function" "try"
@@ -932,7 +980,6 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((node-is "}") parent-bol 0)
      ((node-is "done") parent-bol 0)
      ((node-is "end") parent-bol 0)
-     ((node-is ";;") parent-bol 0)
 
      ;; "with" keyword aligns with match/try
      ((node-is "with") parent-bol 0)
@@ -963,11 +1010,20 @@ The return value is suitable for `treesit-simple-indent-rules'."
              "\\`\\(?:value\\|type\\|module\\|class\\|class_type\\)_definition\\'")
       parent 0)
 
+     ;; Item attributes ([@@deriving ...]) on a line of their own align
+     ;; with their item
+     ((node-is "\\`item_attribute\\'") parent-bol 0)
+
      ;; Let/type/external bindings: body after = is indented
      ((parent-is "let_binding") parent-bol neocaml-indent-offset)
      ((parent-is "type_binding") parent-bol neocaml-indent-offset)
      ((parent-is "external") parent-bol neocaml-indent-offset)
      ((parent-is "value_specification") parent-bol neocaml-indent-offset)
+
+     ;; A leading ; (janestreet style) in a record, list or array goes
+     ;; under the end of the opening bracket
+     ((match "\\`;\\'" "\\`\\(?:\\(?:record\\|list\\|i?array\\)_\\(?:expression\\|pattern\\)\\|record_declaration\\)\\'")
+      neocaml--leading-semicolon-anchor 0)
 
      ;; Type definition components — use grand-parent-bol to avoid
      ;; shifting when the declaration starts on the same line as
@@ -982,9 +1038,11 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Loop bodies
      ((parent-is "do_clause") parent-bol neocaml-indent-offset)
 
-     ;; fun/function expressions
+     ;; fun/function expressions.  After an operator (x >>= fun y ->)
+     ;; the body lines up with the operator chain
+     (neocaml--operand-function-p neocaml--operand-function-anchor 0)
      ((parent-is "fun_expression") parent-bol neocaml-indent-offset)
-     ((parent-is "function_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "function_expression") parent-bol neocaml--function-case-offset)
 
      ;; try/with
      ((parent-is "try_expression") parent-bol neocaml-indent-offset)
@@ -1021,9 +1079,7 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Or-patterns and polymorphic variants broken before a |
      ((match "\\`|\\'" "\\`or_pattern\\'") neocaml--or-pattern-anchor 0)
      ((match "\\`|\\'" "\\`polymorphic_variant_type\\'") parent 0)
-     ;; Record patterns: fields indented from the brace, and a leading ;
-     ;; (janestreet style) under it
-     ((match "\\`;\\'" "\\`record_pattern\\'") parent 0)
+     ;; Record patterns: fields indented from the brace
      ((parent-is "\\`record_pattern\\'") parent neocaml-indent-offset)
      ;; A leading <- (janestreet style) aligns with what it sets, and a
      ;; comment between the cases of a match, or before an else, with them
@@ -1034,6 +1090,10 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; ~label:, a lazy or extension payload
      ((parent-is "\\`\\(?:set_expression\\|match_expression\\|if_expression\\|labeled_argument\\|lazy_expression\\|extension\\)\\'")
       parent-bol neocaml-indent-offset)
+     ;; Attribute and extension payloads (see `neocaml--payload-offset')
+     ((node-is "\\`attribute_payload\\'") parent-bol neocaml--payload-offset)
+     ((parent-is "\\`attribute_payload\\'")
+      neocaml--grand-parent-bol neocaml--payload-offset)
 
      ;; OxCaml.  No other rule matches these parents, so they come last,
      ;; where lines of plain OCaml don't have to try them.
