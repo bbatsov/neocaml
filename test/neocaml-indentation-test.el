@@ -209,6 +209,28 @@ done")
     and y in ys
     when x > y ]")
 
+  (when-indenting-it "aligns the @@ of an OxCaml sig @@ portable with the sig"
+    "module type S = sig
+@@ portable
+  val x : int
+end")
+
+  (when-indenting-it "indents an attribute after a body like the body"
+    "let f x =
+  g x
+  [@nontail]"
+    "module M = struct
+  let f x =
+    g x (* tail *)
+    [@nontail]
+    [@exclave_if_stack a]
+  ;;
+end"
+    "[%%template
+  let f x =
+    g x
+    [@nontail]]")
+
   (when-indenting-it "indents OxCaml immutable arrays like arrays"
     "let a = [:
   1;
