@@ -14,7 +14,7 @@
 ;; Tree-sitter based major mode for editing dune build files,
 ;; dune-project files, and dune-workspace files.
 ;; For the tree-sitter grammar this mode is based on,
-;; see https://github.com/tmcgilchrist/tree-sitter-dune.
+;; see https://github.com/ocaml-dune/tree-sitter-dune.
 
 ;;; License:
 
@@ -78,8 +78,8 @@ such as `libraries' and `pps'."
 ;;; Grammar installation
 
 (defconst neocaml-dune-grammar-recipes
-  '((dune "https://github.com/tmcgilchrist/tree-sitter-dune"
-          "master"
+  '((dune "https://github.com/ocaml-dune/tree-sitter-dune"
+          "0.1.0"
           "src"))
   "Tree-sitter grammar recipe for dune files.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
