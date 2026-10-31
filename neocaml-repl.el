@@ -32,6 +32,7 @@
 
 (require 'comint)
 (require 'pulse)
+(require 'subr-x)
 (require 'neocaml)
 (require 'neocaml-common)
 
@@ -125,9 +126,17 @@ Set to nil to use only the basic REPL font-lock keywords for output."
   :package-version '(neocaml . "0.11.0"))
 
 (defconst neocaml-repl--prompt-regexp
-  "^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# "
+  "^\\(?:utop\\(?:\\[[0-9]+\\]\\)? \\)?# "
   "Regexp matching OCaml toplevel prompts.
 Matches both the standard \"# \" prompt and utop's \"utop # \" / \"utop[0] # \".")
+
+(defun neocaml-repl--after-prompts (regexp)
+  "Return REGEXP, anchored with ^, made to match past the prompt as well.
+Any number of prompts can come first: the toplevel's answer to a phrase
+sent from a source buffer, which it doesn't echo, begins right after
+the prompt."
+  (concat "^\\(?:" (string-remove-prefix "^" comint-prompt-regexp) "\\)*"
+          (string-remove-prefix "^" regexp)))
 
 (defvar-local neocaml-repl--source-buffer nil
   "Source buffer from which the REPL was last invoked.
@@ -414,8 +423,7 @@ For a buffer whose font-lock keywords include
 `neocaml-repl--fontify-responses'."
   (when (and (treesit-ready-p 'ocaml t) (treesit-ready-p 'ocaml-interface t))
     (setq neocaml-repl--response-start
-          (concat "^\\(?:" (string-remove-prefix "^" comint-prompt-regexp) "\\)*\\("
-                  neocaml-repl--response-regexp "\\)"))
+          (neocaml-repl--after-prompts (concat "^\\(" neocaml-repl--response-regexp "\\)")))
     (add-hook 'font-lock-extend-region-functions #'neocaml-repl--extend-region nil t)))
 
 (defvar neocaml-repl-font-lock-keywords
@@ -453,10 +461,11 @@ Highlights prompts, errors, warnings, and toplevel response values.")
   (setq-local comment-start-skip "(\\*+[ \t]*")
   (setq-local font-lock-defaults '(neocaml-repl-font-lock-keywords t))
 
-  ;; Add error navigation
+  ;; Error navigation for the files the toplevel reports errors,
+  ;; warnings and backtraces in (those loaded with #use, say)
   (setq-local compilation-error-regexp-alist
-              '(("^\\(Error\\): \\(.+\\), line \\([0-9]+\\), characters \\([0-9]+\\)-\\([0-9]+\\)" 2 3 4)
-                ("^\\(Warning\\|Alert\\): \\(.+\\), line \\([0-9]+\\), characters \\([0-9]+\\)-\\([0-9]+\\)" 2 3 4 1)))
+              `((,(neocaml-repl--after-prompts neocaml--compilation-error-regexp)
+                 ,@neocaml--compilation-error-spec)))
   (compilation-shell-minor-mode)
 
   ;; Input history persistence
