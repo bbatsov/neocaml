@@ -1671,8 +1671,16 @@ inclusive 1-indexed end-column.  The +1 (0-to-1 indexing) and -1
   (when (match-beginning 7)
     (string-to-number (match-string 7))))
 
+(defconst neocaml--compilation-error-spec
+  '(3 (4 . 5) (neocaml--compilation-begin-column . neocaml--compilation-end-column) (8 . 9) 1
+      (8 font-lock-function-name-face))
+  "Where the parts of OCaml messages are in `neocaml--compilation-error-regexp'.
+The FILE, LINE, COLUMN, TYPE, HYPERLINK and HIGHLIGHT that follow the
+regexp in a `compilation-error-regexp-alist' entry.")
+
 (defvar compilation-error-regexp-alist)
 (defvar compilation-error-regexp-alist-alist)
+(defvar compilation-transform-file-match-alist)
 
 (defun neocaml--setup-compilation ()
   "Register OCaml compilation error regexp with compile.el.
@@ -1683,14 +1691,14 @@ are tried against every line of compilation output."
   (require 'compile)
   (setq compilation-error-regexp-alist-alist
         (assq-delete-all 'ocaml compilation-error-regexp-alist-alist))
-  (push `(ocaml
-          ,neocaml--compilation-error-regexp
-          3 (4 . 5) (neocaml--compilation-begin-column . neocaml--compilation-end-column) (8 . 9) 1
-          (8 font-lock-function-name-face))
+  (push `(ocaml ,neocaml--compilation-error-regexp ,@neocaml--compilation-error-spec)
         compilation-error-regexp-alist-alist)
   (setq compilation-error-regexp-alist
         (delq 'ocaml compilation-error-regexp-alist))
-  (push 'ocaml compilation-error-regexp-alist))
+  (push 'ocaml compilation-error-regexp-alist)
+  ;; "//toplevel//" is the toplevel's name for its input, which backtraces
+  ;; through toplevel phrases mention: there's no file to visit
+  (add-to-list 'compilation-transform-file-match-alist '("\\`//toplevel//\\'" nil)))
 
 ;;;; _build directory awareness
 

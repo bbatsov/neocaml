@@ -181,6 +181,85 @@
         (expect "val" :to-have-face 'font-lock-keyword-face)
         (expect "int" :to-have-face nil)))))
 
+(describe "neocaml-repl error navigation"
+  :var (dir)
+
+  (before-each
+    (setq dir (file-name-as-directory (make-temp-file "neocaml-repl-errors" t)))
+    (with-temp-file (expand-file-name "bad.ml" dir)
+      (insert "let unused_warning () =\n  let unused = 1 in\n  2\n")))
+
+  (after-each
+    (neocaml-test-kill-tracked-buffers)
+    (delete-directory dir t))
+
+  (cl-flet ((transcript (output)
+              (concat "OCaml version 5.4.0\nEnter #help;; for help.\n\n" output))
+            (messages ()
+              ;; (TYPE FILE LINE COLUMN) of each message.  Font-lock has
+              ;; parsed them, as it does in a displayed buffer, a chunk at a
+              ;; time; `compilation-next-error' parses only a line past point,
+              ;; which would cut a warning off from its "Warning".
+              (goto-char (point-min))
+              (let ((messages nil)
+                    (match nil))
+                (while (setq match (text-property-search-forward 'compilation-message))
+                  (let* ((msg (prop-match-value match))
+                         (loc (compilation--message->loc msg)))
+                    (push (list (compilation--message->type msg)
+                                (caar (compilation--loc->file-struct loc))
+                                (compilation--loc->line loc)
+                                (compilation--loc->col loc))
+                          messages)))
+                (nreverse messages))))
+
+    (it "finds the errors, warnings and backtraces the toplevel reports in files"
+      (let ((default-directory dir))
+        (neocaml-repl-test-with-output
+            (transcript (concat "# File \"bad.ml\", line 2, characters 6-12:\n"
+                                "2 |   let unused = 1 in\n"
+                                "          ^^^^^^\n"
+                                "Warning 26 [unused-var]: unused variable unused.\n\n"
+                                "val unused_warning : unit -> int = <fun>\n\n"
+                                "File \"bad.ml\", line 9, characters 3-8:\n"
+                                "Error: This constant has type string but an expression was expected of type\n"
+                                "         int\n"
+                                "# File \"sigerr.ml\", lines 3-5, characters 6-3:\n"
+                                "Error: Signature mismatch:\n"
+                                "       File \"sigerr.ml\", line 2, characters 2-13: Expected declaration\n"
+                                "# Exception: Failure \"nth\".\n"
+                                "Raised at Stdlib.failwith in file \"stdlib.ml\", line 29, characters 17-33\n"
+                                "Called from <unknown> in file \"//toplevel//\", line 1, characters 0-13\n"
+                                "# "))
+          (expect (messages)
+                  :to-equal '((1 "bad.ml" 2 7)
+                              (2 "bad.ml" 9 4)
+                              (2 "sigerr.ml" 3 7)
+                              (0 "sigerr.ml" 2 3)
+                              (2 "stdlib.ml" 29 18))))))
+
+    (it "leaves alone the locations in phrases typed or sent to the toplevel"
+      (neocaml-repl-test-with-output
+          (transcript (concat "# Line 1, characters 12-15:\n"
+                              "1 | let x = 1 + \"a\";;\n"
+                              "                ^^^\n"
+                              "Error: This constant has type string but an expression was expected of type\n"
+                              "         int\n"
+                              "# "))
+        (expect (messages) :to-equal nil)))
+
+    (it "visits the location of a message"
+      (let ((default-directory dir))
+        (neocaml-repl-test-with-output
+            (transcript (concat "# File \"bad.ml\", line 2, characters 6-12:\n"
+                                "Warning 26 [unused-var]: unused variable unused.\n# "))
+          (compilation-next-error 1)
+          (compile-goto-error)
+          (neocaml-test-track-buffer (current-buffer))
+          (expect (buffer-file-name) :to-equal (expand-file-name "bad.ml" dir))
+          (expect (line-number-at-pos) :to-equal 2)
+          (expect (current-column) :to-equal 6))))))
+
 (describe "neocaml-repl input sender"
   ;; Spy on `comint-send-string' to capture what would be sent to the
   ;; toplevel without a real process.

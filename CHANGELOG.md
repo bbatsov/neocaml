@@ -60,6 +60,8 @@
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Fix font-lock in `neocaml-repl` buffers failing on every fontification, which kept prompts from being highlighted and the input from being fontified with tree-sitter.
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Keep the errors in the `neocaml-utop` transcript highlighted, instead of font-lock clearing their face as soon as it fontified them.
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Highlight the toplevel's errors and uncaught exceptions in `neocaml-repl` buffers, where errors got the function name face of `compilation-shell-minor-mode` instead, and its warnings and alerts in their current form (`Warning 26 [unused-var]:`).
+- [#109](https://github.com/bbatsov/neocaml/pull/109): Don't take `//toplevel//`, the toplevel's name for its input, for a file in OCaml compilation messages, so the backtrace frames that mention it aren't listed as errors.
+- [#109](https://github.com/bbatsov/neocaml/pull/109): Make the file locations in the toplevel's errors, warnings and backtraces clickable in `neocaml-repl` buffers, using the regexp of compilation buffers instead of the REPL's own, which matched nothing the toplevel prints.
 
 ## 0.10.0 (2026-07-10)
 

@@ -41,6 +41,20 @@ Returns nil if the regexp does not match."
         (list :file file :line line :end-line end-line
               :col col :end-col end-col :severity severity)))))
 
+(describe "compilation messages"
+  (it "don't take the toplevel's input for a file"
+    (with-temp-buffer
+      (compilation-mode)
+      (let ((inhibit-read-only t)
+            (compilation-error-regexp-alist '(ocaml)))
+        (insert "Called from <unknown> in file \"//toplevel//\", line 1, characters 0-13\n"
+                "Called from Foo.g in file \"foo.ml\", line 9, characters 2-5\n")
+        (font-lock-ensure))
+      (goto-char (point-min))
+      (expect (get-text-property (point) 'compilation-message) :to-be nil)
+      (forward-line 1)
+      (expect (get-text-property (point) 'compilation-message) :not :to-be nil))))
+
 (describe "compilation regexp"
   (it "matches a simple error"
     (let ((info (neocaml-test--match-compilation

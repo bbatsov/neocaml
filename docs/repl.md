@@ -68,9 +68,13 @@ opam switch, though any name is accepted.
 one in the same buffer. These, along with the commands above, are also
 available from the "OCaml REPL" menu.
 
-The REPL buffer also enables `compilation-shell-minor-mode`, so
-error locations in REPL output are clickable and navigable with
-`next-error` / `previous-error`.
+The REPL buffer also enables `compilation-shell-minor-mode`, so the
+file locations in the toplevel's errors, warnings and exception
+backtraces (for a file loaded with `C-c C-u`, say) are clickable and
+navigable with `next-error` / `previous-error`. The errors in a phrase
+you type or send point into the phrase itself (`Line 1, characters
+8-15:`), with the offending code shown right below, so they have no file
+to visit.
 
 ## Per-project REPLs
 
