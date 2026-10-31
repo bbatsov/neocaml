@@ -1673,6 +1673,7 @@ inclusive 1-indexed end-column.  The +1 (0-to-1 indexing) and -1
 
 (defvar compilation-error-regexp-alist)
 (defvar compilation-error-regexp-alist-alist)
+(defvar compilation-transform-file-match-alist)
 
 (defun neocaml--setup-compilation ()
   "Register OCaml compilation error regexp with compile.el.
@@ -1690,7 +1691,10 @@ are tried against every line of compilation output."
         compilation-error-regexp-alist-alist)
   (setq compilation-error-regexp-alist
         (delq 'ocaml compilation-error-regexp-alist))
-  (push 'ocaml compilation-error-regexp-alist))
+  (push 'ocaml compilation-error-regexp-alist)
+  ;; "//toplevel//" is the toplevel's name for its input, which backtraces
+  ;; through toplevel phrases mention: there's no file to visit
+  (add-to-list 'compilation-transform-file-match-alist '("\\`//toplevel//\\'" nil)))
 
 ;;;; _build directory awareness
 
