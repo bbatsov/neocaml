@@ -5,6 +5,7 @@ you to evaluate OCaml code directly from your source buffer. The REPL
 features:
 
 - Tree-sitter syntax highlighting for input (via `comint-fontify-input-mode`)
+  and for the toplevel's responses
 - Persistent input history across sessions
 - Clickable error locations (via `compilation-shell-minor-mode`)
 - Quick switching between source and REPL with `C-c C-z`
@@ -97,8 +98,7 @@ files in `neocaml-dune-project-root-files` (by default `dune-project`).
 
 By default, code you type in the REPL is fontified using tree-sitter
 via `comint-fontify-input-mode`, giving you the same syntax highlighting
-as in regular `.ml` buffers. REPL output (errors, warnings, values)
-keeps its own highlighting.
+as in regular `.ml` buffers.
 
 To disable this and use only basic REPL font-lock:
 
@@ -123,6 +123,21 @@ To disable this and use only basic REPL font-lock:
     This is experimental -- tree-sitter parsers see the entire comint
     buffer (prompts, output, and input), so indentation may be
     approximate for complex multi-line input.
+
+## Output Syntax Highlighting
+
+The toplevel's responses are fontified with tree-sitter as well. In
+`val x : int list = [1; 2]` or `type t = A | B`, the signature is
+highlighted like it would be in an `.mli` buffer and the value like it
+would be in an `.ml` buffer, while the values the toplevel doesn't
+print, such as `<fun>` and `<abstr>`, stay plain. The `Exception:` of an
+uncaught exception gets the warning face, like errors and warnings do.
+
+To keep just the basic highlighting for the output:
+
+```emacs-lisp
+(setq neocaml-repl-fontify-output nil)
+```
 
 ## Configuration
 
@@ -258,7 +273,8 @@ the input when it forms a complete phrase (ends with `;;`, or is a `#`
 directive) and otherwise inserts a newline, so you can type multi-line
 phrases naturally; `RET` on a blank line submits regardless. Input you
 type is fontified with tree-sitter (via `comint-fontify-input-mode`),
-which you can turn off with `neocaml-utop-fontify-input`. When an
+which you can turn off with `neocaml-utop-fontify-input`, and so are
+utop's responses, unless you turn off `neocaml-utop-fontify-output`. When an
 evaluation fails, the underlined span in the source carries the error
 message as its tooltip.
 

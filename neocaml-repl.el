@@ -113,6 +113,17 @@ Set to nil to use only the basic REPL font-lock keywords for input."
   :group 'neocaml-repl
   :package-version '(neocaml . "0.6.0"))
 
+(defcustom neocaml-repl-fontify-output t
+  "When non-nil, fontify the toplevel's responses using tree-sitter.
+The signatures in responses like \"val x : int list = [1; 2]\" are
+fontified as `neocaml-interface-mode' would fontify them, and the
+values as `neocaml-mode' would.
+
+Set to nil to use only the basic REPL font-lock keywords for output."
+  :type 'boolean
+  :group 'neocaml-repl
+  :package-version '(neocaml . "0.11.0"))
+
 (defconst neocaml-repl--prompt-regexp
   "^\\(utop\\(\\[[0-9]+\\]\\)? \\)?# "
   "Regexp matching OCaml toplevel prompts.
@@ -238,8 +249,179 @@ toplevel."
     map)
   "Keymap for `neocaml-repl-mode'.")
 
+;;;; Output fontification
+;;
+;; The toplevel answers a phrase with signature items like
+;; "val x : int list = [1; 2]" or "type t = A | B", continuing long ones
+;; on indented lines.  Each response is fontified in a hidden buffer, the
+;; signature in `neocaml-interface-mode' and the value in `neocaml-mode',
+;; and the faces it gets there are copied back.
+
+(defconst neocaml-repl--response-regexp
+  "\\(?:val\\|type\\|module\\|exception\\|class\\|external\\) \\|- :\\|Exception: "
+  "Regexp matching the start of a toplevel response.")
+
+(defconst neocaml-repl--elision-regexp "<[a-z][a-z ]*>\\|\\.\\.\\."
+  "Regexp matching what the toplevel prints for the values it doesn't show.
+That's <fun>, <abstr>, <unknown constructor> and the like, and the ...
+standing for the rest of a long or deep value.")
+
+(defconst neocaml-repl--fontify-max-length 4000
+  "Length beyond which a response isn't fontified with tree-sitter.")
+
+(defvar-local neocaml-repl--response-start nil
+  "Regexp matching the start of a toplevel response after any prompts.
+Its last group matches the response.  Nil in buffers that don't
+fontify the toplevel's responses with tree-sitter.")
+
+(defun neocaml-repl--fontify-buffer (mode)
+  "Return the hidden buffer in MODE that fontifies toplevel output."
+  (let ((name (format " *neocaml-fontify-%s*" mode)))
+    (or (get-buffer name)
+        (with-current-buffer (get-buffer-create name)
+          ;; Only MODE's font-lock settings matter here, so keep the user's
+          ;; mode hooks (Eglot and the like) from running.
+          (delay-mode-hooks (funcall mode))
+          (current-buffer)))))
+
+(defun neocaml-repl--fontify-as (mode prefix beg end)
+  "Fontify the text between BEG and END as MODE would after PREFIX.
+Elided values (see `neocaml-repl--elision-regexp') outside strings
+become units for the parse, so they don't break it up, and get no face."
+  (let ((text (buffer-substring-no-properties beg end))
+        (offset (- beg (length prefix) 1))
+        (faces nil))
+    (with-current-buffer (neocaml-repl--fontify-buffer mode)
+      ;; Font-lock inhibits modification hooks, but this buffer needs
+      ;; them to keep its `syntax-ppss' cache in step with its text.
+      (let ((inhibit-modification-hooks nil)
+            (elisions nil))
+        (erase-buffer)
+        (insert prefix text)
+        (goto-char (point-min))
+        (while (re-search-forward neocaml-repl--elision-regexp nil t)
+          (unless (save-match-data (nth 8 (syntax-ppss)))
+            (push (cons (match-beginning 0) (match-end 0)) elisions)
+            (replace-match (concat "(" (make-string (- (match-end 0) (match-beginning 0) 2) ?\s) ")")
+                           t t)))
+        (font-lock-fontify-region (point-min) (point-max))
+        (pcase-dolist (`(,start . ,end) elisions)
+          (remove-text-properties start end '(face nil)))
+        (let ((pos (1+ (length prefix))))
+          (while (< pos (point-max))
+            (let ((next (next-single-property-change pos 'face nil (point-max))))
+              (when-let* ((face (get-text-property pos 'face)))
+                (push (list (+ pos offset) (+ next offset) face) faces))
+              (setq pos next))))))
+    (pcase-dolist (`(,start ,end ,face) faces)
+      (put-text-property start end 'face face))))
+
+(defun neocaml-repl--value-start (beg end)
+  "Return the position of the = before the value of the response at BEG.
+Return nil if the response, which ends at END, has no value."
+  (save-excursion
+    (goto-char beg)
+    (let ((found nil))
+      ;; The type can only have an = inside brackets, in a package type's
+      ;; constraints or an operator's name.
+      (while (and (not found) (search-forward "=" end t))
+        (when (zerop (car (save-excursion (parse-partial-sexp beg (1- (point))))))
+          (setq found (1- (point)))))
+      found)))
+
+(defun neocaml-repl--fontify-response (beg end)
+  "Fontify the toplevel response between BEG and END."
+  (save-excursion
+    (goto-char beg)
+    (if (looking-at "Exception: ")
+        (neocaml-repl--fontify-as 'neocaml-mode "let _ = " (match-end 0)
+                                  (if (eq (char-before end) ?.) (1- end) end))
+      (let ((value (and (looking-at-p "val \\|- :")
+                        (neocaml-repl--value-start beg end)))
+            (anonymous (eq (char-after beg) ?-)))
+        ;; Fontify "- : t" as the specification of a value named x.
+        (neocaml-repl--fontify-as 'neocaml-interface-mode (if anonymous "val x" "")
+                                  (if anonymous (1+ beg) beg) (or value end))
+        (when value
+          (neocaml-repl--fontify-as 'neocaml-mode "let _ " value end))))))
+
+(defun neocaml-repl--continuation-line-p ()
+  "Return non-nil if the current line continues the output before it."
+  (and (looking-at-p "[ \t]+[^ \t\n]")
+       (eq (get-text-property (point) 'field) 'output)))
+
+(defun neocaml-repl--response-end ()
+  "Return the end of the response starting on the current line."
+  (save-excursion
+    (end-of-line)
+    (let ((end (point)))
+      (while (and (zerop (forward-line 1))
+                  (neocaml-repl--continuation-line-p))
+        (end-of-line)
+        (setq end (point)))
+      end)))
+
+(defun neocaml-repl--fontify-responses (limit)
+  "Fontify the toplevel responses starting before LIMIT with tree-sitter.
+A font-lock matcher that does the fontification itself and returns nil.
+Responses that start out with a `font-lock-face', like utop's errors
+or output colored with ANSI escapes, keep it."
+  (when neocaml-repl--response-start
+    (let ((group (regexp-opt-depth neocaml-repl--response-start)))
+      (while (re-search-forward neocaml-repl--response-start limit t)
+        (when-let* ((beg (match-beginning group))
+                    ((eq (get-text-property beg 'field) 'output))
+                    ((not (get-text-property beg 'font-lock-face)))
+                    (end (neocaml-repl--response-end)))
+          (when (<= (- end beg) neocaml-repl--fontify-max-length)
+            (neocaml-repl--fontify-response beg end))
+          (goto-char end)))))
+  nil)
+
+(defvar font-lock-beg)
+(defvar font-lock-end)
+
+(defun neocaml-repl--extend-region ()
+  "Extend the font-lock region over the whole responses at its ends.
+Responses too long to be fontified with tree-sitter (see
+`neocaml-repl--fontify-max-length') don't extend it.  For
+`font-lock-extend-region-functions'."
+  (let ((changed nil))
+    (save-excursion
+      (goto-char font-lock-beg)
+      (forward-line 0)
+      (let ((limit (- (point) neocaml-repl--fontify-max-length)))
+        (while (and (neocaml-repl--continuation-line-p)
+                    (> (point) limit)
+                    (zerop (forward-line -1))))
+        (when (and (> (point) limit) (< (point) font-lock-beg))
+          (setq font-lock-beg (point)
+                changed t)))
+      (goto-char font-lock-end)
+      (unless (bolp) (forward-line 1))
+      (let ((limit (+ (point) neocaml-repl--fontify-max-length)))
+        (while (and (neocaml-repl--continuation-line-p)
+                    (< (point) limit)
+                    (zerop (forward-line 1))))
+        (when (and (< (point) limit) (> (point) font-lock-end))
+          (setq font-lock-end (point)
+                changed t))))
+    changed))
+
+(defun neocaml-repl--fontify-output-setup ()
+  "Fontify the toplevel's responses in the current buffer with tree-sitter.
+For a buffer whose font-lock keywords include
+`neocaml-repl--fontify-responses'."
+  (when (and (treesit-ready-p 'ocaml t) (treesit-ready-p 'ocaml-interface t))
+    (setq neocaml-repl--response-start
+          (concat "^\\(?:" (string-remove-prefix "^" comint-prompt-regexp) "\\)*\\("
+                  neocaml-repl--response-regexp "\\)"))
+    (add-hook 'font-lock-extend-region-functions #'neocaml-repl--extend-region nil t)))
+
 (defvar neocaml-repl-font-lock-keywords
-  `(("^\\(# *\\)\\([^;]*\\)\\(;;\\)" (1 font-lock-comment-face) (3 font-lock-comment-face))
+  `(;; the toplevel's responses, with tree-sitter (`neocaml-repl-fontify-output')
+    (neocaml-repl--fontify-responses)
+    ("^\\(# *\\)\\([^;]*\\)\\(;;\\)" (1 font-lock-comment-face) (3 font-lock-comment-face))
     ;; errors, overriding the face `compilation-shell-minor-mode' gives
     ;; the word starting a "word:" line
     ("^\\(Error:\\)" (1 font-lock-warning-face t))
@@ -291,7 +473,11 @@ Highlights prompts, errors, warnings, and toplevel response values.")
   ;; Tree-sitter fontification for REPL input
   (when neocaml-repl-fontify-input
     (setq-local comint-indirect-setup-function #'neocaml-mode)
-    (comint-fontify-input-mode)))
+    (comint-fontify-input-mode))
+
+  ;; Tree-sitter fontification for the toplevel's responses
+  (when neocaml-repl-fontify-output
+    (neocaml-repl--fontify-output-setup)))
 
 (defun neocaml-repl--input-sender (proc input)
   "Send INPUT to PROC, appending `;;' terminator if missing.

@@ -425,6 +425,41 @@
         (neocaml-utop-mode)
         (expect comint-fontify-input-mode :not :to-be-truthy)))))
 
+(describe "neocaml-utop output fontification"
+  (it "fontifies the toplevel's responses with tree-sitter"
+    (let ((neocaml-utop-fontify-input nil)
+          (neocaml-utop-history-file nil))
+      (with-temp-buffer
+        (neocaml-utop-mode)
+        (insert (propertize "utop[0]> val x : int list = [1]\nutop[1]> " 'field 'output))
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (expect "list" :to-have-face 'font-lock-builtin-face)
+        (expect "1" :to-have-face 'font-lock-number-face))))
+
+  (it "leaves the errors utop highlights alone"
+    (let ((neocaml-utop-fontify-input nil)
+          (neocaml-utop-history-file nil))
+      (with-temp-buffer
+        (neocaml-utop-mode)
+        (insert (propertize (concat "utop[0]> "
+                                    (neocaml-utop--handle-line "stderr:Exception: Failure \"boom\"."))
+                            'field 'output))
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (expect "\"boom\"" :to-have-face nil))))
+
+  (it "leaves output to the basic keywords when disabled"
+    (let ((neocaml-utop-fontify-input nil)
+          (neocaml-utop-fontify-output nil)
+          (neocaml-utop-history-file nil))
+      (with-temp-buffer
+        (neocaml-utop-mode)
+        (insert (propertize "utop[0]> val x : int list = [1]\nutop[1]> " 'field 'output))
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (expect "list" :to-have-face nil)))))
+
 ;;;; Live integration against a real utop -emacs process
 
 (describe "neocaml-utop live session"

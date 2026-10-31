@@ -24,6 +24,7 @@
 - [#107](https://github.com/bbatsov/neocaml/pull/107): Fontify OxCaml's builtin kinds (`value`, `immediate`, `float64`, etc.) and SIMD vector types (`int8x16`, `float64x2#`, etc.) as builtins, and the predefined `floatarray`, `extension_constructor`, `eff`, `continuation`, `atomic_loc` and `lexing_position` types too.
 - [#107](https://github.com/bbatsov/neocaml/pull/107): Indent the `@@` of an OxCaml `sig @@ portable` starting a line like `end`.
 - [#107](https://github.com/bbatsov/neocaml/pull/107): Indent an attribute on a line of its own after a body, like the `[@nontail]` and `[@exclave_if_stack a]` of Jane Street code, like the body.
+- [#108](https://github.com/bbatsov/neocaml/pull/108): Fontify the toplevel's responses in `neocaml-repl` and `neocaml-utop` with tree-sitter, the signatures as in `.mli` buffers and the values as in `.ml` buffers (toggle with `neocaml-repl-fontify-output` and `neocaml-utop-fontify-output`).
 
 ### Changes
 

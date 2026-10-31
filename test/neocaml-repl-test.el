@@ -70,6 +70,117 @@
         (goto-char (point-min))
         (expect "let" :to-have-face 'font-lock-keyword-face)))))
 
+(defvar font-lock-beg)
+(defvar font-lock-end)
+
+(defmacro neocaml-repl-test-with-output (output &rest body)
+  "Run BODY at the start of a REPL buffer showing the toplevel's OUTPUT."
+  (declare (indent 1))
+  `(let ((neocaml-repl-history-file nil)
+         (neocaml-repl-fontify-input nil))
+     (with-temp-buffer
+       (neocaml-repl-mode)
+       (insert (propertize ,output 'field 'output))
+       (font-lock-ensure)
+       (goto-char (point-min))
+       ,@body)))
+
+(describe "neocaml-repl output fontification"
+  (it "fontifies the signature and the value of a response"
+    (neocaml-repl-test-with-output "# val r : float option = Some 3.14\n# "
+      (expect "val" :to-have-face 'font-lock-keyword-face)
+      (expect "r" :to-have-face 'font-lock-variable-name-face)
+      (expect "float" :to-have-face 'font-lock-builtin-face)
+      (expect "option" :to-have-face 'font-lock-builtin-face)
+      (expect "Some" :to-have-face 'font-lock-constant-face)
+      (expect "3.14" :to-have-face 'font-lock-number-face)))
+
+  (it "fontifies the type of an anonymous value"
+    (neocaml-repl-test-with-output "- : string list = [\"a\"]"
+      (expect "string" :to-have-face 'font-lock-builtin-face)
+      (expect "list" :to-have-face 'font-lock-builtin-face)
+      (expect "\"a\"" :to-have-face 'font-lock-string-face)))
+
+  (it "fontifies definitions as an interface would"
+    (neocaml-repl-test-with-output "# type 'a t = Leaf | Node of 'a t * 'a t\n# "
+      (expect "type" :to-have-face 'font-lock-keyword-face)
+      (expect "Leaf" :to-have-face 'font-lock-constant-face)
+      (expect "Node" :to-have-face 'font-lock-constant-face)
+      (expect "of" :to-have-face 'font-lock-keyword-face)))
+
+  (it "leaves the values the toplevel doesn't show unfontified"
+    (neocaml-repl-test-with-output "val f : int -> int = <fun>\nval l : int list = [1; 2; ...]\n- : exn = <unknown constructor>\n"
+      (expect "<fun>" :to-have-face nil)
+      (expect "2" :to-have-face 'font-lock-number-face)
+      (expect "..." :to-have-face nil)
+      (expect "<unknown constructor>" :to-have-face nil)))
+
+  (it "skips the = of a package type looking for the value"
+    (neocaml-repl-test-with-output "val m : (module S with type t = int) = <module>"
+      (expect "int" :to-have-face 'font-lock-builtin-face)
+      (expect "<module>" :to-have-face nil)))
+
+  (it "fontifies the indented lines a response goes on over"
+    (neocaml-repl-test-with-output "val long_name :\n  int list -> unit = <fun>\nval l : int list =\n  [1;\n   2]\n# "
+      (expect "int" :to-have-face 'font-lock-builtin-face)
+      (expect "unit" :to-have-face 'font-lock-builtin-face)
+      (expect "2" :to-have-face 'font-lock-number-face)))
+
+  (it "fontifies a response whose lines arrive separately"
+    (neocaml-repl-test-with-output "val l : int list =\n"
+      (goto-char (point-max))
+      (insert (propertize "  [1;\n   2]\n# " 'field 'output))
+      ;; Fontify only the new text, as jit-lock would.
+      (font-lock-fontify-region (line-beginning-position -1) (point-max))
+      (goto-char (point-min))
+      (expect "2" :to-have-face 'font-lock-number-face)))
+
+  (it "doesn't extend fontification over a response too long to fontify"
+    (neocaml-repl-test-with-output
+        (apply #'concat "val l : int list =\n"
+               (make-list 400 "  [1; 2; 3; 4; 5; 6; 7; 8; 9; 10];\n"))
+      (goto-char (point-max))
+      (let ((font-lock-beg (line-beginning-position 0))
+            (font-lock-end (point-max)))
+        (expect (neocaml-repl--extend-region) :not :to-be-truthy))))
+
+  (it "fontifies uncaught exceptions"
+    (neocaml-repl-test-with-output "# Exception: Failure \"boom\".\n# "
+      (expect "Exception:" :to-have-face 'font-lock-warning-face)
+      (expect "\"boom\"" :to-have-face 'font-lock-string-face)))
+
+  (it "leaves input alone"
+    (let ((neocaml-repl-history-file nil)
+          (neocaml-repl-fontify-input nil))
+      (with-temp-buffer
+        (neocaml-repl-mode)
+        (insert (propertize "# " 'field 'output) "exception E of int")
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (expect "E" :to-have-face nil))))
+
+  (it "works along with the tree-sitter fontification of input"
+    (let ((neocaml-repl-history-file nil)
+          (neocaml-repl-fontify-input t))
+      (with-temp-buffer
+        (neocaml-repl-mode)
+        (insert (propertize "# " 'field 'output))
+        ;; The first fontification creates comint's indirect buffer for the
+        ;; input, which fontifies the whole buffer as OCaml.
+        (font-lock-ensure)
+        (insert (propertize "val x : int option = None\n# " 'field 'output) "let y = 1")
+        (font-lock-fontify-region (point-min) (point-max))
+        (goto-char (point-min))
+        (expect "option" :to-have-face 'font-lock-builtin-face)
+        (expect "None" :to-have-face 'font-lock-constant-face)
+        (expect "let" :to-have-face 'font-lock-keyword-face))))
+
+  (it "leaves output to the basic keywords when disabled"
+    (let ((neocaml-repl-fontify-output nil))
+      (neocaml-repl-test-with-output "val x : int = 1"
+        (expect "val" :to-have-face 'font-lock-keyword-face)
+        (expect "int" :to-have-face nil)))))
+
 (describe "neocaml-repl input sender"
   ;; Spy on `comint-send-string' to capture what would be sent to the
   ;; toplevel without a real process.
