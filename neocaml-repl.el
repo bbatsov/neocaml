@@ -240,10 +240,14 @@ toplevel."
 
 (defvar neocaml-repl-font-lock-keywords
   `(("^\\(# *\\)\\([^;]*\\)\\(;;\\)" (1 font-lock-comment-face) (3 font-lock-comment-face))
-    ;; errors
-    ("^\\(Error:\\)" (1 font-lock-warning-face))
-    ;; warnings
-    ("^\\(Warning:\\)" (1 font-lock-warning-face))
+    ;; errors, overriding the face `compilation-shell-minor-mode' gives
+    ;; the word starting a "word:" line
+    ("^\\(Error:\\)" (1 font-lock-warning-face t))
+    ;; warnings ("Warning 26 [unused-var]:") and alerts
+    ("^\\(\\(?:Warning\\|Alert\\)[^:\n]*:\\)" (1 font-lock-warning-face t))
+    ;; uncaught exceptions, after the prompt when the phrase came from a
+    ;; source buffer and wasn't echoed
+    ("\\(?:^\\|# \\)\\(Exception:\\)" (1 font-lock-warning-face t))
     ;; values and types from result
     ("\\(val\\) \\([^:]*\\)\\( *:\\)" (1 font-lock-keyword-face) (2 font-lock-variable-name-face))
     ("\\(type\\) \\([^ =]*\\)" (1 font-lock-keyword-face) (2 font-lock-type-face))

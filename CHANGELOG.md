@@ -58,6 +58,7 @@
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Make `neocaml-dune-project-root-files` pick the nearest directory containing any of the listed files, as documented, instead of trying the files in order and taking the first match at any depth, and honor it in library and package completion too.
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Fix font-lock in `neocaml-repl` buffers failing on every fontification, which kept prompts from being highlighted and the input from being fontified with tree-sitter.
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Keep the errors in the `neocaml-utop` transcript highlighted, instead of font-lock clearing their face as soon as it fontified them.
+- [#108](https://github.com/bbatsov/neocaml/pull/108): Highlight the toplevel's errors and uncaught exceptions in `neocaml-repl` buffers, where errors got the function name face of `compilation-shell-minor-mode` instead, and its warnings and alerts in their current form (`Warning 26 [unused-var]:`).
 
 ## 0.10.0 (2026-07-10)
 

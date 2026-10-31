@@ -46,6 +46,20 @@
         (font-lock-ensure)
         (expect '(1 7) :to-have-face 'font-lock-comment-face))))
 
+  (it "highlights errors, uncaught exceptions, warnings and alerts"
+    (let ((neocaml-repl-history-file nil)
+          (neocaml-repl-fontify-input nil))
+      (with-temp-buffer
+        (neocaml-repl-mode)
+        (insert (propertize "Error: Unbound value x\n# Exception: Not_found.\nWarning 26 [unused-var]: unused variable y.\nAlert deprecated: f\n"
+                            'field 'output))
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (expect "Error:" :to-have-face 'font-lock-warning-face)
+        (expect "Exception:" :to-have-face 'font-lock-warning-face)
+        (expect "Warning 26 [unused-var]:" :to-have-face 'font-lock-warning-face)
+        (expect "Alert deprecated:" :to-have-face 'font-lock-warning-face))))
+
   (it "fontifies the input with tree-sitter"
     (let ((neocaml-repl-history-file nil)
           (neocaml-repl-fontify-input t))
