@@ -239,7 +239,7 @@ toplevel."
   "Keymap for `neocaml-repl-mode'.")
 
 (defvar neocaml-repl-font-lock-keywords
-  '(("^\\(# *\\)\\([^;]*\\)\\(;;\\)" (1 font-lock-comment-face) (3 font-lock-comment-face))
+  `(("^\\(# *\\)\\([^;]*\\)\\(;;\\)" (1 font-lock-comment-face) (3 font-lock-comment-face))
     ;; errors
     ("^\\(Error:\\)" (1 font-lock-warning-face))
     ;; warnings
@@ -248,7 +248,7 @@ toplevel."
     ("\\(val\\) \\([^:]*\\)\\( *:\\)" (1 font-lock-keyword-face) (2 font-lock-variable-name-face))
     ("\\(type\\) \\([^ =]*\\)" (1 font-lock-keyword-face) (2 font-lock-type-face))
     ;; prompt (standard "# " and utop's "utop # " / "utop[0] # ")
-    (neocaml-repl--prompt-regexp . font-lock-comment-face))
+    (,neocaml-repl--prompt-regexp . font-lock-comment-face))
   "Font-lock keywords for the OCaml REPL buffer.
 Highlights prompts, errors, warnings, and toplevel response values.")
 
