@@ -148,6 +148,16 @@ Set to nil to use only the basic transcript font-lock keywords for input."
   :type 'boolean
   :package-version '(neocaml . "0.10.0"))
 
+(defcustom neocaml-utop-fontify-output t
+  "When non-nil, fontify the toplevel's responses using tree-sitter.
+The signatures in responses like \"val x : int list = [1; 2]\" are
+fontified as `neocaml-interface-mode' would fontify them, and the
+values as `neocaml-mode' would.
+
+Set to nil to use only the basic transcript font-lock keywords for output."
+  :type 'boolean
+  :package-version '(neocaml . "0.11.0"))
+
 (defface neocaml-utop-error-face
   '((((supports :underline (:style wave)))
      :underline (:style wave :color "Red1"))
@@ -164,7 +174,9 @@ Set to nil to use only the basic transcript font-lock keywords for input."
   "Regexp matching the prompt neocaml-utop renders for utop.")
 
 (defvar neocaml-utop-font-lock-keywords
-  '(("\\(val\\) \\([^:]*\\)\\( *:\\)"
+  '(;; the toplevel's responses, with tree-sitter (`neocaml-utop-fontify-output')
+    (neocaml-repl--fontify-responses)
+    ("\\(val\\) \\([^:]*\\)\\( *:\\)"
      (1 font-lock-keyword-face) (2 font-lock-variable-name-face))
     ("\\(type\\) \\([^ =]*\\)"
      (1 font-lock-keyword-face) (2 font-lock-type-face)))
@@ -605,7 +617,9 @@ Active only in the transcript buffer, on the current input line."
   ;; buffer in `neocaml-mode' (mirrors `neocaml-repl').
   (when neocaml-utop-fontify-input
     (setq-local comint-indirect-setup-function #'neocaml-mode)
-    (comint-fontify-input-mode)))
+    (comint-fontify-input-mode))
+  (when neocaml-utop-fontify-output
+    (neocaml-repl--fontify-output-setup)))
 
 ;;;; Lifecycle
 
