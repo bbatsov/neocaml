@@ -424,7 +424,7 @@ itself when the underlying text is edited."
       ("stderr"
        (neocaml-utop--echo-accumulate 'err arg)
        (neocaml-utop--note-error-text arg)
-       (concat (propertize arg 'face 'font-lock-warning-face) "\n"))
+       (concat (propertize arg 'font-lock-face 'font-lock-warning-face) "\n"))
       ("prompt"
        (setq neocaml-utop--error-pending nil)
        (neocaml-utop--prompt-string))
@@ -437,7 +437,7 @@ itself when the underlying text is edited."
       ("completion-stop" (setq neocaml-utop--completion-state 'done) "")
       ("no-such-package"
        (concat (propertize (format "No such package: %s" arg)
-                           'face 'font-lock-warning-face)
+                           'font-lock-face 'font-lock-warning-face)
                "\n"))
       ;; Control/metadata messages with nothing to display.
       ((or "protocol-version" "phrase-terminator" "continue"
