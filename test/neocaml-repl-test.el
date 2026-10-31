@@ -36,6 +36,26 @@
     (expect (string-match-p neocaml-repl--prompt-regexp "Welcome to OCaml") :not :to-be-truthy)
     (expect (string-match-p neocaml-repl--prompt-regexp "val x : int") :not :to-be-truthy)))
 
+(describe "neocaml-repl font-lock"
+  (it "highlights the prompt"
+    (let ((neocaml-repl-history-file nil)
+          (neocaml-repl-fontify-input nil))
+      (with-temp-buffer
+        (neocaml-repl-mode)
+        (insert (propertize "utop # " 'field 'output))
+        (font-lock-ensure)
+        (expect '(1 7) :to-have-face 'font-lock-comment-face))))
+
+  (it "fontifies the input with tree-sitter"
+    (let ((neocaml-repl-history-file nil)
+          (neocaml-repl-fontify-input t))
+      (with-temp-buffer
+        (neocaml-repl-mode)
+        (insert (propertize "# " 'field 'output) "let x = 1")
+        (font-lock-ensure)
+        (goto-char (point-min))
+        (expect "let" :to-have-face 'font-lock-keyword-face)))))
+
 (describe "neocaml-repl input sender"
   ;; Spy on `comint-send-string' to capture what would be sent to the
   ;; toplevel without a real process.

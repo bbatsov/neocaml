@@ -56,6 +56,7 @@
 - [#91](https://github.com/bbatsov/neocaml/issues/91): Fix the `dune-utop` flavor of `neocaml-utop` failing to start - it passed the project root to `dune utop` as an absolute path, which dune rejects, so it now runs `dune utop .` from the project root instead.
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Make the `dune-utop` flavor of both REPL backends run `dune utop` with `neocaml-dune-program` and `neocaml-dune-use-opam-exec`, and make `neocaml-repl-flavor` set to `dune-utop` (e.g. from `.dir-locals.el`) run `dune utop` from the project root instead of the plain toplevel.
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Make `neocaml-dune-project-root-files` pick the nearest directory containing any of the listed files, as documented, instead of trying the files in order and taking the first match at any depth, and honor it in library and package completion too.
+- [#108](https://github.com/bbatsov/neocaml/pull/108): Fix font-lock in `neocaml-repl` buffers failing on every fontification, which kept prompts from being highlighted and the input from being fontified with tree-sitter.
 
 ## 0.10.0 (2026-07-10)
 
