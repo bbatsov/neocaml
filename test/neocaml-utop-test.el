@@ -187,7 +187,16 @@
     (with-temp-buffer
       (let ((out (neocaml-utop--handle-line "stderr:Error: boom")))
         (expect out :to-equal "Error: boom\n")
-        (expect (get-text-property 0 'face out) :to-equal 'font-lock-warning-face))))
+        (expect (get-text-property 0 'font-lock-face out) :to-equal 'font-lock-warning-face))))
+
+  (it "keeps stderr highlighted through font-lock"
+    (let ((neocaml-utop-fontify-input nil)
+          (neocaml-utop-history-file nil))
+      (with-temp-buffer
+        (neocaml-utop-mode)
+        (insert (neocaml-utop--handle-line "stderr:Error: boom"))
+        (font-lock-ensure)
+        (expect (get-text-property 1 'font-lock-face) :to-equal 'font-lock-warning-face))))
 
   (it "numbers prompts, advancing the counter"
     (with-temp-buffer
