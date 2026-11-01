@@ -1569,6 +1569,23 @@ That's the first element of a tuple, also past the #( of an OxCaml
 unboxed one, or the pattern of a typed pattern."
   (treesit-node-start (treesit-node-child parent 0 t)))
 
+(defun neocaml--applied-type-p (node parent &rest _)
+  "Return non-nil if NODE is the type PARENT gives parameters to.
+That's the last part of PARENT, after the parameters, which line up
+with the first one (as in `(\\='key,' followed by `\\='value) t')."
+  (and (equal (treesit-node-type parent) "constructed_type")
+       (null (treesit-node-next-sibling node))))
+
+(defun neocaml--applied-type-offset (&rest _)
+  "Return the offset for a type applied to parameters on a line of its own.
+It goes `neocaml-indent-offset' past the start of the parameters'
+line, but under them in the conventional style, as ocp-indent and
+ocamlformat's profiles lay it out:
+  ( \\='key,       ( \\='key,
+    \\='value )      \\='value )
+    Hashtbl.t    Hashtbl.t"
+  (if (eq (neocaml--indent-style) 'conventional) 0 neocaml-indent-offset))
+
 (defun neocaml--let-binding-offset (&rest _)
   "Return the offset for a let binding on the line after its let.
 As in `let%expect_test' followed by the test's name.  That's twice
@@ -1799,8 +1816,9 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; starting a line under the module, and the rest one step in, like
      ;; the rest of an include, open, functor, local open or class binding
      ((match "\\`module_parameter\\'" "\\`module_binding\\'") parent-bol neocaml--double-offset)
-     ((match "\\`\\(?:structure\\|signature\\)\\'" "\\`module_binding\\'") parent-bol 0)
-     ((parent-is "\\`\\(?:module_binding\\|module_application\\|include_module\\(?:_type\\)?\\|open_module\\|functor\\|local_open_expression\\|class_binding\\)\\'")
+     ((match "\\`\\(?:structure\\|signature\\)\\'" "\\`\\(?:module_binding\\|module_type_definition\\)\\'")
+      parent-bol 0)
+     ((parent-is "\\`\\(?:module_binding\\|module_type_definition\\|module_application\\|include_module\\(?:_type\\)?\\|open_module\\|functor\\|local_open_expression\\|class_binding\\)\\'")
       parent-bol neocaml-indent-offset)
      ;; Typed patterns and expressions, polymorphic types and let bindings
      ;; on the line after their let (see the functions for how the styles
@@ -1811,8 +1829,11 @@ The return value is suitable for `treesit-simple-indent-rules'."
      (neocaml--polymorphic-type-aligned-p parent 0)
      ((parent-is "\\`polymorphic_type\\'") parent-bol neocaml--polymorphic-type-offset)
      ((match "\\`let_binding\\'" "\\`value_definition\\'") parent-bol neocaml--let-binding-offset)
-     ;; A leading comma in type parameters (see the function)
+     ;; A leading comma in type parameters (see the function), and the
+     ;; parameters and the type they're applied to on lines of their own
      ((match "\\`,\\'" "\\`constructed_type\\'") neocaml--type-parameter-comma-anchor 0)
+     (neocaml--applied-type-p parent-bol neocaml--applied-type-offset)
+     ((parent-is "\\`constructed_type\\'") (nth-sibling 1) 0)
 
      ;; OxCaml.  No other rule matches these parents, so they come last,
      ;; where lines of plain OCaml don't have to try them.
