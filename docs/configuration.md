@@ -287,7 +287,7 @@ All the differences, with the columns counted for the default
 | Arguments on continuation lines, after `=`, `then` and the like | 4 | 4 | 2 past the function |
 | Arguments on continuation lines, after an operator, a comma or a semicolon | 2 past the start of the chain | 2 past the function | 2 past the function |
 | An operator starting a line inside parentheses | under the first operand | under the parenthesis | under the first operand |
-| A structure passed to a functor, `F (struct ... end)` | body 4, `end` 2 | body 2, `end` 0 | body 4, `end` 2 |
+| A structure passed to a functor, `F (struct ... end)`, or the signature of a functor's parameter, `module F (X : sig ... end)` | body 4, `end` 2 | body 2, `end` 0 | body 4, `end` 2 |
 | Body of a `(fun x ->` starting a line | 2 past the `fun` | 2 past the parenthesis | 2 past the `fun` when passed to a function, 2 past the parenthesis otherwise |
 | Body of a `(fun x ->` further along a line | 4 past the start of the line | 4 past the function it's passed to | 2 past the start of the line |
 

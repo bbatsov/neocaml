@@ -1090,36 +1090,82 @@ lays them out."
          (if (eq (neocaml--indent-style) 'conventional) 0 neocaml-indent-offset))
     neocaml-indent-offset))
 
-(defun neocaml--functor-application (structure)
-  "Return the functor application STRUCTURE is passed to in parentheses.
-That's the whole application, as in `F (struct ... end) (struct ... end)',
-or nil when STRUCTURE isn't passed to a functor."
-  (let ((outer (treesit-node-parent structure)))
-    (when (and (equal (treesit-node-type outer) "parenthesized_module_expression")
-               (equal (treesit-node-field-name outer) "argument"))
-      (treesit-parent-while
-       outer
-       (lambda (node)
-         (member (treesit-node-type node)
-                 '("parenthesized_module_expression" "module_application")))))))
+(defun neocaml--functor-argument (node)
+  "Return the functor argument or parameter NODE belongs to, or nil.
+NODE is a structure passed to a functor in parentheses, which belongs
+to the whole application, as in `F (struct ... end) (struct ... end)',
+or the signature of a functor's parameter, as in
+`module F (X : sig ... end)', which belongs to the parameter."
+  (pcase (treesit-node-type node)
+    ("structure"
+     (let ((outer (treesit-node-parent node)))
+       (when (and (equal (treesit-node-type outer) "parenthesized_module_expression")
+                  (equal (treesit-node-field-name outer) "argument"))
+         (treesit-parent-while
+          outer
+          (lambda (n)
+            (member (treesit-node-type n)
+                    '("parenthesized_module_expression" "module_application")))))))
+    ("signature"
+     (let ((outer (treesit-node-parent node)))
+       (and (equal (treesit-node-type outer) "module_parameter") outer)))))
 
 (defun neocaml--functor-argument-p (_node parent &rest _)
-  "Return non-nil if PARENT is a structure passed to a functor further along a line.
-Outside the conventional style, which indents its body and `end' like
-any other, they're indented as if the functor started a line of its
-own, as ocp-indent and ocamlformat's janestreet profile lay them out:
+  "Return non-nil if PARENT is a functor argument or parameter to indent more.
+That's a structure passed to a functor in parentheses further along a
+line, or the signature of a functor's parameter (see
+`neocaml--functor-argument'), outside the conventional style, which
+indents them like any other.  See `neocaml--functor-indentation' for
+where they go."
+  (and (not (eq (neocaml--indent-style) 'conventional))
+       (when-let* ((argument (neocaml--functor-argument parent)))
+         (or (equal (treesit-node-type argument) "module_parameter")
+             (not (neocaml--at-bol-p argument))))))
+
+(defun neocaml--functor-indentation (parent)
+  "Return (ANCHOR BODY END) for the lines of PARENT, a functor argument.
+PARENT can also be a functor parameter's signature.
+BODY and END are the offsets of its body and `end' from ANCHOR.  A
+structure passed to a functor, and the signature of the first
+parameter of a module definition on the definition's first line, go
+as if the functor started a line of its own, as ocp-indent and
+ocamlformat's janestreet profile lay them out:
   module M = F (struct
       let x = 1
-    end)"
-  (and (not (eq (neocaml--indent-style) 'conventional))
-       (equal (treesit-node-type parent) "structure")
-       (when-let* ((application (neocaml--functor-application parent)))
-         (not (neocaml--at-bol-p application)))))
+    end)
+  module F (X : sig
+      type t
+    end) =
+The signatures of other parameters go from inside their parentheses:
+  module F
+      (X : sig
+         type t
+       end)"
+  (let ((argument (neocaml--functor-argument parent))
+        (step neocaml-indent-offset))
+    (if (or (not (equal (treesit-node-type argument) "module_parameter"))
+            (let ((definition (treesit-node-parent argument)))
+              (and (equal (treesit-node-type definition) "module_binding")
+                   (= (neocaml--node-bol argument) (neocaml--node-bol definition))
+                   (not (neocaml--at-bol-p argument))
+                   (setq argument definition))))
+        (list (neocaml--node-bol argument) (* 2 step) step)
+      (list (1+ (treesit-node-start argument)) step 0))))
 
 (defun neocaml--functor-anchor (_node parent &rest _)
-  "Return the start of the line of the functor PARENT, a structure, is passed to.
-See `neocaml--functor-argument-p'."
-  (neocaml--node-bol (neocaml--functor-application parent)))
+  "Return the anchor for a line in PARENT, a functor argument or parameter.
+See `neocaml--functor-indentation'."
+  (nth 0 (neocaml--functor-indentation parent)))
+
+(defun neocaml--functor-body-offset (_node parent &rest _)
+  "Return the offset for a line of the body of PARENT, a functor argument.
+See `neocaml--functor-indentation'."
+  (nth 1 (neocaml--functor-indentation parent)))
+
+(defun neocaml--functor-end-offset (_node parent &rest _)
+  "Return the offset for the `end' of PARENT, a functor argument or parameter.
+See `neocaml--functor-indentation'."
+  (nth 2 (neocaml--functor-indentation parent)))
 
 (defun neocaml--double-offset (&rest _)
   "Return twice `neocaml-indent-offset'."
@@ -1413,7 +1459,7 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((node-is "}") parent-bol 0)
      ((node-is "done") parent-bol 0)
      ((and (node-is "end") neocaml--functor-argument-p)
-      neocaml--functor-anchor neocaml-indent-offset)
+      neocaml--functor-anchor neocaml--functor-end-offset)
      ((node-is "end") neocaml--module-body-anchor 0)
 
      ;; "with" keyword aligns with match/try (see `neocaml--with-anchor')
@@ -1474,7 +1520,7 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Module structures and signatures.  The @@ of an OxCaml sig @@
      ;; portable starting a line aligns with the sig, as end does
      ((match "\\`@@\\'" "\\`signature\\'") parent-bol 0)
-     (neocaml--functor-argument-p neocaml--functor-anchor neocaml--double-offset)
+     (neocaml--functor-argument-p neocaml--functor-anchor neocaml--functor-body-offset)
      ((parent-is "\\`\\(?:structure\\|signature\\|open_module_signature\\)\\'")
       neocaml--module-body-anchor neocaml-indent-offset)
 
