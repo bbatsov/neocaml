@@ -44,6 +44,7 @@
 
 ### Bug fixes
 
+- [#111](https://github.com/bbatsov/neocaml/pull/111): Stop moving a comment that no indentation rule covers further right every time it's indented.
 - [#111](https://github.com/bbatsov/neocaml/pull/111): Leave the lines inside a multi-line string, `{|...|}` ones (as in `[%expect]` blocks) included, as they are when indenting, instead of indenting them like code, which changed the string.
 - [#111](https://github.com/bbatsov/neocaml/pull/111): Indent the continuation lines no rule covered, which neocaml left where they were typed:
   - The arguments of a constructor on the line after it, in patterns and declarations, and the type or value of a record field after its `:` or `=`.
