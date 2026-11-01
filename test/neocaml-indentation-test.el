@@ -682,7 +682,20 @@ and u = B"
   let rec f x = g x
   (* c *)
   and g x = f x
-end")))
+end"))
+
+  (describe "string indentation"
+    (it "leaves the lines inside a multi-line string as they are"
+      (dolist (code '("let s = \"usage:\n      prog FILE\""
+                      "let s = \"foo\n   \""
+                      "let () =\n  print ();\n  [%expect {|\n     foo\n   bar |}]"
+                      "let () =\n  [%expect {|\n    foo\n  |}]"
+                      "let x = {%sql|\n  SELECT 1\n|}"))
+        (with-temp-buffer
+          (insert code)
+          (neocaml-mode)
+          (indent-region (point-min) (point-max))
+          (expect (buffer-string) :to-equal code))))))
 
 (describe "neocaml-interface indentation"
   (before-all

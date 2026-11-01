@@ -1513,6 +1513,32 @@ ocp-indent style, as ocp-indent does."
       neocaml-indent-offset
     (neocaml--double-offset)))
 
+(defconst neocaml--string-types
+  '("string" "string_content" "quoted_string" "quoted_string_content"
+    "quoted_extension")
+  "Types of the nodes a line can start inside of in a string.")
+
+(defun neocaml--string-line-p (node parent bol &rest _)
+  "Return non-nil if the line at BOL begins inside a string.
+Its indentation is part of the string then, so it has to stay as it
+is, unless the previous line ends with a backslash, after which OCaml
+skips it.  Such a line has no NODE of its own, or one whose PARENT is
+part of a string.  The syntax table knows about strings and quoted
+strings, and the parse tree about quoted extensions like `{%sql|...|}'
+too."
+  (and (or (null node)
+           (member (treesit-node-type parent) neocaml--string-types))
+       (save-excursion
+         (goto-char bol)
+         (let ((start (line-beginning-position)))
+           (and (not (eq (char-before (1- start)) ?\\))
+                (or (nth 3 (syntax-ppss start))
+                    (let ((leaf (treesit-node-at start)))
+                      (seq-some (lambda (n)
+                                  (and (member (treesit-node-type n) neocaml--string-types)
+                                       (< (treesit-node-start n) start)))
+                                (list leaf (treesit-node-parent leaf))))))))))
+
 (defun neocaml--indent-rules (language)
   "Return tree-sitter indentation rules for LANGUAGE.
 The return value is suitable for `treesit-simple-indent-rules'."
@@ -1521,6 +1547,11 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; the opening delimiter.  Must come before `no-node' because
      ;; lines inside a multi-line comment have node=nil, parent=comment.
      ((parent-is "comment") neocaml--comment-body-anchor 0)
+
+     ;; Lines starting inside a string stay as they are (see
+     ;; `neocaml--string-line-p').  Must come before `no-node', which
+     ;; would otherwise take them
+     (neocaml--string-line-p no-indent 0)
 
      ;; Empty lines: use previous line's indentation, adding offset
      ;; when the previous line ends with a body-expecting token.
