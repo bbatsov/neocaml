@@ -37,6 +37,7 @@
 
 ### Bug fixes
 
+- [#110](https://github.com/bbatsov/neocaml/pull/110): Indent the arguments of a function that comes after a parenthesis or a bracket past the function, as ocp-indent and ocamlformat do, instead of past the start of the line.
 - [#103](https://github.com/bbatsov/neocaml/pull/103): Indent with spaces in `neocaml-mode` and `neocaml-interface-mode`, as ocamlformat does, instead of a mix of tabs and spaces past column 8.
 - [#104](https://github.com/bbatsov/neocaml/pull/104): Indent the lines that no indentation rule covered, which `TAB` and `indent-region` used to leave where they were. They now follow ocamlformat's layout:
   - continuation lines of operator chains (`|>`, `&&`, `^`, `::`, `:=`, `<-`) and of multi-line function types
