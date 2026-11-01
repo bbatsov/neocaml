@@ -210,6 +210,52 @@
       (expect (neocaml-utop--handle-line "phrase-terminator:;;") :to-equal "")
       (expect (neocaml-utop--handle-line "continue:") :to-equal ""))))
 
+(describe "neocaml-utop error navigation"
+  (cl-flet ((transcript (protocol)
+              ;; A transcript buffer showing utop's answer to PROTOCOL
+              (let ((neocaml-utop-fontify-input nil)
+                    (neocaml-utop-history-file nil))
+                (neocaml-utop-mode)
+                (insert (neocaml-utop--preoutput protocol))
+                (font-lock-ensure)
+                (goto-char (point-min))))
+            (messages () (neocaml-test-compilation-messages)))
+
+    (it "finds the errors, warnings and backtraces utop reports in files"
+      (with-temp-buffer
+        (transcript (concat "prompt:\n"
+                            "stderr:File \"bad.ml\", line 2, characters 6-12:\n"
+                            "stderr:Warning 26 [unused-var]: unused variable unused.\n"
+                            "prompt:\n"
+                            "stderr:File \"bad.ml\", line 4, characters 14-17:\n"
+                            "stderr:Error: This constant has type string\n"
+                            "stderr:       File \"bad.ml\", line 1, characters 4-7:\n"
+                            "stderr:         Definition of x\n"
+                            "prompt:\n"
+                            "stderr:Exception: Failure \"boom\".\n"
+                            "stderr:Raised at Stdlib.failwith in file \"stdlib.ml\", line 29, characters 17-33\n"
+                            "prompt:\n"))
+        (expect (messages) :to-equal '((1 "bad.ml" 2 7) (2 "bad.ml" 4 15) (0 "bad.ml" 1 5)
+                                       (2 "stdlib.ml" 29 18)))))
+
+    (it "leaves utop's errors in the warning face"
+      (with-temp-buffer
+        (transcript (concat "prompt:\n"
+                            "stderr:File \"bad.ml\", line 2, characters 6-12:\n"
+                            "stderr:Warning 26 [unused-var]: unused variable unused.\n"
+                            "stderr:Error: boom\n"
+                            "stderr:Hint: Did you mean x?\n"
+                            "stderr:Exception: Failure \"boom\".\n"
+                            "prompt:\n"))
+        ;; Compilation's highlighting would put a face over the warning
+        ;; face these lines have as font-lock-face
+        (dolist (word '("Warning" "Error" "Hint" "Exception"))
+          (goto-char (point-min))
+          (search-forward word)
+          (expect (get-text-property (match-beginning 0) 'face) :to-be nil)
+          (expect (get-text-property (match-beginning 0) 'font-lock-face)
+                  :to-equal 'font-lock-warning-face))))))
+
 (describe "neocaml-utop preoutput filter"
   (it "buffers a partial line until its newline arrives"
     (with-temp-buffer
@@ -547,6 +593,30 @@
             (expect (buffer-substring-no-properties
                      (overlay-start (car errs)) (overlay-end (car errs)))
                     :to-equal "\"a\"")))))
+
+    (it "makes the locations of errors in a loaded file clickable"
+      (let* ((neocaml-utop-history-file nil)
+             (neocaml-utop-fontify-input nil)
+             (dir (file-name-as-directory (make-temp-file "neocaml-utop-errors" t)))
+             (file (expand-file-name "bad.ml" dir))
+             (source (neocaml-test-track-buffer (generate-new-buffer "src.ml")))
+             transcript)
+        (unwind-protect
+            (progn
+              (with-temp-file file
+                (insert "let bad = 1 + \"a\"\n"))
+              (with-current-buffer source
+                (setq transcript (neocaml-test-track-buffer (neocaml-utop--get-or-create)))
+                (expect (wait (lambda () (string-match-p "utop\\[0\\]> " (contents transcript))))
+                        :to-be-truthy)
+                (neocaml-utop-load-file file)
+                (expect (wait (lambda () (string-match-p "Error:" (contents transcript))))
+                        :to-be-truthy))
+              (with-current-buffer transcript
+                (font-lock-ensure)
+                (expect (car (neocaml-test-compilation-messages))
+                        :to-equal (list 2 file 1 15))))
+          (delete-directory dir t))))
 
     (it "returns completion candidates from utop"
       (let ((neocaml-utop-history-file nil)

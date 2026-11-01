@@ -426,6 +426,24 @@ For a buffer whose font-lock keywords include
           (neocaml-repl--after-prompts (concat "^\\(" neocaml-repl--response-regexp "\\)")))
     (add-hook 'font-lock-extend-region-functions #'neocaml-repl--extend-region nil t)))
 
+(defun neocaml-repl--error-navigation-setup (&optional plain)
+  "Make the locations of errors, warnings and backtraces in files clickable.
+That's with `compilation-shell-minor-mode' and neocaml's OCaml error
+regexp, made to match past the prompt (see
+`neocaml-repl--after-prompts'), so it has to run after
+`comint-prompt-regexp' is set.  With PLAIN, compilation's own
+highlighting is off, for a transcript that already puts the warning
+face on errors, which it would paint over."
+  (when plain
+    (setq-local compilation-mode-font-lock-keywords nil))
+  (setq-local compilation-error-regexp-alist
+              `((,(neocaml-repl--after-prompts neocaml--compilation-error-regexp)
+                 ;; FILE LINE COLUMN TYPE HYPERLINK, then HIGHLIGHT
+                 ,@(if plain
+                       (seq-take neocaml--compilation-error-spec 5)
+                     neocaml--compilation-error-spec))))
+  (compilation-shell-minor-mode))
+
 (defvar neocaml-repl-font-lock-keywords
   `(;; the toplevel's responses, with tree-sitter (`neocaml-repl-fontify-output')
     (neocaml-repl--fontify-responses)
@@ -463,10 +481,7 @@ Highlights prompts, errors, warnings, and toplevel response values.")
 
   ;; Error navigation for the files the toplevel reports errors,
   ;; warnings and backtraces in (those loaded with #use, say)
-  (setq-local compilation-error-regexp-alist
-              `((,(neocaml-repl--after-prompts neocaml--compilation-error-regexp)
-                 ,@neocaml--compilation-error-spec)))
-  (compilation-shell-minor-mode)
+  (neocaml-repl--error-navigation-setup)
 
   ;; Input history persistence
   (when neocaml-repl-history-file

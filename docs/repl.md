@@ -218,6 +218,10 @@ information that a raw stream can't, which lets `neocaml-utop`:
 - answer completion from utop's own engine, wired into
   `completion-at-point` in the transcript.
 
+As in `neocaml-repl`, the locations of errors, warnings and backtraces in
+files (for a file loaded with `C-c C-u`, say) are clickable in the
+transcript, via `compilation-shell-minor-mode`.
+
 The transcript is a comint derivative, so input editing, history (with
 optional persistence via `neocaml-utop-history-file`), and read-only
 prompts work as usual.
