@@ -792,10 +792,38 @@ exception E of string")
     ?second (type a) =
   first")
 
-    (when-indenting-it "indents a structure passed to a functor as if the functor started its line"
+    (when-indenting-it "indents a functor argument or parameter partway along a line as if the functor started it"
       "module M = F (struct
     type t = int
-  end)")
+  end)"
+      "module F (X : sig
+    type t
+  end) =
+struct
+  let x = 1
+end")
+
+    (when-indenting-it "indents the signature of other functor parameters from inside their parentheses"
+      "module G (X : sig
+    type t
+  end) (Y : sig
+          type u
+        end) = struct
+  let x = 1
+end"
+      "module H
+    (X : sig
+       type t
+     end)
+    (Y : S) =
+struct
+  let x = 1
+end"
+      "module F = functor (X : sig
+                      type t
+                    end) -> struct
+  type t = X.t
+end")
 
     (when-indenting-it "indents the body of a fun opening a line in parentheses past the fun"
       "let a =
@@ -891,10 +919,21 @@ exception E of string")
     third =
   first")
 
-    (when-indenting-in-style-it conventional "indents a structure passed to a functor like any other"
+    (when-indenting-in-style-it conventional "indents a functor argument or parameter like any other structure or signature"
       "module M = F (struct
   type t = int
-end)")
+end)"
+      "module F (X : sig
+  type t
+end) =
+struct
+  let x = 1
+end"
+      "module F = functor (X : sig
+  type t
+end) -> struct
+  type t = X.t
+end")
 
     (when-indenting-in-style-it conventional "indents the body of a fun in parentheses from the parenthesis or the function"
       "let a =
@@ -953,10 +992,16 @@ end)")
   some_function title (fun formatter ->
     body formatter)")
 
-    (when-indenting-in-style-it janestreet "indents a structure passed to a functor as if the functor started its line"
+    (when-indenting-in-style-it janestreet "indents a functor argument or parameter partway along a line as if the functor started it"
       "module M = F (struct
     type t = int
-  end)")))
+  end)"
+      "module F (X : sig
+    type t
+  end) =
+struct
+  let x = 1
+end")))
 
 (defun neocaml-test--write-file (file content)
   "Write CONTENT to FILE, creating its directory."
