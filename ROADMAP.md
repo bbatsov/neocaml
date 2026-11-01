@@ -294,6 +294,12 @@ the `markdown-ts-mode` approach of injecting real language modes into code block
   `--explain` writes.
 - **Performance and robustness**: behavior on very large files, and good defaults
   for `treesit-font-lock-level`.
+- **Indentation gaps**: a few layouts still have no rule of their own, or one that
+  doesn't match ocp-indent and ocamlformat: the `with` constraints of a module type
+  (the styles differ there), a type's binding on the line after `type`, a typed
+  pattern whose pattern starts a line, and a comment before a definition's first
+  binding. `dev/indent-score.el` lists the lines that still come out differently
+  from ocamlformat's.
 
 ## Not planned
 
