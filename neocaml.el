@@ -66,11 +66,11 @@ The styles only differ in a few layouts:
 - `janestreet' indents as ocamlformat's janestreet profile does,
   which puts parameters on continuation lines further in.
 
-nil picks the style from the profile in the project's .ocamlformat,
-taking its cases-exp-indent into account, and falls back to
-`ocp-indent' in projects that don't have one.  To switch the style
-of the current buffer, use \\[neocaml-set-indent-style]."
-  :type '(choice (const :tag "From .ocamlformat" nil)
+nil picks the style, and the offset of match case bodies, from the
+project's .ocamlformat or, failing that, its .ocp-indent, and falls
+back to `ocp-indent' in projects that have neither.  To switch the
+style of the current buffer, use \\[neocaml-set-indent-style]."
+  :type '(choice (const :tag "From .ocamlformat or .ocp-indent" nil)
                  (const :tag "ocp-indent" ocp-indent)
                  (const :tag "ocamlformat's conventional profile" conventional)
                  (const :tag "ocamlformat's janestreet profile" janestreet))
@@ -795,15 +795,15 @@ The return value is suitable for `treesit-font-lock-settings'."
 ;; directory-local variable or switched in a buffer takes effect without
 ;; rebuilding the rules.
 
-(defvar-local neocaml--ocamlformat-indentation 'unknown
-  "The indentation style and case offset of the project's .ocamlformat.
-A cons (STYLE . CASE-OFFSET), where CASE-OFFSET is its
-cases-exp-indent, or nil when it doesn't set one.  nil when there's
-no .ocamlformat, and `unknown' until it's been looked up.")
+(defvar-local neocaml--project-indentation 'unknown
+  "The indentation style and case offset of the project's configuration.
+A cons (STYLE . CASE-OFFSET) from its .ocamlformat or .ocp-indent,
+where CASE-OFFSET is nil when it doesn't set one.  nil when there's
+neither, and `unknown' until it's been looked up.")
 
 (defun neocaml--read-ocamlformat-indentation ()
   "Return the indentation style and case offset of the file's .ocamlformat.
-See `neocaml--ocamlformat-indentation'.  As in ocamlformat, the files
+See `neocaml--project-indentation'.  As in ocamlformat, the files
 in the file's directory and its parents up to the project root (the
 nearest one with a .git, .hg or dune-project) apply from the root
 down, and a profile resets cases-exp-indent to the profile's own.  A
@@ -834,28 +834,55 @@ default."
         (cons (if (equal profile "janestreet") 'janestreet 'conventional)
               cases)))))
 
-(defun neocaml--ocamlformat-indentation ()
-  "Return the indentation style and case offset of the project's .ocamlformat.
-They're looked up once per buffer (see `neocaml--ocamlformat-indentation')."
-  (when (eq neocaml--ocamlformat-indentation 'unknown)
-    (setq neocaml--ocamlformat-indentation (neocaml--read-ocamlformat-indentation)))
-  neocaml--ocamlformat-indentation)
+(defun neocaml--read-ocp-indent-indentation ()
+  "Return the indentation style and case offset of the file's .ocp-indent.
+See `neocaml--project-indentation'.  As in ocp-indent, the nearest
+.ocp-indent in the file's directory and its parents counts, unlike
+ocamlformat's, which stack.  The JaneStreet preset selects the
+janestreet style, and match_clause sets the case offset."
+  (when-let* ((file buffer-file-name)
+              (dir (locate-dominating-file
+                    (file-name-directory file)
+                    (lambda (dir)
+                      (let ((config (expand-file-name ".ocp-indent" dir)))
+                        (and (file-regular-p config) (file-readable-p config)))))))
+    (let ((style 'ocp-indent) cases)
+      (with-temp-buffer
+        (insert-file-contents (expand-file-name ".ocp-indent" dir))
+        (dolist (setting (split-string (buffer-string) "[,\n]\\|#.*" t "[ \t]+"))
+          (pcase (split-string setting "[ \t]*=[ \t]*")
+            (`("JaneStreet") (setq style 'janestreet cases nil))
+            ((or `("normal") `("apprentice")) (setq style 'ocp-indent cases nil))
+            (`("match_clause" ,value) (setq cases (string-to-number value))))))
+      (cons style cases))))
+
+(defun neocaml--project-indentation ()
+  "Return the indentation style and case offset of the project's configuration.
+That's its .ocamlformat's, or failing that its .ocp-indent's, looked up
+once per buffer (see `neocaml--project-indentation')."
+  (when (eq neocaml--project-indentation 'unknown)
+    (setq neocaml--project-indentation
+          (with-demoted-errors "neocaml: can't read the indentation configuration: %S"
+            (or (neocaml--read-ocamlformat-indentation)
+                (neocaml--read-ocp-indent-indentation)))))
+  neocaml--project-indentation)
 
 (defun neocaml--indent-style ()
   "Return the indentation style of the current buffer.
 That's `neocaml-indent-style', or when it's nil, the style of the
-project's .ocamlformat, or `ocp-indent'."
+project's configuration (see `neocaml--project-indentation'), or
+`ocp-indent'."
   (or neocaml-indent-style
-      (car (neocaml--ocamlformat-indentation))
+      (car (neocaml--project-indentation))
       'ocp-indent))
 
 (defun neocaml-set-indent-style (style)
   "Set the indentation style of the current buffer to STYLE.
 STYLE is one of the styles of `neocaml-indent-style', or nil to take
-the style from the project's .ocamlformat.  This doesn't reindent the
+the style from the project's .ocamlformat or .ocp-indent.  This doesn't reindent the
 buffer."
   (interactive
-   (let ((choices '(("from .ocamlformat") ("ocp-indent" . ocp-indent)
+   (let ((choices '(("from .ocamlformat or .ocp-indent") ("ocp-indent" . ocp-indent)
                     ("conventional" . conventional) ("janestreet" . janestreet))))
      (list (cdr (assoc (completing-read
                         "Indentation style: " choices nil t nil nil
@@ -866,8 +893,9 @@ buffer."
 (defun neocaml--case-body-offset (_node parent &rest _)
   "Return the offset of the body of PARENT, a match case, on a line of its own.
 It's counted from the start of the case's line.  When that's the
-case's |, the offset is the cases-exp-indent of the project's
-.ocamlformat, when it sets one and `neocaml-indent-style' is nil, or
+case's |, the offset is the case offset of the project's
+configuration (see `neocaml--project-indentation'), when it sets one
+and `neocaml-indent-style' is nil, or
 else twice `neocaml-indent-offset' in the conventional style and
 `neocaml-indent-offset' in the others.  A case after a `with' on the
 same line has its body `neocaml-indent-offset' in, in every style:
@@ -881,7 +909,7 @@ same line has its body `neocaml-indent-offset' in, in every style:
    ((not (eq (char-after (neocaml--node-bol parent)) ?|))
     neocaml-indent-offset)
    ((and (null neocaml-indent-style)
-         (cdr (neocaml--ocamlformat-indentation))))
+         (cdr (neocaml--project-indentation))))
    ((eq (neocaml--indent-style) 'conventional)
     (* 2 neocaml-indent-offset))
    (t neocaml-indent-offset)))
@@ -2566,9 +2594,9 @@ The information is also copied to the kill ring."
          ["Customize (persist)..." (customize-variable 'treesit-font-lock-level)
           :help "Set the default font-lock level for new buffers"])
         ("Indentation Style"
-         ["From .ocamlformat" (neocaml-set-indent-style nil)
+         ["From .ocamlformat or .ocp-indent" (neocaml-set-indent-style nil)
           :style radio :selected (null neocaml-indent-style)
-          :help "Indent as the project's .ocamlformat says, or as ocp-indent does"]
+          :help "Indent as the project's .ocamlformat or .ocp-indent says"]
          ["ocp-indent" (neocaml-set-indent-style 'ocp-indent)
           :style radio :selected (eq neocaml-indent-style 'ocp-indent)
           :help "Indent as ocp-indent does by default"]
