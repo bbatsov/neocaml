@@ -684,7 +684,23 @@ and u = B"
   and g x = f x
 end")
 
-    (it "leaves a comment no rule covers where it is, however often it's indented"
+    (it "moves a line no rule covers along with the line its parent starts on"
+      (with-temp-buffer
+        (insert "module M = struct\nlet f = function\n  | A x\n    as c -> c\nend")
+        (neocaml-mode)
+        (dotimes (_ 2)
+          (indent-region (point-min) (point-max))
+          (expect (buffer-string)
+                  :to-equal "module M = struct\n  let f = function\n    | A x\n      as c -> c\nend"))))
+
+    (it "indents a line no rule covers that's left of its parent's line"
+      (with-temp-buffer
+        (insert "    type t =\n      [ `A\n  (* c *)\n      | `B ]")
+        (neocaml-mode)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal "type t =\n  [ `A\n  (* c *)\n  | `B ]")))
+
+    (it "keeps a comment no rule covers in place relative to its parent, however often it's indented"
       (dolist (code '("type t =\n  [ `A\n  (* c *)\n  | `B ]"
                       "type\n  (* c *)\n  t = int"))
         (with-temp-buffer
