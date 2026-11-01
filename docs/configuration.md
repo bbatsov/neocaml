@@ -172,6 +172,179 @@ The base indentation offset is controlled by `neocaml-indent-offset` (default 2)
 (setq neocaml-indent-offset 4)
 ```
 
+### Indentation Styles
+
+OCaml doesn't have one indentation style that everyone follows. ocamlformat
+ships several profiles, Jane Street's code doesn't look like the compiler's,
+and plenty of projects never run a formatter at all. So neocaml's indentation
+comes in three styles, which agree on most things and differ on a handful of
+layouts:
+
+- `ocp-indent` (the default) indents the way
+  [ocp-indent](https://github.com/OCamlPro/ocp-indent) does out of the box.
+- `conventional` indents the way ocamlformat's `conventional` profile (its
+  default one) does. ocaml.org, ppxlib and Irmin are formatted with it.
+- `janestreet` indents the way ocamlformat's `janestreet` profile does. Jane
+  Street's libraries, dune and ocaml-lsp are formatted with it.
+
+Here's the same code indented in each style:
+
+=== "ocp-indent"
+
+    ```ocaml
+    let classify value =
+      match value with
+      | Some payload ->
+        let result = transform payload in
+        finish result
+      | None ->
+        (match fallback () with
+         | [] -> 0
+         | _ -> 1)
+
+    let print_all first_list
+        second_list =
+      List.iter
+        (fun x ->
+           print x)
+        (first_list
+         @ second_list);
+      List.iter first_list (fun x ->
+          print x)
+
+    module Int_set = Set.Make (struct
+        type t = int
+        let compare = compare
+      end)
+    ```
+
+=== "conventional"
+
+    ```ocaml
+    let classify value =
+      match value with
+      | Some payload ->
+          let result = transform payload in
+          finish result
+      | None ->
+          (match fallback () with
+          | [] -> 0
+          | _ -> 1)
+
+    let print_all first_list
+        second_list =
+      List.iter
+        (fun x ->
+          print x)
+        (first_list
+        @ second_list);
+      List.iter first_list (fun x ->
+          print x)
+
+    module Int_set = Set.Make (struct
+      type t = int
+      let compare = compare
+    end)
+    ```
+
+=== "janestreet"
+
+    ```ocaml
+    let classify value =
+      match value with
+      | Some payload ->
+        let result = transform payload in
+        finish result
+      | None ->
+        (match fallback () with
+         | [] -> 0
+         | _ -> 1)
+
+    let print_all first_list
+          second_list =
+      List.iter
+        (fun x ->
+           print x)
+        (first_list
+         @ second_list);
+      List.iter first_list (fun x ->
+        print x)
+
+    module Int_set = Set.Make (struct
+        type t = int
+        let compare = compare
+      end)
+    ```
+
+All the differences, with the columns counted for the default
+`neocaml-indent-offset` of 2:
+
+| Layout | `ocp-indent` | `conventional` | `janestreet` |
+|--------|--------------|----------------|--------------|
+| Body of a match case on a line of its own, from the bar | 2 | 4 | 2 |
+| Cases of a `(match ...)` or `(try ...)` | under the `match` | under the parenthesis | under the `match` |
+| Parameters on continuation lines | 4 | 4 | 6 |
+| Arguments on continuation lines, after `=`, `then` and the like | 4 | 4 | 2 past the function |
+| Arguments on continuation lines, after an operator, a comma or a semicolon | 2 past the start of the chain | 2 past the function | 2 past the function |
+| An operator starting a line inside parentheses | under the first operand | under the parenthesis | under the first operand |
+| A structure passed to a functor, `F (struct ... end)` | body 4, `end` 2 | body 2, `end` 0 | body 4, `end` 2 |
+| Body of a `(fun x ->` starting a line | 2 past the `fun` | 2 past the parenthesis | 2 past the `fun` when passed to a function, 2 past the parenthesis otherwise |
+| Body of a `(fun x ->` further along a line | 4 past the start of the line | 4 past the function it's passed to | 2 past the start of the line |
+
+Everything else is the same in all three: the bar of a case goes under its
+`match`, nothing is indented after `in`, `then` and `else` go under their
+`if`, and so on.
+
+Why `ocp-indent` by default? If you use ocamlformat, the default doesn't
+matter much, because neocaml picks the style that matches your
+`.ocamlformat` (see below). For code that ocamlformat never touches,
+ocp-indent is what most projects indent with: opam, Rocq, Frama-C and Eio do,
+and so does the compiler (with deeper match cases). It's also close to the
+`janestreet` profile, and it keeps match case bodies one
+`neocaml-indent-offset` past the bar, as neocaml always has.
+
+Keep in mind that indentation only places the lines you've broken, it doesn't
+break them for you. If ocamlformat formats your code on save, it gets the last
+word on the layout either way. Picking the matching style just means less of
+what you type moves around when you save.
+
+#### Switching Styles
+
+By default (`neocaml-indent-style` set to `nil`) neocaml looks for an
+`.ocamlformat` in the file's directory and its parents, up to the project
+root, the same way ocamlformat does:
+
+- `profile = janestreet` selects the `janestreet` style, and any other profile
+  (or none, since `conventional` is ocamlformat's default) the `conventional`
+  one.
+- A `cases-exp-indent` option sets how far the bodies of match cases go,
+  whatever the profile.
+- Without an `.ocamlformat`, you get the `ocp-indent` style.
+
+neocaml reads the `.ocamlformat` once per buffer, so after you change it,
+revert the buffers it applies to (`M-x revert-buffer`).
+
+To use one style everywhere, whatever the `.ocamlformat` says:
+
+```emacs-lisp
+(setq neocaml-indent-style 'janestreet)
+```
+
+To pick a style for one project without an `.ocamlformat`, set it in a
+`.dir-locals.el` at the project root:
+
+```emacs-lisp
+((neocaml-base-mode . ((neocaml-indent-style . conventional))))
+```
+
+To switch the current buffer to another style, use `M-x
+neocaml-set-indent-style` or the "Indentation Style" submenu of the OCaml
+menu. That only changes how lines get indented from then on, and only in
+that buffer. To reindent the
+whole buffer, select it with `C-x h` and press `TAB`.
+
+### Alternative Indentation Functions
+
 When it comes to indentation you've got several options:
 
 - Using the built-in Tree-sitter indentation

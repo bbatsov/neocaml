@@ -45,8 +45,11 @@ Set `neocaml-indent-offset` (default 2):
 (setq neocaml-indent-offset 4)
 ```
 
-See [Configuration](configuration.md#indentation) for alternative
-indentation engines (ocp-indent, tuareg SMIE, indent-relative).
+For the layout itself (how far match case bodies go, parameters on
+continuation lines and the like), pick an [indentation
+style](configuration.md#indentation-styles). See
+[Configuration](configuration.md#alternative-indentation-functions) for
+alternative indentation engines (ocp-indent, tuareg SMIE, indent-relative).
 
 ## Do I need to remove tuareg or caml-mode?
 
@@ -85,7 +88,7 @@ Yes. It's also a **n**ew **E**macs package for **OCaml**.
 They're independent projects. tuareg uses a handwritten parser and
 SMIE for indentation; neocaml uses tree-sitter for everything. You can
 use tuareg's indentation engine with neocaml if you prefer it (see
-[Configuration](configuration.md#indentation)). See
+[Configuration](configuration.md#alternative-indentation-functions)). See
 [Migration](migration.md) for a detailed comparison.
 
 ## Where can I get help?

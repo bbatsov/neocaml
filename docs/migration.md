@@ -94,7 +94,8 @@ enclosing and case analysis.
 
 If you prefer tuareg's SMIE-based indentation over neocaml's tree-sitter
 indentation, you can use it directly -- see the
-[Indentation](configuration.md#indentation) section for the setup snippet.
+[Alternative Indentation Functions](configuration.md#alternative-indentation-functions)
+section for the setup snippet.
 
 ## What you gain
 

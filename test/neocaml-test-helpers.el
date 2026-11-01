@@ -230,37 +230,50 @@ or (START END FACE) for position-based matching."
    (split-string code "\n")
    "\n"))
 
-(defmacro when-indenting--it (mode description &rest code-strings)
+(defun neocaml-test--reindent (mode code &optional file)
+  "Return CODE with its indentation stripped and redone by MODE.
+With FILE, the buffer visits it."
+  (with-temp-buffer
+    (setq buffer-file-name file)
+    (insert (neocaml-test--strip-indentation code))
+    (funcall mode)
+    (indent-region (point-min) (point-max))
+    (prog1 (buffer-string)
+      (set-buffer-modified-p nil))))
+
+(defmacro when-indenting--it (mode style description &rest code-strings)
   "Create a Buttercup test that asserts each CODE-STRING indents correctly.
-MODE is the major mode function to use.  DESCRIPTION is the test name.
+MODE is the major mode function to use, and STYLE the value of
+`neocaml-indent-style'.  DESCRIPTION is the test name.
 Each element of CODE-STRINGS is a properly-indented OCaml code string.
 The macro strips indentation, re-indents via MODE, and asserts the
 result matches the original."
-  (declare (indent 2))
+  (declare (indent 3))
   `(it ,description
-     ,@(mapcar
-        (lambda (code)
-          `(let ((expected ,code))
-             (expect
-              (with-temp-buffer
-                (insert (neocaml-test--strip-indentation expected))
-                (funcall #',mode)
-                (indent-region (point-min) (point-max))
-                (buffer-string))
-              :to-equal expected)))
-        code-strings)))
+     (let ((neocaml-indent-style ',style))
+       ,@(mapcar
+          (lambda (code)
+            `(let ((expected ,code))
+               (expect (neocaml-test--reindent #',mode expected) :to-equal expected)))
+          code-strings))))
 
 (defmacro when-indenting-it (description &rest code-strings)
   "Create a Buttercup test that asserts each CODE-STRING indents correctly.
 DESCRIPTION is the test name.  Uses `neocaml-mode'."
   (declare (indent 1))
-  `(when-indenting--it neocaml-mode ,description ,@code-strings))
+  `(when-indenting--it neocaml-mode nil ,description ,@code-strings))
+
+(defmacro when-indenting-in-style-it (style description &rest code-strings)
+  "Create a Buttercup test that asserts each CODE-STRING indents correctly.
+Like `when-indenting-it', with `neocaml-indent-style' set to STYLE."
+  (declare (indent 2))
+  `(when-indenting--it neocaml-mode ,style ,description ,@code-strings))
 
 (defmacro when-indenting-interface-it (description &rest code-strings)
   "Create a Buttercup test that asserts each CODE-STRING indents correctly.
 DESCRIPTION is the test name.  Uses `neocaml-interface-mode'."
   (declare (indent 1))
-  `(when-indenting--it neocaml-interface-mode ,description ,@code-strings))
+  `(when-indenting--it neocaml-interface-mode nil ,description ,@code-strings))
 
 (defmacro when-indenting-with-point--it (mode description before after)
   "Create a Buttercup test asserting single-line indentation with cursor tracking.

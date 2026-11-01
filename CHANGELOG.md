@@ -25,6 +25,7 @@
 - [#107](https://github.com/bbatsov/neocaml/pull/107): Indent the `@@` of an OxCaml `sig @@ portable` starting a line like `end`.
 - [#107](https://github.com/bbatsov/neocaml/pull/107): Indent an attribute on a line of its own after a body, like the `[@nontail]` and `[@exclave_if_stack a]` of Jane Street code, like the body.
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Fontify the toplevel's responses in `neocaml-repl` and `neocaml-utop` with tree-sitter, the signatures as in `.mli` buffers and the values as in `.ml` buffers (toggle with `neocaml-repl-fontify-output` and `neocaml-utop-fontify-output`).
+- [#110](https://github.com/bbatsov/neocaml/pull/110): Add indentation styles: `neocaml-indent-style` selects `ocp-indent` (the default), or `conventional` and `janestreet` after ocamlformat's profiles, and when it's `nil` the style comes from the `profile` and `cases-exp-indent` of the project's `.ocamlformat`. `M-x neocaml-set-indent-style` and the OCaml menu switch the style of the current buffer.
 
 ### Changes
 
@@ -34,6 +35,11 @@
   - The dune commands move from the `C-c C-d` prefix to `C-c C-o`, and live in `neocaml-dune-command-map`, so they can be bound under another prefix.
 - [#80](https://github.com/bbatsov/neocaml/pull/80): Use the hybrid forward-sexp function on every Emacs version, so `C-M-f` moves over whole keyword-led forms (`fun`, `match`, `if`, etc.) on Emacs 31+ instead of stopping after the keyword.
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Give each dune project in a monorepo its own REPL session, named with its path below the `project.el` root (e.g. `*OCaml: mono/pkgs/core*`), so `dune utop` loads the libraries of the project you're working in.
+- [#110](https://github.com/bbatsov/neocaml/pull/110): Indent as ocp-indent does by default, which moves a few layouts:
+  - The cases and the `with` of a `(match ...)` or `(try ...)` go under the `match`, and an operator starting a line inside parentheses under the first operand.
+  - Parameters on continuation lines go 4 columns in, arguments after `=`, `then` and the like 4 past the start of the line, and arguments after an operator past the start of the chain.
+  - The body of a structure passed to a functor (`F (struct`) goes 4 columns in and its `end` 2, and the body of a `begin` or `(` opening a match case's body 2 past where the case's body goes.
+  - The body of a `(fun x ->` starting a line goes past the `fun`, and that of one further along a line 4 past the start of the line.
 
 ### Bug fixes
 

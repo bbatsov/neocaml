@@ -56,6 +56,27 @@
   :safe 'natnump
   :package-version '(neocaml . "0.1.0"))
 
+(defcustom neocaml-indent-style nil
+  "Style of indentation in `neocaml-mode' and `neocaml-interface-mode'.
+The styles only differ in a few layouts:
+
+- `ocp-indent' indents as ocp-indent does by default.
+- `conventional' indents as ocamlformat's conventional (default)
+  profile does, which puts match case bodies further past the |.
+- `janestreet' indents as ocamlformat's janestreet profile does,
+  which puts parameters on continuation lines further in.
+
+nil picks the style from the profile in the project's .ocamlformat,
+taking its cases-exp-indent into account, and falls back to
+`ocp-indent' in projects that don't have one.  To switch the style
+of the current buffer, use \\[neocaml-set-indent-style]."
+  :type '(choice (const :tag "From .ocamlformat" nil)
+                 (const :tag "ocp-indent" ocp-indent)
+                 (const :tag "ocamlformat's conventional profile" conventional)
+                 (const :tag "ocamlformat's janestreet profile" janestreet))
+  :safe (lambda (value) (memq value '(nil ocp-indent conventional janestreet)))
+  :package-version '(neocaml . "0.11.0"))
+
 (defcustom neocaml-other-file-alist
   '(("\\.mli\\'" (".ml" ".mll" ".mly"))
     ("\\.ml\\'" (".mli"))
@@ -769,6 +790,108 @@ The return value is suitable for `treesit-font-lock-settings'."
 ;; enclosing node.  This means `node-is' won't match those lines —
 ;; use `parent-is' instead, and place such rules before `no-node'.
 
+;; The handful of layouts the indentation styles disagree on consult
+;; `neocaml--indent-style' when they're applied, so a style set by a
+;; directory-local variable or switched in a buffer takes effect without
+;; rebuilding the rules.
+
+(defvar-local neocaml--ocamlformat-indentation 'unknown
+  "The indentation style and case offset of the project's .ocamlformat.
+A cons (STYLE . CASE-OFFSET), where CASE-OFFSET is its
+cases-exp-indent, or nil when it doesn't set one.  nil when there's
+no .ocamlformat, and `unknown' until it's been looked up.")
+
+(defun neocaml--read-ocamlformat-indentation ()
+  "Return the indentation style and case offset of the file's .ocamlformat.
+See `neocaml--ocamlformat-indentation'.  As in ocamlformat, the files
+in the file's directory and its parents up to the project root (the
+nearest one with a .git, .hg or dune-project) apply from the root
+down, and a profile resets cases-exp-indent to the profile's own.  A
+file without a profile gets the conventional one, ocamlformat's
+default."
+  (when buffer-file-name
+    (let (files profile cases)
+      (locate-dominating-file
+       (file-name-directory buffer-file-name)
+       (lambda (dir)
+         (let ((file (expand-file-name ".ocamlformat" dir)))
+           (when (file-readable-p file)
+             (push file files)))
+         ;; Stop at the project root
+         (seq-some (lambda (marker) (file-exists-p (expand-file-name marker dir)))
+                   '(".git" ".hg" "dune-project"))))
+      (dolist (file files)
+        (with-temp-buffer
+          (insert-file-contents file)
+          (while (re-search-forward
+                  "^[ \t]*\\(profile\\|cases-exp-indent\\)[ \t]*=[ \t]*\\([^ \t\n#]+\\)"
+                  nil t)
+            (if (equal (match-string 1) "profile")
+                (setq profile (match-string 2)
+                      cases nil)
+              (setq cases (string-to-number (match-string 2)))))))
+      (when files
+        (cons (if (equal profile "janestreet") 'janestreet 'conventional)
+              cases)))))
+
+(defun neocaml--ocamlformat-indentation ()
+  "Return the indentation style and case offset of the project's .ocamlformat.
+They're looked up once per buffer (see `neocaml--ocamlformat-indentation')."
+  (when (eq neocaml--ocamlformat-indentation 'unknown)
+    (setq neocaml--ocamlformat-indentation (neocaml--read-ocamlformat-indentation)))
+  neocaml--ocamlformat-indentation)
+
+(defun neocaml--indent-style ()
+  "Return the indentation style of the current buffer.
+That's `neocaml-indent-style', or when it's nil, the style of the
+project's .ocamlformat, or `ocp-indent'."
+  (or neocaml-indent-style
+      (car (neocaml--ocamlformat-indentation))
+      'ocp-indent))
+
+(defun neocaml-set-indent-style (style)
+  "Set the indentation style of the current buffer to STYLE.
+STYLE is one of the styles of `neocaml-indent-style', or nil to take
+the style from the project's .ocamlformat.  This doesn't reindent the
+buffer."
+  (interactive
+   (let ((choices '(("from .ocamlformat") ("ocp-indent" . ocp-indent)
+                    ("conventional" . conventional) ("janestreet" . janestreet))))
+     (list (cdr (assoc (completing-read
+                        "Indentation style: " choices nil t nil nil
+                        (car (rassq neocaml-indent-style choices)))
+                       choices)))))
+  (setq-local neocaml-indent-style style))
+
+(defun neocaml--case-body-offset (_node parent &rest _)
+  "Return the offset of the body of PARENT, a match case, on a line of its own.
+It's counted from the start of the case's line.  When that's the
+case's |, the offset is the cases-exp-indent of the project's
+.ocamlformat, when it sets one and `neocaml-indent-style' is nil, or
+else twice `neocaml-indent-offset' in the conventional style and
+`neocaml-indent-offset' in the others.  A case after a `with' on the
+same line has its body `neocaml-indent-offset' in, in every style:
+  try f x with
+  | Not_found ->
+      g x
+  try f x
+  with Not_found ->
+    g x"
+  (cond
+   ((not (eq (char-after (neocaml--node-bol parent)) ?|))
+    neocaml-indent-offset)
+   ((and (null neocaml-indent-style)
+         (cdr (neocaml--ocamlformat-indentation))))
+   ((eq (neocaml--indent-style) 'conventional)
+    (* 2 neocaml-indent-offset))
+   (t neocaml-indent-offset)))
+
+(defun neocaml--parameter-offset (&rest _)
+  "Return the offset of a parameter starting a line from its definition.
+The janestreet style puts parameters three times `neocaml-indent-offset'
+in, and the others twice."
+  (* (if (eq (neocaml--indent-style) 'janestreet) 3 2) neocaml-indent-offset))
+
 (defun neocaml--grand-parent-bol (_node parent _bol &rest _)
   "Return the first non-whitespace position on PARENT's parent's line.
 This is like `parent-bol' but goes one level up in the tree.
@@ -857,14 +980,34 @@ of a parenthesized or-pattern, as ocamlformat lays them out:
     (back-to-indentation)
     (point)))
 
+(defun neocaml--opens-parens-p (node)
+  "Return non-nil if NODE comes right after the parenthesis around it."
+  (let ((outer (treesit-node-parent node)))
+    (and (member (treesit-node-type outer)
+                 '("parenthesized_expression" "parenthesized_pattern"
+                   "parenthesized_type"))
+         (= (treesit-node-start node) (1+ (treesit-node-start outer))))))
+
+(defun neocaml--paren-content-anchor (node)
+  "Return where lines inside the parentheses NODE opens line up.
+That's NODE, but the parenthesis in the conventional style, as
+ocp-indent and ocamlformat's profiles lay them out:
+  (match x with    (match x with
+   | A -> ...)     | A -> ...)"
+  (if (eq (neocaml--indent-style) 'conventional)
+      (treesit-node-start (treesit-node-parent node))
+    (treesit-node-start node)))
+
 (defun neocaml--chain-anchor (node parent _bol &rest _)
   "Return the anchor for the line at NODE, a continuation of PARENT's chain.
 PARENT is part of the chain (see `neocaml--chain-start' for what
 counts), and the line aligns with the start of the whole chain (see
-`neocaml--chain-start'), as ocamlformat lays it out.  The exceptions:
-- in a chain right inside parentheses, an operator starting the line
-  goes under the parenthesis, and so does every line of a function
-  type:
+`neocaml--chain-start'), as ocp-indent and ocamlformat lay it out.
+The exceptions:
+- in a chain right inside parentheses, an operator starting a line,
+  and every line of a function type, go where the parentheses' content
+  does (see `neocaml--paren-content-anchor'), which is under the
+  parenthesis in the conventional style:
     (\"a\"
     ^ \"b\")
     (int ->
@@ -877,16 +1020,13 @@ counts), and the line aligns with the start of the whole chain (see
   (let* ((chain (neocaml--chain-start parent))
          (outer (treesit-node-parent chain)))
     (cond
-     ((and (member (treesit-node-type outer)
-                   '("parenthesized_expression" "parenthesized_pattern"
-                     "parenthesized_type"))
-           (= (treesit-node-start chain) (1+ (treesit-node-start outer)))
+     ((and (neocaml--opens-parens-p chain)
            (or (equal (treesit-node-type outer) "parenthesized_type")
                ;; An operator (:: has no field of its own)
                (and node
                     (or (equal (treesit-node-type node) "::")
                         (equal (treesit-node-field-name node) "operator")))))
-      (treesit-node-start outer))
+      (neocaml--paren-content-anchor chain))
      ((and (equal (treesit-node-type node) "->")
            (let ((before (treesit-node-prev-sibling chain)))
              (and (equal (treesit-node-type before) ":")
@@ -905,6 +1045,86 @@ so it's indented.  Everything else aligns (see `neocaml--chain-anchor')."
            (equal (treesit-node-field-name node) "right"))
       neocaml-indent-offset
     0))
+
+(defun neocaml--case-anchor (_node parent &rest _)
+  "Return the anchor for a case of PARENT, a `match' or `try'.
+The cases line up with the start of PARENT's line, or when PARENT is
+right inside parentheses, with the parentheses' content (see
+`neocaml--paren-content-anchor')."
+  (if (neocaml--opens-parens-p parent)
+      (neocaml--paren-content-anchor parent)
+    (neocaml--node-bol parent)))
+
+(defun neocaml--with-anchor (_node parent &rest _)
+  "Return the anchor for the `with' of PARENT, a `match' or `try'.
+It goes at the start of PARENT's line, or under the keyword when
+PARENT is right inside parentheses, in every style:
+  (try f ()
+   with Not_found -> 0)"
+  (if (neocaml--opens-parens-p parent)
+      (treesit-node-start parent)
+    (neocaml--node-bol parent)))
+
+(defun neocaml--case-body-parens-p (_node parent &rest _)
+  "Return non-nil if PARENT is parentheses opening a match case's body.
+They open at the end of the case's line:
+  | A -> (
+      match ...)
+  | B -> begin
+      ...
+    end"
+  (and (equal (treesit-node-type parent) "parenthesized_expression")
+       (equal (treesit-node-type (treesit-node-parent parent)) "match_case")
+       (equal (treesit-node-field-name parent) "body")
+       (not (neocaml--at-bol-p parent))))
+
+(defun neocaml--parenthesized-offset (_node parent &rest _)
+  "Return the offset for a line in PARENT, a parenthesized expression.
+That's `neocaml-indent-offset', but in parentheses opening a match
+case's body (see `neocaml--case-body-parens-p'), the lines go one step
+past the case's body, as ocp-indent lays them out, and where the body
+goes in the conventional style, as ocamlformat's conventional profile
+lays them out."
+  (if (neocaml--case-body-parens-p nil parent)
+      (+ (neocaml--case-body-offset nil (treesit-node-parent parent))
+         (if (eq (neocaml--indent-style) 'conventional) 0 neocaml-indent-offset))
+    neocaml-indent-offset))
+
+(defun neocaml--functor-application (structure)
+  "Return the functor application STRUCTURE is passed to in parentheses.
+That's the whole application, as in `F (struct ... end) (struct ... end)',
+or nil when STRUCTURE isn't passed to a functor."
+  (let ((outer (treesit-node-parent structure)))
+    (when (and (equal (treesit-node-type outer) "parenthesized_module_expression")
+               (equal (treesit-node-field-name outer) "argument"))
+      (treesit-parent-while
+       outer
+       (lambda (node)
+         (member (treesit-node-type node)
+                 '("parenthesized_module_expression" "module_application")))))))
+
+(defun neocaml--functor-argument-p (_node parent &rest _)
+  "Return non-nil if PARENT is a structure passed to a functor further along a line.
+Outside the conventional style, which indents its body and `end' like
+any other, they're indented as if the functor started a line of its
+own, as ocp-indent and ocamlformat's janestreet profile lay them out:
+  module M = F (struct
+      let x = 1
+    end)"
+  (and (not (eq (neocaml--indent-style) 'conventional))
+       (equal (treesit-node-type parent) "structure")
+       (when-let* ((application (neocaml--functor-application parent)))
+         (not (neocaml--at-bol-p application)))))
+
+(defun neocaml--functor-anchor (_node parent &rest _)
+  "Return the start of the line of the functor PARENT, a structure, is passed to.
+See `neocaml--functor-argument-p'."
+  (neocaml--node-bol (neocaml--functor-application parent)))
+
+(defun neocaml--functor-body-offset (&rest _)
+  "Return the offset of the body of a structure passed to a functor.
+See `neocaml--functor-argument-p'."
+  (* 2 neocaml-indent-offset))
 
 (defun neocaml--attribute-anchor (node &rest _)
   "Return the anchor for NODE, an attribute after an item.
@@ -965,6 +1185,14 @@ body or cases line up with the start of the operator chain, as
 ocamlformat lays them out."
   (treesit-node-start (neocaml--chain-start (treesit-node-parent parent))))
 
+(defun neocaml--application-of (arg)
+  "Return the application ARG is passed to, possibly with a label, or nil."
+  (let ((outer (treesit-node-parent arg)))
+    (when (equal (treesit-node-type outer) "labeled_argument")
+      (setq outer (treesit-node-parent outer)))
+    (and (equal (treesit-node-type outer) "application_expression")
+         outer)))
+
 (defun neocaml--let-fun-body-p (node parent &rest _)
   "Return non-nil if NODE is the body of PARENT, a `fun' starting a `let' body.
 The body goes where the `fun' would, as ocp-indent and ocamlformat
@@ -976,6 +1204,59 @@ lay it out:
        (equal (treesit-node-type (treesit-node-parent parent)) "let_binding")
        (neocaml--at-bol-p parent)
        (equal (treesit-node-field-name node) "body")))
+
+(defun neocaml--paren-fun-body-p (node parent &rest _)
+  "Return non-nil if NODE is the body of PARENT, a `fun' right inside parens.
+See `neocaml--paren-fun-body-anchor' for where it goes."
+  (and (equal (treesit-node-type parent) "fun_expression")
+       (neocaml--opens-parens-p parent)
+       (equal (treesit-node-field-name node) "body")))
+
+(defun neocaml--paren-fun-body-anchor (_node parent &rest _)
+  "Return the anchor for the body of PARENT, a `fun' right inside parentheses.
+When the parenthesis starts its line, the body goes past the `fun',
+as ocp-indent lays it out:
+  List.map
+    (fun x ->
+       x + 1)
+The conventional style indents it from the parenthesis instead, and
+so does the janestreet style, unless PARENT is passed to a function,
+as ocamlformat's profiles lay it out.  Further along a line, the body
+is indented from the start of the line (see
+`neocaml--paren-fun-body-offset'), but in the conventional style from
+the function PARENT is passed to, as its arguments are:
+  List.iter
+    ~f:(fun x ->
+      print x)"
+  (let* ((paren (treesit-node-parent parent))
+         (application (neocaml--application-of paren)))
+    (cond
+     ((neocaml--at-bol-p paren)
+      (if (pcase (neocaml--indent-style)
+            ('conventional nil)
+            ('janestreet
+             (and application
+                  (not (equal (treesit-node-type
+                               (treesit-node-child-by-field-name application "function"))
+                              "constructor_path"))))
+            (_ t))
+          (treesit-node-start parent)
+        (treesit-node-start paren)))
+     ((and application (eq (neocaml--indent-style) 'conventional))
+      (neocaml--argument-anchor nil application))
+     (t (neocaml--node-bol paren)))))
+
+(defun neocaml--paren-fun-body-offset (_node parent &rest _)
+  "Return the offset for the body of PARENT, a `fun' right inside parentheses.
+That's `neocaml-indent-offset', but outside the janestreet style,
+the body of a `fun' further along its line goes twice as far, as
+ocp-indent and ocamlformat's conventional profile lay it out:
+  List.iter l (fun x ->
+      print x)"
+  (if (or (neocaml--at-bol-p (treesit-node-parent parent))
+          (eq (neocaml--indent-style) 'janestreet))
+      neocaml-indent-offset
+    (* 2 neocaml-indent-offset)))
 
 (defun neocaml--function-case-offset (_node parent &rest _)
   "Return the offset for a line in the cases of PARENT, a `function'.
@@ -990,7 +1271,8 @@ The cases are indented from the line the `function' is on, unless the
     "stack_" "local_" "borrow_")
   "Tokens that expect a body on the next line.
 Used by `neocaml--empty-line-offset' to decide whether an empty line
-should be indented relative to the previous line.")
+should be indented relative to the previous line, and by
+`neocaml--argument-indentation'.")
 
 (defun neocaml--token-before (pos)
   "Return the token before POS on its line, or nil at the start of the line.
@@ -1022,17 +1304,60 @@ which preserves the previous line's indentation level.  A trailing
         neocaml-indent-offset
       0)))
 
+(defun neocaml--operand-chain (node)
+  "Return the operator chain, tuple or sequence NODE is an operand of, or nil."
+  (let* ((outer (treesit-node-parent node))
+         (type (treesit-node-type outer)))
+    (pcase type
+      ((or "infix_expression" "cons_expression") (neocaml--chain-start outer))
+      ((or "tuple_expression" "sequence_expression")
+       (treesit-parent-while outer (lambda (n) (equal (treesit-node-type n) type)))))))
+
+(defun neocaml--argument-indentation (application)
+  "Return (ANCHOR . OFFSET) for an argument of APPLICATION starting a line.
+Arguments go past the function, also when it comes further along its
+line after a parenthesis or a bracket:
+  (Printf.sprintf \"%s\" msg
+     (to_string bt))
+Where else they do depends on the style:
+- After a token that starts a body (=, then, fun ... -> and the like)
+  they go two steps past the start of the line, one after `in', as
+  ocp-indent lays them out, in every style but janestreet.
+- After an operator, a comma or a semicolon, they go past the start of
+  the chain, tuple or sequence in the ocp-indent style, as ocp-indent
+  lays them out:
+    let v = x |> g a
+              b
+- The janestreet style puts them past the function everywhere, and
+  the conventional style everywhere but after a body token, as
+  ocamlformat's profiles and ocp-indent's JaneStreet preset do."
+  (let* ((style (neocaml--indent-style))
+         (before (and (not (eq style 'janestreet))
+                      (neocaml--token-before (treesit-node-start application))))
+         (type (treesit-node-type before)))
+    (cond
+     ((equal type "in")
+      (cons (neocaml--node-bol application) neocaml-indent-offset))
+     ((and (member type neocaml--indent-body-tokens)
+           ;; The -> of a match case and the = of a record field don't
+           ;; count, as ocp-indent has it
+           (not (member (treesit-node-type (treesit-node-parent before))
+                        '("match_case" "field_expression"))))
+      (cons (neocaml--node-bol application) (* 2 neocaml-indent-offset)))
+     ((when-let* (((and before (eq style 'ocp-indent)))
+                  (chain (neocaml--operand-chain application)))
+        (cons (treesit-node-start chain) neocaml-indent-offset)))
+     (t (cons (treesit-node-start application) neocaml-indent-offset)))))
+
 (defun neocaml--argument-anchor (_node parent &rest _)
   "Return the anchor for an argument of PARENT, an application, starting a line.
-Arguments go past the start of the line, or past the function when it
-comes further along the line after a parenthesis or a bracket, as
-ocp-indent and ocamlformat lay them out:
-  (Printf.sprintf \"%s\" msg
-     (to_string bt))"
-  (if (member (treesit-node-type (neocaml--token-before (treesit-node-start parent)))
-              '("(" "[" "[|"))
-      (treesit-node-start parent)
-    (neocaml--node-bol parent)))
+See `neocaml--argument-indentation'."
+  (car (neocaml--argument-indentation parent)))
+
+(defun neocaml--argument-offset (_node parent &rest _)
+  "Return the offset for an argument of PARENT, an application, starting a line.
+See `neocaml--argument-indentation'."
+  (cdr (neocaml--argument-indentation parent)))
 
 (defun neocaml--indent-rules (language)
   "Return tree-sitter indentation rules for LANGUAGE.
@@ -1057,33 +1382,40 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Top-level definitions: column 0
      ((parent-is "compilation_unit") column-0 0)
 
-     ;; Closing delimiters align with the opening construct
+     ;; Closing delimiters align with the opening construct, those of
+     ;; parentheses opening a match case's body with the body
+     ((and (node-is "\\`\\(?:)\\|end\\)\\'") neocaml--case-body-parens-p)
+      parent-bol neocaml-indent-offset)
      ((node-is ")") parent-bol 0)
      ((node-is "]") parent-bol 0)
      ((node-is "}") parent-bol 0)
      ((node-is "done") parent-bol 0)
+     ((and (node-is "end") neocaml--functor-argument-p)
+      neocaml--functor-anchor neocaml-indent-offset)
      ((node-is "end") parent-bol 0)
 
-     ;; "with" keyword aligns with match/try
+     ;; "with" keyword aligns with match/try (see `neocaml--with-anchor')
+     ((match "\\`with\\'" "\\`\\(?:match\\|try\\)_expression\\'") neocaml--with-anchor 0)
      ((node-is "with") parent-bol 0)
 
      ;; then/else clauses align with their enclosing if
      ((node-is "then_clause") parent-bol 0)
      ((node-is "else_clause") parent-bol 0)
 
-     ;; | pipe in match/try aligns with the keyword
-     ((match "^|$" "match_expression") parent-bol 0)
-     ((match "^|$" "try_expression") parent-bol 0)
-
-     ;; Match cases: match_case node aligns with match/try keyword
+     ;; The cases of a match or try (a leading | or the first case
+     ;; without one) align with the keyword (see `neocaml--case-anchor')
+     ((match "\\`\\(?:|\\|match_case\\)\\'" "\\`\\(?:match\\|try\\)_expression\\'")
+      neocaml--case-anchor 0)
      ((node-is "match_case") parent-bol 0)
 
      ;; Bodies inside then/else are indented
      ((parent-is "then_clause") parent-bol neocaml-indent-offset)
      ((parent-is "else_clause") parent-bol neocaml-indent-offset)
 
-     ;; Match case bodies (after ->) are indented from |
-     ((parent-is "match_case") parent-bol neocaml-indent-offset)
+     ;; Match case bodies (after ->) are indented from | (see
+     ;; `neocaml--case-body-offset'), a guard or -> starting a line less
+     ((match "\\`\\(?:guard\\|->\\)\\'" "\\`match_case\\'") parent-bol neocaml-indent-offset)
+     ((parent-is "match_case") parent-bol neocaml--case-body-offset)
 
      ;; let...in: body after "in" aligns with "let" (no accumulation)
      ((parent-is "let_expression") parent-bol 0)
@@ -1097,7 +1429,10 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; with their item
      ((node-is "\\`item_attribute\\'") parent-bol 0)
 
-     ;; Let/type/external bindings: body after = is indented
+     ;; Let/type/external bindings: body after = is indented, and
+     ;; parameters starting a line further (see `neocaml--parameter-offset')
+     ((match "\\`\\(?:parameter\\|abstract_type\\)\\'" "\\`let_binding\\'")
+      parent-bol neocaml--parameter-offset)
      ((parent-is "let_binding") parent-bol neocaml-indent-offset)
      ((parent-is "type_binding") parent-bol neocaml-indent-offset)
      ((parent-is "external") parent-bol neocaml-indent-offset)
@@ -1117,6 +1452,7 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Module structures and signatures.  The @@ of an OxCaml sig @@
      ;; portable starting a line aligns with the sig, as end does
      ((match "\\`@@\\'" "\\`signature\\'") parent-bol 0)
+     (neocaml--functor-argument-p neocaml--functor-anchor neocaml--functor-body-offset)
      ((parent-is "structure") parent-bol neocaml-indent-offset)
      ((parent-is "signature") parent-bol neocaml-indent-offset)
 
@@ -1125,9 +1461,11 @@ The return value is suitable for `treesit-simple-indent-rules'."
 
      ;; fun/function expressions.  After an operator (x >>= fun y ->)
      ;; the body lines up with the operator chain, and the body of a
-     ;; fun starting a let body with the fun
+     ;; fun starting a let body or right inside parentheses has rules of
+     ;; its own
      (neocaml--operand-function-p neocaml--operand-function-anchor 0)
      (neocaml--let-fun-body-p neocaml--grand-parent-bol neocaml-indent-offset)
+     (neocaml--paren-fun-body-p neocaml--paren-fun-body-anchor neocaml--paren-fun-body-offset)
      ((parent-is "fun_expression") parent-bol neocaml-indent-offset)
      ((parent-is "function_expression") parent-bol neocaml--function-case-offset)
 
@@ -1137,13 +1475,13 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Compound expressions.  parent-is matches anywhere in the node
      ;; type, so array_expression covers OxCaml's iarray_expression too,
      ;; as the "]" rule above covers its closing ":]".
-     ((parent-is "parenthesized_expression") parent-bol neocaml-indent-offset)
+     ((parent-is "parenthesized_expression") parent-bol neocaml--parenthesized-offset)
      ((parent-is "record_expression") parent-bol neocaml-indent-offset)
      ((parent-is "list_expression") parent-bol neocaml-indent-offset)
      ((parent-is "array_expression") parent-bol neocaml-indent-offset)
 
-     ;; Application (see `neocaml--argument-anchor') and field access
-     ((parent-is "application_expression") neocaml--argument-anchor neocaml-indent-offset)
+     ;; Application (see `neocaml--argument-indentation') and field access
+     ((parent-is "application_expression") neocaml--argument-anchor neocaml--argument-offset)
      ((parent-is "field_expression") parent-bol neocaml-indent-offset)
 
      ;; Sequences (expr1; expr2) — keep aligned
@@ -1171,7 +1509,8 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; A leading <- (janestreet style) aligns with what it sets, and a
      ;; comment between the cases of a match, or before an else, with them
      ((match "\\`<-\\'" "\\`set_expression\\'") parent 0)
-     ((match "\\`comment\\'" "\\`\\(?:match\\|if\\)_expression\\'") parent-bol 0)
+     ((match "\\`comment\\'" "\\`\\(?:match\\|try\\)_expression\\'") neocaml--case-anchor 0)
+     ((match "\\`comment\\'" "\\`if_expression\\'") parent-bol 0)
      ;; Otherwise these are bodies: the right side of x.f <-, a match or
      ;; if subject on a line of its own, a labeled argument's value after
      ;; ~label:, a lazy or extension payload
@@ -2021,6 +2360,22 @@ The information is also copied to the kill ring."
          "--"
          ["Customize (persist)..." (customize-variable 'treesit-font-lock-level)
           :help "Set the default font-lock level for new buffers"])
+        ("Indentation Style"
+         ["From .ocamlformat" (neocaml-set-indent-style nil)
+          :style radio :selected (null neocaml-indent-style)
+          :help "Indent as the project's .ocamlformat says, or as ocp-indent does"]
+         ["ocp-indent" (neocaml-set-indent-style 'ocp-indent)
+          :style radio :selected (eq neocaml-indent-style 'ocp-indent)
+          :help "Indent as ocp-indent does by default"]
+         ["ocamlformat conventional" (neocaml-set-indent-style 'conventional)
+          :style radio :selected (eq neocaml-indent-style 'conventional)
+          :help "Indent as ocamlformat's conventional profile does"]
+         ["ocamlformat janestreet" (neocaml-set-indent-style 'janestreet)
+          :style radio :selected (eq neocaml-indent-style 'janestreet)
+          :help "Indent as ocamlformat's janestreet profile does"]
+         "--"
+         ["Customize (persist)..." (customize-variable 'neocaml-indent-style)
+          :help "Set the default indentation style for new buffers"])
         "--"
         ["Mark Definition" mark-defun
          :help "Mark the current definition"]
