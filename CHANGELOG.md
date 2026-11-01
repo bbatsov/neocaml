@@ -43,6 +43,10 @@
 
 ### Bug fixes
 
+- [#111](https://github.com/bbatsov/neocaml/pull/111): Indent module definitions broken across lines, as ocp-indent and ocamlformat do:
+  - Functor parameters on continuation lines go 4 columns in, and a `struct` or `sig` starting a line under the `module`.
+  - A module type or body after `:` or `=` goes 2 columns in, and the arguments of a functor on lines of their own 2 past the functor.
+  - The body and `end` of a module whose header spans lines line up with the `module`.
 - [#110](https://github.com/bbatsov/neocaml/pull/110): Indent the arguments of a function that comes after a parenthesis or a bracket past the function, as ocp-indent and ocamlformat do, instead of past the start of the line.
 - [#110](https://github.com/bbatsov/neocaml/pull/110): Indent the body of a `fun` that starts the body of a `let` on a line of its own (`let f : t =` followed by `fun x ->`) where the `fun` is, as ocp-indent and ocamlformat do.
 - [#103](https://github.com/bbatsov/neocaml/pull/103): Indent with spaces in `neocaml-mode` and `neocaml-interface-mode`, as ocamlformat does, instead of a mix of tabs and spaces past column 8.

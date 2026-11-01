@@ -118,6 +118,25 @@ end")
   val x : int
 end")
 
+  (when-indenting-it "indents module definitions broken across lines"
+    "module Make_equal
+    (M : S)
+    (Equal : T) =
+struct
+  let x = 1
+end"
+    "module M =
+  Cached_value"
+    "module Dag =
+  Import.Dag.Make
+    (struct
+      type t = int
+    end)"
+    "module N
+  : S = struct
+  let x = 1
+end")
+
   (when-indenting-it "indents try/with"
     "try
   expr
