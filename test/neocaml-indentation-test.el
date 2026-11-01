@@ -341,6 +341,58 @@ end"
   fun x ->
   x + 1")
 
+    (when-indenting-it "indents the arguments of a constructor on the next line past it"
+      "let f = function
+  | Texp_record
+      { representation = r } -> r
+  | PStr
+      (x, y) -> x"
+      "type error =
+  | Non_regular of
+      { definition : Path.t }
+  | With_error_handler :
+      (Exn.t -> Nothing.t) * (unit -> eff)
+      -> eff")
+
+    (when-indenting-it "indents the type or value of a record field on the next line past it"
+      "type 'state t = {
+  menu : Menu.t;
+  handle_request :
+    Menu.t -> 'state -> Response.t;
+}"
+      "let g = function
+  | { pstr_desc =
+        Pstr_eval x } -> x")
+
+    (when-indenting-it "lines up a tuple type and a leading comma in type parameters"
+      "type watermark =
+  string
+  * int"
+      "type u =
+  #(int
+    * string)"
+      "type t =
+  ( int
+  , string ) result")
+
+    (when-indenting-it "indents the rest of an include, open, functor, local open or class on the next line"
+      "include
+  Make (M)"
+      "open
+  functor
+    (A : S)
+    ->
+    struct
+      type t
+    end"
+      "let l =
+  M.
+    [ x ]"
+      "class virtual c =
+  object
+    val virtual x : int
+  end")
+
     (when-indenting-it "aligns the and of a nested let rec with its let"
       "let f () =
   let rec a x = b x
@@ -620,7 +672,17 @@ let g x = x]")
 
     (when-indenting-with-point-it "indents after blank line in doc comment"
       "(** First line.\n\n|Second line. *)"
-      "(** First line.\n\n    |Second line. *)")))
+      "(** First line.\n\n    |Second line. *)")
+
+    (when-indenting-it "lines up a comment between definitions with them"
+      "type t = A
+(* c *)
+and u = B"
+      "module M = struct
+  let rec f x = g x
+  (* c *)
+  and g x = f x
+end")))
 
 (describe "neocaml-interface indentation"
   (before-all
@@ -769,6 +831,27 @@ exception E of string")
       "let t = (a, f b
            c)")
 
+    (when-indenting-it "indents typed patterns and expressions, polymorphic types and let%ext bindings"
+      "let h (x :
+         t) = x"
+      "let f (x
+       : t) = x"
+      "let v = (e
+         : t)"
+      "let f : type a.
+  a t -> a = fun x -> x"
+      "let%expect_test
+  \"name\" = ()")
+
+    (it "indents a typed pattern starting its own line the same way every time"
+      (let ((code "let h (\n  x : t) = x"))
+        (with-temp-buffer
+          (insert code)
+          (neocaml-mode)
+          (dotimes (_ 3)
+            (indent-region (point-min) (point-max)))
+          (expect (buffer-string) :to-equal code))))
+
     (when-indenting-it "indents parentheses opening a match case's body one step past the body"
       "let f = function
   | A -> begin
@@ -914,6 +997,16 @@ end")
       "let v = x |> g a
                b")
 
+    (when-indenting-in-style-it conventional "indents typed patterns and expressions, polymorphic types and let%ext bindings"
+      "let h (x :
+        t) = x"
+      "let v = (e
+          : t)"
+      "let f : type a.
+    a t -> a = fun x -> x"
+      "let%expect_test
+    \"name\" = ()")
+
     (when-indenting-in-style-it conventional "indents parameters on continuation lines twice as far"
       "let f first second
     third =
@@ -970,6 +1063,24 @@ end")
           arg2"
       "let v = x |> g a
                b")
+
+    (when-indenting-in-style-it janestreet "puts a leading comma in type parameters under the first one"
+      "type t =
+  ( int
+    , string ) result")
+
+    (when-indenting-in-style-it janestreet "indents typed patterns and expressions, polymorphic types and let%ext bindings"
+      "let h (x :
+        t) = x"
+      "let v = (e
+         : t)"
+      "let f
+  :  'a.
+     'a -> 'a
+  =
+  fun x -> x"
+      "let%expect_test
+    \"name\" = ()")
 
     (when-indenting-in-style-it janestreet "indents parameters on continuation lines three times as far"
       "let long_parameters

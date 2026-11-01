@@ -276,7 +276,7 @@ Here's the same code indented in each style:
       end)
     ```
 
-All the differences, with the columns counted for the default
+The differences, with the columns counted for the default
 `neocaml-indent-offset` of 2:
 
 | Layout | `ocp-indent` | `conventional` | `janestreet` |
@@ -290,6 +290,12 @@ All the differences, with the columns counted for the default
 | A structure passed to a functor, `F (struct ... end)`, or the signature of a functor's parameter, `module F (X : sig ... end)` | body 4, `end` 2 | body 2, `end` 0 | body 4, `end` 2 |
 | Body of a `(fun x ->` starting a line | 2 past the `fun` | 2 past the parenthesis | 2 past the `fun` when passed to a function, 2 past the parenthesis otherwise |
 | Body of a `(fun x ->` further along a line | 4 past the start of the line | 4 past the function it's passed to | 2 past the start of the line |
+
+A few rarer layouts differ by a column or two as well: the type of a
+typed pattern or the `:` of a typed expression on a line of its own, the
+type after a `type a.` annotation, a binding on the line after a
+`let%ext`, a leading comma in type parameters, and the signatures of
+other functor parameters than the first one of a module definition.
 
 Everything else is the same in all three: the bar of a case goes under its
 `match`, nothing is indented after `in`, `then` and `else` go under their

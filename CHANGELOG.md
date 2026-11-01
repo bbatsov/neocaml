@@ -44,6 +44,11 @@
 
 ### Bug fixes
 
+- [#111](https://github.com/bbatsov/neocaml/pull/111): Indent the continuation lines no rule covered, which neocaml left where they were typed:
+  - The arguments of a constructor on the line after it, in patterns and declarations, and the type or value of a record field after its `:` or `=`.
+  - The type of a typed pattern, the `:` of a typed expression, the type after a polymorphic annotation, and a binding on the line after a `let%ext`, as each indentation style lays them out.
+  - The elements of a tuple type, a leading comma in type parameters, and the rest of an `include`, `open`, `functor`, local open or class binding.
+  - Comments between the definitions of a `let rec ... and` or a `type ... and`, which line up with the definitions.
 - [#111](https://github.com/bbatsov/neocaml/pull/111): Indent module definitions broken across lines, as ocp-indent and ocamlformat do:
   - Functor parameters on continuation lines go 4 columns in, and a `struct` or `sig` starting a line under the `module`.
   - A module type or body after `:` or `=` goes 2 columns in, and the arguments of a functor on lines of their own 2 past the functor.
