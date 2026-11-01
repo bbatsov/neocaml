@@ -725,12 +725,37 @@ end")
           (expect (buffer-string) :to-equal code)))))
 
   (describe "string indentation"
+    (when-indenting-it "indents a string continued after a backslash past its opening quote"
+      "let s =
+  \"foo \\
+   bar \\
+   \\nbaz\""
+      "module M = struct
+  let msg = f \"abc\\
+               def\"
+end")
+
+    (it "leaves the lines inside a quoted string as they are, char-like text and all"
+      (let ((code "let s = {|\n#define D(x) ('0'+(x)%%10)\n|};\nlet f x =\n  x"))
+        (with-temp-buffer
+          (insert code)
+          (neocaml-mode)
+          (goto-char (point-min))
+          (while (not (eobp))
+            (syntax-ppss (line-beginning-position))
+            (forward-line 1))
+          (indent-region (point-min) (point-max))
+          (expect (buffer-string) :to-equal code))))
+
     (it "leaves the lines inside a multi-line string as they are"
       (dolist (code '("let s = \"usage:\n      prog FILE\""
                       "let s = \"foo\n   \""
                       "let () =\n  print ();\n  [%expect {|\n     foo\n   bar |}]"
                       "let () =\n  [%expect {|\n    foo\n  |}]"
-                      "let x = {%sql|\n  SELECT 1\n|}"))
+                      "let x = {%sql|\n  SELECT 1\n|}"
+                      "{%%raw|\n  select\n    x\n|}\nlet y = 1"
+                      "let c = {|\n#define D(x) \\\n    ((x) + 1)\n|}"
+                      "let s = \"a\\\\\n    b\""))
         (with-temp-buffer
           (insert code)
           (neocaml-mode)

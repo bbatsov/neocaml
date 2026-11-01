@@ -1596,30 +1596,53 @@ ocp-indent style, as ocp-indent does."
     (neocaml--double-offset)))
 
 (defconst neocaml--string-types
-  '("string" "string_content" "quoted_string" "quoted_string_content"
-    "quoted_extension")
-  "Types of the nodes a line can start inside of in a string.")
+  '("string" "quoted_string" "quoted_extension" "quoted_item_extension")
+  "Types of the nodes of strings, quoted strings and quoted extensions.")
+
+(defun neocaml--string-line (node parent bol)
+  "Return the string the line at BOL begins inside of, or nil.
+Such a line has no NODE of its own, or one whose PARENT is part of a
+string.  The parse tree tells, also for a string that isn't closed
+yet, where the syntax table can be fooled by text in a quoted string
+that looks like a char literal.  The second value is non-nil when the
+line continues the string after a backslash (and an escape sequence
+spans the newline), as OCaml skips the line's indentation then."
+  (when (or (null node)
+            (member (treesit-node-type parent) neocaml--string-types)
+            (string-suffix-p "string_content" (treesit-node-type parent)))
+    (let* ((start (save-excursion (goto-char bol) (line-beginning-position)))
+           (leaf (treesit-node-at start))
+           ;; A string is the leaf at most two levels up, past an
+           ;; escape sequence and the string's content
+           (string (seq-find
+                    (lambda (n)
+                      (and (member (treesit-node-type n) neocaml--string-types)
+                           (< (treesit-node-start n) start)))
+                    (list leaf (treesit-node-parent leaf)
+                          (treesit-node-parent (treesit-node-parent leaf))))))
+      (when string
+        ;; An escape sequence spans the newline before a continuation
+        (list string (equal (treesit-node-type (treesit-node-at (1- start)))
+                            "escape_sequence"))))))
 
 (defun neocaml--string-line-p (node parent bol &rest _)
   "Return non-nil if the line at BOL begins inside a string.
-Its indentation is part of the string then, so it has to stay as it
-is, unless the previous line ends with a backslash, after which OCaml
-skips it.  Such a line has no NODE of its own, or one whose PARENT is
-part of a string.  The syntax table knows about strings and quoted
-strings, and the parse tree about quoted extensions like `{%sql|...|}'
-too."
-  (and (or (null node)
-           (member (treesit-node-type parent) neocaml--string-types))
-       (save-excursion
-         (goto-char bol)
-         (let ((start (line-beginning-position)))
-           (and (not (eq (char-before (1- start)) ?\\))
-                (or (nth 3 (syntax-ppss start))
-                    (let ((leaf (treesit-node-at start)))
-                      (seq-some (lambda (n)
-                                  (and (member (treesit-node-type n) neocaml--string-types)
-                                       (< (treesit-node-start n) start)))
-                                (list leaf (treesit-node-parent leaf))))))))))
+See `neocaml--string-line' for NODE and PARENT, and
+`neocaml--string-line-anchor' for where the line goes."
+  (and (neocaml--string-line node parent bol) t))
+
+(defun neocaml--string-line-anchor (node parent bol &rest _)
+  "Return the anchor for the line at BOL, which begins inside a string.
+Its indentation is part of the string, so it stays as it is, unless
+the line continues the string after a backslash, whose indentation
+OCaml skips.  That goes one column past the string's opening quote,
+as ocp-indent and ocamlformat lay it out:
+  \"foo \\
+   bar\"
+See `neocaml--string-line' for NODE and PARENT."
+  (pcase (neocaml--string-line node parent bol)
+    (`(,string t) (1+ (treesit-node-start string)))
+    (_ bol)))
 
 (defun neocaml--relative-offset (_node parent bol &rest _)
   "Return the offset of the line at BOL from the start of PARENT's line.
@@ -1651,10 +1674,10 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; lines inside a multi-line comment have node=nil, parent=comment.
      ((parent-is "comment") neocaml--comment-body-anchor 0)
 
-     ;; Lines starting inside a string stay as they are (see
-     ;; `neocaml--string-line-p').  Must come before `no-node', which
-     ;; would otherwise take them
-     (neocaml--string-line-p no-indent 0)
+     ;; Lines starting inside a string stay as they are, but after a
+     ;; backslash go past the opening quote (see the functions).  Must
+     ;; come before `no-node', which would otherwise take them
+     (neocaml--string-line-p neocaml--string-line-anchor 0)
 
      ;; Empty lines: use previous line's indentation, adding offset
      ;; when the previous line ends with a body-expecting token.
