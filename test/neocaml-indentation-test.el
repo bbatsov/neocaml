@@ -1226,6 +1226,24 @@ end")))
         (setq buffer-file-name (expand-file-name "lib/a.ml" root))
         (expect (neocaml--project-indentation) :to-equal expected))))
 
+  (it "doesn't count an .ocamlformat for the files ocamlformat doesn't format"
+    (neocaml-test--write-file (expand-file-name ".ocp-indent" root) "match_clause=4\n")
+    (neocaml-test--write-file (expand-file-name "lambda/.ocamlformat" root)
+                              "profile=conventional\ndisable=true\n")
+    (neocaml-test--write-file (expand-file-name "lambda/.ocamlformat-enable" root) "matching.ml\n")
+    (neocaml-test--write-file (expand-file-name "lib/.ocamlformat" root) "profile=janestreet\n")
+    (neocaml-test--write-file (expand-file-name "lib/.ocamlformat-ignore" root)
+                              "# vendored\nvendor/*\n")
+    (pcase-dolist (`(,file . ,expected)
+                   '(("lambda/matching.ml" conventional)
+                     ("lambda/translcore.ml" ocp-indent . 4)
+                     ("lib/a.ml" janestreet)
+                     ("lib/vendor/b.ml" ocp-indent . 4)
+                     ("lib/vendor/sub/c.ml" janestreet)))
+      (with-temp-buffer
+        (setq buffer-file-name (expand-file-name file root))
+        (expect (neocaml--project-indentation) :to-equal expected))))
+
   (it "prefers the .ocamlformat to the .ocp-indent"
     (neocaml-test--write-file (expand-file-name ".ocamlformat" root) "profile=janestreet\n")
     (neocaml-test--write-file (expand-file-name ".ocp-indent" root) "match_clause=4\n")
