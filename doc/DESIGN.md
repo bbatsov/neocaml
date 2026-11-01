@@ -53,6 +53,7 @@ The rules in `neocaml--indent-rules` are roughly ordered as follows:
 4. **Keyword alignment** — `with`, `then_clause`, `else_clause`, match `|` align with their enclosing keyword.
 5. **Body indentation** — children of `let_binding`, `match_case`, `structure`, `do_clause`, etc. are indented by `neocaml-indent-offset`.
 6. **Error recovery** — `(parent-is "ERROR")` indents by offset so that typing inside incomplete code gets reasonable indentation.
+7. **Last resort**: `neocaml--last-resort-rule` keeps a line no other rule covers where it is relative to its parent's line, so it moves along with the code around it. Since every line matches it, rules appended to `neocaml--indent-rules` never get a chance; add yours in front of them.
 
 ### The `no-node` problem
 

@@ -1604,6 +1604,27 @@ too."
                                        (< (treesit-node-start n) start)))
                                 (list leaf (treesit-node-parent leaf))))))))))
 
+(defun neocaml--relative-offset (_node parent bol &rest _)
+  "Return the offset of the line at BOL from the start of PARENT's line.
+That's the offset it has now (0 at the least), so a line no other rule
+covers keeps its place relative to its parent's line, and moves along
+with it when the code around it is reindented, instead of staying
+where it was typed.  `indent-region' only remembers where lines were
+for a batch of lines at a time, so a line whose parent's line is in
+an earlier batch stays where it was."
+  (max 0 (- (save-excursion (goto-char bol) (current-column))
+            (save-excursion (goto-char (neocaml--node-bol parent)) (current-column)))))
+
+(defconst neocaml--last-resort-rule '(catch-all parent-bol neocaml--relative-offset)
+  "The last of `neocaml--indent-rules', for the lines no other rule covers.")
+
+(defun neocaml--without-last-resort-rule (rules)
+  "Return the indentation RULES without the last resort rule.
+RULES are as in `treesit-simple-indent-rules'.  That's for checking
+which lines the other rules cover."
+  (mapcar (lambda (language-rules) (remove neocaml--last-resort-rule language-rules))
+          rules))
+
 (defun neocaml--indent-rules (language)
   "Return tree-sitter indentation rules for LANGUAGE.
 The return value is suitable for `treesit-simple-indent-rules'."
@@ -1814,7 +1835,11 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((parent-is "ERROR") parent-bol neocaml-indent-offset)
 
      ;; Strings preserve previous indentation
-     ((node-is "string") prev-line 0))))
+     ((node-is "string") prev-line 0)
+
+     ;; Anything else keeps its place relative to the line its parent
+     ;; starts on (see `neocaml--relative-offset')
+     ,neocaml--last-resort-rule)))
 
 (defun neocaml-cycle-indent-function ()
   "Cycle between `treesit-indent' and `indent-relative' for indentation."

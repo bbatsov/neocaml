@@ -232,11 +232,16 @@ or (START END FACE) for position-based matching."
 
 (defun neocaml-test--reindent (mode code &optional file)
   "Return CODE with its indentation stripped and redone by MODE.
-With FILE, the buffer visits it."
+With FILE, the buffer visits it.  The last resort rule, which keeps a
+line no other rule covers where it is relative to its parent's line,
+is left out, so CODE only comes back as it was when real rules cover
+its lines."
   (with-temp-buffer
     (setq buffer-file-name file)
     (insert (neocaml-test--strip-indentation code))
     (funcall mode)
+    (setq-local treesit-simple-indent-rules
+                (neocaml--without-last-resort-rule treesit-simple-indent-rules))
     (indent-region (point-min) (point-max))
     (prog1 (buffer-string)
       (set-buffer-modified-p nil))))
