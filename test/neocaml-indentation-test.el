@@ -682,7 +682,17 @@ and u = B"
   let rec f x = g x
   (* c *)
   and g x = f x
-end"))
+end")
+
+    (it "leaves a comment no rule covers where it is, however often it's indented"
+      (dolist (code '("type t =\n  [ `A\n  (* c *)\n  | `B ]"
+                      "type\n  (* c *)\n  t = int"))
+        (with-temp-buffer
+          (insert code)
+          (neocaml-mode)
+          (dotimes (_ 3)
+            (indent-region (point-min) (point-max)))
+          (expect (buffer-string) :to-equal code)))))
 
   (describe "string indentation"
     (it "leaves the lines inside a multi-line string as they are"

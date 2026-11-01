@@ -1748,8 +1748,6 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Error recovery
      ((parent-is "ERROR") parent-bol neocaml-indent-offset)
 
-     ;; Comment continuation lines align with the body start
-     ((node-is "comment") neocaml--comment-body-anchor 0)
      ;; Strings preserve previous indentation
      ((node-is "string") prev-line 0))))
 
