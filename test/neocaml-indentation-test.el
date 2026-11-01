@@ -305,6 +305,18 @@ end"
   | (x
     :: rest) -> x")
 
+    (when-indenting-it "indents arguments past the function after a parenthesis or a bracket"
+      "let r =
+  Some
+    (Printf.sprintf \"%s\" msg
+       (to_string bt))"
+      "let r =
+  f
+    [ g a
+        b ]"
+      "let r = foo ~f:(g a
+                  b)")
+
     (when-indenting-it "aligns the and of a nested let rec with its let"
       "let f () =
   let rec a x = b x

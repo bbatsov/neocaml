@@ -850,6 +850,13 @@ of a parenthesized or-pattern, as ocamlformat lays them out:
     (skip-chars-backward " \t")
     (bolp)))
 
+(defun neocaml--node-bol (node)
+  "Return the first non-whitespace position on the first line of NODE."
+  (save-excursion
+    (goto-char (treesit-node-start node))
+    (back-to-indentation)
+    (point)))
+
 (defun neocaml--chain-anchor (node parent _bol &rest _)
   "Return the anchor for the line at NODE, a continuation of PARENT's chain.
 PARENT is part of the chain (see `neocaml--chain-start' for what
@@ -973,6 +980,22 @@ The cases are indented from the line the `function' is on, unless the
 Used by `neocaml--empty-line-offset' to decide whether an empty line
 should be indented relative to the previous line.")
 
+(defun neocaml--token-before (pos)
+  "Return the token before POS on its line, or nil at the start of the line.
+A trailing `exclave_' doesn't nest (see `neocaml--empty-line-offset'),
+so the token before it counts instead."
+  (save-excursion
+    (goto-char pos)
+    (skip-chars-backward " \t")
+    (unless (bolp)
+      (let ((node (treesit-node-at (1- (point)))))
+        (if (not (equal (treesit-node-type node) "exclave_"))
+            node
+          (goto-char (treesit-node-start node))
+          (skip-chars-backward " \t")
+          (unless (bolp)
+            (treesit-node-at (1- (point)))))))))
+
 (defun neocaml--empty-line-offset (_node _parent bol)
   "Compute extra indentation offset for an empty line at BOL.
 If the last token on the previous line expects a body (e.g., `=',
@@ -982,21 +1005,22 @@ which preserves the previous line's indentation level.  A trailing
   (save-excursion
     (goto-char bol)
     (if (and (zerop (forward-line -1))
-             (progn
-               (end-of-line)
-               (skip-chars-backward " \t")
-               (> (point) (line-beginning-position)))
-             (let ((node (treesit-node-at (1- (point)))))
-               (when (and node (equal (treesit-node-type node) "exclave_"))
-                 (goto-char (treesit-node-start node))
-                 (skip-chars-backward " \t")
-                 (setq node (and (> (point) (line-beginning-position))
-                                 (treesit-node-at (1- (point))))))
-               (and node
-                    (member (treesit-node-type node)
-                            neocaml--indent-body-tokens))))
+             (member (treesit-node-type (neocaml--token-before (line-end-position)))
+                     neocaml--indent-body-tokens))
         neocaml-indent-offset
       0)))
+
+(defun neocaml--argument-anchor (_node parent &rest _)
+  "Return the anchor for an argument of PARENT, an application, starting a line.
+Arguments go past the start of the line, or past the function when it
+comes further along the line after a parenthesis or a bracket, as
+ocp-indent and ocamlformat lay them out:
+  (Printf.sprintf \"%s\" msg
+     (to_string bt))"
+  (if (member (treesit-node-type (neocaml--token-before (treesit-node-start parent)))
+              '("(" "[" "[|"))
+      (treesit-node-start parent)
+    (neocaml--node-bol parent)))
 
 (defun neocaml--indent-rules (language)
   "Return tree-sitter indentation rules for LANGUAGE.
@@ -1104,8 +1128,8 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((parent-is "list_expression") parent-bol neocaml-indent-offset)
      ((parent-is "array_expression") parent-bol neocaml-indent-offset)
 
-     ;; Application and field access
-     ((parent-is "application_expression") parent-bol neocaml-indent-offset)
+     ;; Application (see `neocaml--argument-anchor') and field access
+     ((parent-is "application_expression") neocaml--argument-anchor neocaml-indent-offset)
      ((parent-is "field_expression") parent-bol neocaml-indent-offset)
 
      ;; Sequences (expr1; expr2) — keep aligned
