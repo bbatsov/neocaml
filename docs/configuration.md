@@ -291,21 +291,21 @@ The differences, with the columns counted for the default
 | Body of a `(fun x ->` starting a line | 2 past the `fun` | 2 past the parenthesis | 2 past the `fun` when passed to a function, 2 past the parenthesis otherwise |
 | Body of a `(fun x ->` further along a line | 4 past the start of the line | 4 past the function it's passed to | 2 past the start of the line |
 
-A few rarer layouts differ by a column or two as well: the type of a
-typed pattern or the `:` of a typed expression on a line of its own, the
-type after a `type a.` annotation, a binding on the line after a
-`let%ext`, a leading comma in type parameters, and the signatures of
-other functor parameters than the first one of a module definition.
+A few rarer layouts differ by a column or two as well: typed patterns and
+expressions broken before their type, the type after a `type a.` annotation,
+a binding on the line after a `let%ext`, a leading comma in type parameters,
+the type applied to them on a line of its own, and the signatures of functor
+parameters other than a module definition's first one.
 
 Everything else is the same in all three: the bar of a case goes under its
 `match`, nothing is indented after `in`, `then` and `else` go under their
 `if`, and so on.
 
 Why `ocp-indent` by default? If you use ocamlformat, the default doesn't
-matter much, because neocaml picks the style that matches your
-`.ocamlformat` (see below). For code that ocamlformat never touches,
-ocp-indent is what most projects indent with: opam, Rocq, Frama-C and Eio do,
-and so does the compiler (with deeper match cases). It's also close to the
+matter much, as neocaml picks the style that matches your `.ocamlformat`
+(see below). For code that ocamlformat never touches, ocp-indent is what most
+projects indent with. Opam, Rocq, Frama-C and Eio do, and so does the compiler
+(with deeper match cases). It's also close to the
 `janestreet` profile, and it keeps match case bodies one
 `neocaml-indent-offset` past the bar, as neocaml always has.
 
@@ -351,11 +351,11 @@ To pick a style for one project without such a file, set it in a
 ((neocaml-base-mode . ((neocaml-indent-style . conventional))))
 ```
 
-To switch the current buffer to another style, use `M-x
-neocaml-set-indent-style` or the "Indentation Style" submenu of the OCaml
-menu. That only changes how lines get indented from then on, and only in
-that buffer. To reindent the
-whole buffer, select it with `C-x h` and press `TAB`.
+You can switch the style of the current buffer with `M-x
+neocaml-set-indent-style`, or from the OCaml menu (under "Indentation
+Style"). Note that this affects only how lines get indented from then on, and
+only in that buffer. To indent the whole buffer in the new style, select it
+with `C-x h` and press `TAB`.
 
 ### Alternative Indentation Functions
 
