@@ -56,6 +56,11 @@ end"
       (expect (provided-mode-derived-p major-mode 'prog-mode)
               :to-be-truthy)))
 
+  (it "indents OCaml in the indentation style of neocaml-mode"
+    (let ((neocaml-indent-style 'conventional)
+          (code "let f x =\n  match x with\n  | A ->\n      x\n  | B -> 0"))
+      (expect (neocaml-test--reindent #'neocaml-mlx-mode code) :to-equal code)))
+
   (it "includes a closing delimiter at the recovered node boundary"
     (with-temp-buffer
       (insert "let make () = <div></div>\n;;")
