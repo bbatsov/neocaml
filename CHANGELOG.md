@@ -45,6 +45,7 @@
 
 ### Bug fixes
 
+- [#112](https://github.com/bbatsov/neocaml/pull/112): Indent the OCaml in `neocaml-mlx-mode` buffers on Emacs 30 when the `tsx` grammar is installed, which went by the JSX rules instead.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Tell the lines inside a string from the parse tree alone, so the lines of a quoted string with text that looks like char literals in it (C code, say), and of a top-level quoted extension like `{%%raw|...|}`, stay as they are.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Indent a line continuing a string after a backslash one column past the string's opening quote, as ocp-indent and ocamlformat do.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Indent the parameters of a type and the type applied to them on lines of their own (`( 'key,` followed by `'value ) Hashtbl.t`), and a module type, or its `sig`, on the line after `module type S =`.

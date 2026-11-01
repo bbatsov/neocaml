@@ -333,7 +333,14 @@ the mode degrades gracefully to plain `neocaml-mode' behaviour.
     ;; OCaml regions; these rules handle JSX regions parsed by tsx.
     (setq-local treesit-simple-indent-rules
                 (append treesit-simple-indent-rules
-                        `((tsx ,@(neocaml-mlx--jsx-indent-rules))))))
+                        `((tsx ,@(neocaml-mlx--jsx-indent-rules)))))
+    ;; Emacs 30 picks the parser to indent a line with by the language
+    ;; at it, and without this takes the first parser in the buffer,
+    ;; which can be the tsx one.  The OCaml parser covers the whole
+    ;; buffer and the tsx one only the structure of the JSX, so OCaml is
+    ;; the language everywhere, as it is for Emacs 31 with the OCaml
+    ;; parser as the primary one.
+    (setq-local treesit-language-at-point-function (lambda (_pos) 'ocaml)))
 
   ;; Offer to install the JSX grammar so highlighting works out of the
   ;; box; the host `ocaml' grammar is handled by `neocaml--setup-mode'.
