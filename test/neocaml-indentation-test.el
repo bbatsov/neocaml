@@ -373,7 +373,21 @@ end"
     * string)"
       "type t =
   ( int
-  , string ) result")
+  , string ) result"
+      "type t =
+  ( 'key,
+    'value )
+    Hashtbl.t"
+      "type t = ('key,
+          'value) Hashtbl.t")
+
+    (when-indenting-it "indents a module type on the line after its ="
+      "module type S =
+  T with type t = int"
+      "module type S =
+sig
+  val x : int
+end")
 
     (when-indenting-it "indents the rest of an include, open, functor, local open or class on the next line"
       "include
@@ -1035,6 +1049,12 @@ end")
        ys"
       "let v = x |> g a
                b")
+
+    (when-indenting-in-style-it conventional "puts a type applied to parameters on a line of its own under them"
+      "type t =
+  ( 'key,
+    'value )
+  Hashtbl.t")
 
     (when-indenting-in-style-it conventional "indents typed patterns and expressions, polymorphic types and let%ext bindings"
       "let h (x :

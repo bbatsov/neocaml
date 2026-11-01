@@ -45,6 +45,7 @@
 
 ### Bug fixes
 
+- [#112](https://github.com/bbatsov/neocaml/pull/112): Indent the parameters of a type and the type applied to them on lines of their own (`( 'key,` followed by `'value ) Hashtbl.t`), and a module type, or its `sig`, on the line after `module type S =`.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Move a line no indentation rule covers along with the line its parent starts on when the code around it is reindented, instead of leaving it where it was typed.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Don't take the indentation style from an `.ocamlformat` for the files ocamlformat leaves alone: when it says `disable = true` and no `.ocamlformat-enable` lists the file, or when an `.ocamlformat-ignore` lists it.
 - [#111](https://github.com/bbatsov/neocaml/pull/111): Stop moving a comment that no indentation rule covers further right every time it's indented.
