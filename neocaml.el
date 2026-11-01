@@ -808,12 +808,15 @@ in the file's directory and its parents up to the project root (the
 nearest one with a .git, .hg or dune-project) apply from the root
 down, and a profile resets cases-exp-indent to the profile's own.  A
 file without a profile gets the conventional one, ocamlformat's
-default."
+default.  Nothing counts when ocamlformat doesn't format the file:
+when the files disable it and no .ocamlformat-enable lists the file,
+or an .ocamlformat-ignore does."
   (when buffer-file-name
-    (let (files profile cases)
+    (let (dirs files profile cases disable)
       (locate-dominating-file
        (file-name-directory buffer-file-name)
        (lambda (dir)
+         (push dir dirs)
          (let ((file (expand-file-name ".ocamlformat" dir)))
            (when (file-readable-p file)
              (push file files)))
@@ -824,15 +827,49 @@ default."
         (with-temp-buffer
           (insert-file-contents file)
           (while (re-search-forward
-                  "^[ \t]*\\(profile\\|cases-exp-indent\\)[ \t]*=[ \t]*\\([^ \t\n#]+\\)"
+                  "^[ \t]*\\(profile\\|cases-exp-indent\\|disable\\)[ \t]*=[ \t]*\\([^ \t\n#]+\\)"
                   nil t)
-            (if (equal (match-string 1) "profile")
-                (setq profile (match-string 2)
-                      cases nil)
-              (setq cases (string-to-number (match-string 2)))))))
-      (when files
+            (pcase (match-string 1)
+              ("profile" (setq profile (match-string 2)
+                               cases nil))
+              ("cases-exp-indent" (setq cases (string-to-number (match-string 2))))
+              (_ (setq disable (equal (match-string 2) "true")))))))
+      (when (and files
+                 (if disable
+                     (neocaml--ocamlformat-listed-p dirs ".ocamlformat-enable")
+                   (not (neocaml--ocamlformat-listed-p dirs ".ocamlformat-ignore"))))
         (cons (if (equal profile "janestreet") 'janestreet 'conventional)
               cases)))))
+
+(defun neocaml--ocamlformat-listed-p (dirs name)
+  "Return non-nil if a file called NAME in one of DIRS lists the current file.
+NAME is .ocamlformat-enable or .ocamlformat-ignore, whose lines are
+shell patterns for file names relative to their directory, matched as
+ocamlformat does (see `neocaml--glob-regexp'), and lines starting with
+a # are comments."
+  (seq-some
+   (lambda (dir)
+     (let ((list (expand-file-name name dir))
+           (file (file-relative-name buffer-file-name dir))
+           (case-fold-search nil))
+       (and (file-regular-p list)
+            (with-temp-buffer
+              (insert-file-contents list)
+              (seq-some (lambda (pattern)
+                          (string-match-p (neocaml--glob-regexp pattern) file))
+                        (seq-remove (lambda (line) (string-prefix-p "#" line))
+                                    (split-string (buffer-string) "\n" t "[ \t]+")))))))
+   dirs))
+
+(defun neocaml--glob-regexp (glob)
+  "Return a regexp for the file names the shell pattern GLOB matches.
+As in ocamlformat, a * or ? doesn't match a /."
+  (concat "\\`"
+          (replace-regexp-in-string
+           "\\\\\\*" "[^/]*"
+           (replace-regexp-in-string "\\\\\\?" "[^/]" (regexp-quote glob) t t)
+           t t)
+          "\\'"))
 
 (defun neocaml--read-ocp-indent-indentation ()
   "Return the indentation style and case offset of the file's .ocp-indent.

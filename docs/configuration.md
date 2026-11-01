@@ -325,6 +325,9 @@ root, the same way ocamlformat does:
   one.
 - A `cases-exp-indent` option sets how far the bodies of match cases go,
   whatever the profile.
+- An `.ocamlformat` doesn't count for the files ocamlformat leaves alone, i.e.
+  when it says `disable = true` and no `.ocamlformat-enable` lists the file, or
+  when an `.ocamlformat-ignore` lists it.
 
 Without an `.ocamlformat`, neocaml looks for the nearest `.ocp-indent`, as
 ocp-indent does. Its `JaneStreet` preset selects the `janestreet` style, and
