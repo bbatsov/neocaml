@@ -325,18 +325,23 @@ root, the same way ocamlformat does:
   one.
 - A `cases-exp-indent` option sets how far the bodies of match cases go,
   whatever the profile.
-- Without an `.ocamlformat`, you get the `ocp-indent` style.
 
-neocaml reads the `.ocamlformat` once per buffer, so after you change it,
-revert the buffers it applies to (`M-x revert-buffer`).
+Without an `.ocamlformat`, neocaml looks for the nearest `.ocp-indent`, as
+ocp-indent does. Its `JaneStreet` preset selects the `janestreet` style, and
+anything else the `ocp-indent` one. Its `match_clause` sets how far the bodies
+of match cases go. That's how the compiler's own sources get their deeper
+match cases. Without either file, you get the `ocp-indent` style.
 
-To use one style everywhere, whatever the `.ocamlformat` says:
+neocaml reads these files once per buffer, so after you change one, revert
+the buffers it applies to (`M-x revert-buffer`).
+
+To use one style everywhere, whatever the project's files say:
 
 ```emacs-lisp
 (setq neocaml-indent-style 'janestreet)
 ```
 
-To pick a style for one project without an `.ocamlformat`, set it in a
+To pick a style for one project without such a file, set it in a
 `.dir-locals.el` at the project root:
 
 ```emacs-lisp

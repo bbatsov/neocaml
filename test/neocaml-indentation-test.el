@@ -1171,7 +1171,7 @@ end")))
       (expect (neocaml-test--style-of (expand-file-name "a.ml" root))
               :to-be 'conventional)))
 
-  (it "falls back to ocp-indent without an .ocamlformat"
+  (it "falls back to ocp-indent without an .ocamlformat or .ocp-indent"
     (expect (neocaml-test--style-of (expand-file-name "a.ml" root))
             :to-be 'ocp-indent))
 
@@ -1214,6 +1214,24 @@ end")))
               :to-equal code)
       (expect (neocaml-test--reindent #'neocaml-mode code (expand-file-name "bin/a.ml" root))
               :to-equal code)))
+
+  (it "picks the style and the case offset from the .ocp-indent without an .ocamlformat"
+    (pcase-dolist (`(,content . ,expected)
+                   '(("# Jane Street's\nJaneStreet\n" janestreet)
+                     ("normal\nstrict_with=auto\n" ocp-indent)
+                     ("match_clause=4\nstrict_with=auto\n" ocp-indent . 4)
+                     ("match_clause = 4, JaneStreet" janestreet)))
+      (neocaml-test--write-file (expand-file-name ".ocp-indent" root) content)
+      (with-temp-buffer
+        (setq buffer-file-name (expand-file-name "lib/a.ml" root))
+        (expect (neocaml--project-indentation) :to-equal expected))))
+
+  (it "prefers the .ocamlformat to the .ocp-indent"
+    (neocaml-test--write-file (expand-file-name ".ocamlformat" root) "profile=janestreet\n")
+    (neocaml-test--write-file (expand-file-name ".ocp-indent" root) "match_clause=4\n")
+    (with-temp-buffer
+      (setq buffer-file-name (expand-file-name "a.ml" root))
+      (expect (neocaml--project-indentation) :to-equal '(janestreet))))
 
   (it "prefers an explicit style to the .ocamlformat's"
     (neocaml-test--write-file (expand-file-name ".ocamlformat" root)

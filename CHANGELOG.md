@@ -26,6 +26,7 @@
 - [#107](https://github.com/bbatsov/neocaml/pull/107): Indent an attribute on a line of its own after a body, like the `[@nontail]` and `[@exclave_if_stack a]` of Jane Street code, like the body.
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Fontify the toplevel's responses in `neocaml-repl` and `neocaml-utop` with tree-sitter, the signatures as in `.mli` buffers and the values as in `.ml` buffers (toggle with `neocaml-repl-fontify-output` and `neocaml-utop-fontify-output`).
 - [#110](https://github.com/bbatsov/neocaml/pull/110): Add indentation styles: `neocaml-indent-style` selects `ocp-indent` (the default), or `conventional` and `janestreet` after ocamlformat's profiles, and when it's `nil` the style comes from the `profile` and `cases-exp-indent` of the project's `.ocamlformat`. `M-x neocaml-set-indent-style` and the OCaml menu switch the style of the current buffer.
+- [#112](https://github.com/bbatsov/neocaml/pull/112): Take the indentation style from the project's `.ocp-indent` when it has no `.ocamlformat`: its `JaneStreet` preset selects the `janestreet` style, and its `match_clause` how far the bodies of match cases go.
 
 ### Changes
 
