@@ -598,6 +598,11 @@ Active only in the transcript buffer, on the current input line."
   (setq-local comment-end " *)")
   (setq-local comment-start-skip "(\\*+[ \t]*")
   (setq-local font-lock-defaults '(neocaml-utop-font-lock-keywords t))
+  ;; Error navigation for the files utop reports errors, warnings and
+  ;; backtraces in (those loaded with #use, say), as in `neocaml-repl',
+  ;; but without compilation's own highlighting, which would paint over
+  ;; the warning face utop's errors already have
+  (neocaml-repl--error-navigation-setup t)
   (add-hook 'comint-preoutput-filter-functions #'neocaml-utop--preoutput nil t)
   (add-hook 'completion-at-point-functions
             #'neocaml-utop-completion-at-point nil t)

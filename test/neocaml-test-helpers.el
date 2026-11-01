@@ -221,6 +221,25 @@ or (START END FACE) for position-based matching."
              (specs (cdr test)))
          (neocaml-test--check-face-specs #'neocaml-interface-mode content specs)))))
 
+(defun neocaml-test-compilation-messages ()
+  "Return (TYPE FILE LINE COLUMN) of each compilation message in the buffer.
+Font-lock has parsed them, as it does in a displayed buffer, a chunk
+at a time; `compilation-next-error' parses only a line past point,
+which would cut a warning off from its \"Warning\"."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((messages nil)
+          (match nil))
+      (while (setq match (text-property-search-forward 'compilation-message))
+        (let* ((msg (prop-match-value match))
+               (loc (compilation--message->loc msg)))
+          (push (list (compilation--message->type msg)
+                      (caar (compilation--loc->file-struct loc))
+                      (compilation--loc->line loc)
+                      (compilation--loc->col loc))
+                messages)))
+      (nreverse messages))))
+
 ;;;; Indentation helpers
 
 (defun neocaml-test--strip-indentation (code)
