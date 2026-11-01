@@ -260,16 +260,16 @@ end"
   ^ \"b\"
   ^ \"c\"")
 
-    (when-indenting-it "puts operators of a parenthesized chain under the parenthesis"
+    (when-indenting-it "puts operators of a parenthesized chain under its first operand"
       "let s =
   f
     (\"a\"
-    ^ \"b\")"
+     ^ \"b\")"
       "let ys =
   f
     (xs
-    |> g
-    |> h)")
+     |> g
+     |> h)")
 
     (when-indenting-it "aligns the operand after a trailing operator"
       "let ok =
@@ -303,7 +303,7 @@ end"
       b ) -> a"
       "let f = function
   | (x
-    :: rest) -> x")
+     :: rest) -> x")
 
     (when-indenting-it "indents arguments past the function after a parenthesis or a bracket"
       "let r =
@@ -666,7 +666,7 @@ end")
   unit"
     "val f :
   (int ->
-  int) ->
+   int) ->
   unit")
 
   (when-indenting-interface-it "puts a leading -> under the colon that starts its line"
@@ -708,5 +708,336 @@ exception E of string")
     (when-indenting-interface-with-point-it "keeps top-level val at column 0"
       "type t = int\n  |val x : t"
       "type t = int\n|val x : t")))
+
+(describe "neocaml indentation styles"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (describe "ocp-indent (the default)"
+    (when-indenting-it "puts the cases of a match or try right inside parentheses under its keyword"
+      "let v =
+  f
+    (match x with
+     | A -> 1
+     | B -> 2)"
+      "let v =
+  (try f () with
+   | Not_found -> 0)")
+
+    (when-indenting-it "indents arguments two steps past a line after a body token, one after in"
+      "let x = some_function arg1
+    arg2"
+      "let f x = exclave_ g a
+    b"
+      "let f x =
+  let y = 1 in g y
+    z")
+
+    (when-indenting-it "indents arguments past the function after the -> of a match case"
+      "let f = function
+  | A -> g a
+           b")
+
+    (when-indenting-it "indents arguments after an operator, a comma or a semicolon past the chain"
+      "let v = x |> g a
+          b"
+      "let l =
+  x
+  :: List.map
+    (fun y -> y)
+    ys"
+      "let t = (a, f b
+           c)")
+
+    (when-indenting-it "indents parentheses opening a match case's body one step past the body"
+      "let f = function
+  | A -> begin
+      foo ();
+      bar ()
+    end
+  | B -> (
+      foo ();
+      bar ())")
+
+    (when-indenting-it "puts the with of a match or try right inside parentheses under its keyword"
+      "let v =
+  (try f ()
+   with Not_found -> 0)")
+
+    (when-indenting-it "indents parameters on continuation lines twice as far"
+      "let f first second
+    third =
+  first"
+      "let rec f ~first
+    ?second (type a) =
+  first")
+
+    (when-indenting-it "indents a structure passed to a functor as if the functor started its line"
+      "module M = F (struct
+    type t = int
+  end)")
+
+    (when-indenting-it "indents the body of a fun opening a line in parentheses past the fun"
+      "let a =
+  List.map
+    (fun x ->
+       x + 1)
+    l")
+
+    (when-indenting-it "indents the body of a fun further along a line twice as far"
+      "let b = f x (fun y ->
+    y + 1)"
+      "let () =
+  List.iter
+    ~f:(fun x ->
+        print x)
+    l"))
+
+  (describe "conventional"
+    (when-indenting-in-style-it conventional "indents match case bodies twice as far past the |"
+      "let f value =
+  match value with
+  | Some payload ->
+      let r = transform payload in
+      finish r
+  | None -> default"
+      "let f value other =
+  match value with
+  | First -> (
+      match other with
+      | Alpha -> 1
+      | Beta -> 2)
+  | Second -> 3")
+
+    (when-indenting-in-style-it conventional "indents a guard or -> starting a line, and the body of a case after with, once"
+      "let f = function
+  | Some l
+    when is_long l ->
+      l
+  | _ -> 0"
+      "let f = function
+  | Record { fields; representation }
+    ->
+      fields"
+      "let apply f x =
+  try f x
+  with exn ->
+    let e = capture exn in
+    reraise e")
+
+    (when-indenting-in-style-it conventional "puts the cases of a match right inside parentheses under the parenthesis"
+      "let v =
+  f
+    (match x with
+    | A -> 1
+    | B -> 2)"
+      "let v = a @ (match x with
+            | A -> 1)")
+
+    (when-indenting-in-style-it conventional "puts the with of a match or try right inside parentheses under its keyword"
+      "let v =
+  (try f ()
+   with Not_found -> 0)")
+
+    (when-indenting-in-style-it conventional "puts operators of a parenthesized chain under the parenthesis"
+      "let s =
+  f
+    (\"a\"
+    ^ \"b\")"
+      "let ys =
+  f
+    (xs
+    |> g
+    |> h)"
+      "let f = function
+  | (x
+    :: rest) -> x"
+      "type t =
+  (int ->
+  int) ->
+  unit")
+
+    (when-indenting-in-style-it conventional "indents arguments after an operator past the function"
+      "let l =
+  x
+  :: List.map
+       (fun y -> y)
+       ys"
+      "let v = x |> g a
+               b")
+
+    (when-indenting-in-style-it conventional "indents parameters on continuation lines twice as far"
+      "let f first second
+    third =
+  first")
+
+    (when-indenting-in-style-it conventional "indents a structure passed to a functor like any other"
+      "module M = F (struct
+  type t = int
+end)")
+
+    (when-indenting-in-style-it conventional "indents the body of a fun in parentheses from the parenthesis or the function"
+      "let a =
+  List.map
+    (fun x ->
+      x + 1)
+    l"
+      "let b =
+  ref (fun x ->
+      let y = f x in
+      g y)"
+      "let () =
+  List.iter
+    ~f:(fun x ->
+      print x)
+    l"))
+
+  (describe "janestreet"
+    (when-indenting-in-style-it janestreet "indents match case bodies once past the |"
+      "let f value =
+  match value with
+  | Some payload ->
+    let r = transform payload in
+    finish r
+  | None -> default"
+      "let v =
+  f
+    (match x with
+     | A -> 1
+     | B -> 2)")
+
+    (when-indenting-in-style-it janestreet "indents arguments past the function everywhere"
+      "let x = some_function arg1
+          arg2"
+      "let v = x |> g a
+               b")
+
+    (when-indenting-in-style-it janestreet "indents parameters on continuation lines three times as far"
+      "let long_parameters
+      first
+      second
+  =
+  first")
+
+    (when-indenting-in-style-it janestreet "indents the body of a fun past the fun only when it's passed to a function"
+      "let c =
+  List.map
+    (fun t ->
+       body t)
+    l"
+      "let a =
+  Communication
+    (fun t ->
+      body t)"
+      "let z =
+  some_function title (fun formatter ->
+    body formatter)")
+
+    (when-indenting-in-style-it janestreet "indents a structure passed to a functor as if the functor started its line"
+      "module M = F (struct
+    type t = int
+  end)")))
+
+(defun neocaml-test--write-file (file content)
+  "Write CONTENT to FILE, creating its directory."
+  (make-directory (file-name-directory file) t)
+  (with-temp-file file (insert content)))
+
+(defun neocaml-test--style-of (file)
+  "Return the indentation style of a buffer visiting FILE."
+  (with-temp-buffer
+    (setq buffer-file-name file)
+    (neocaml--indent-style)))
+
+(describe "neocaml-indent-style"
+  :var (root)
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+  (before-each
+    (setq root (file-name-as-directory (make-temp-file "neocaml-style" t)))
+    (neocaml-test--write-file (expand-file-name "dune-project" root) "(lang dune 3.0)\n"))
+  (after-each
+    (delete-directory root t))
+
+  (it "picks the janestreet style from the project's .ocamlformat"
+    (neocaml-test--write-file (expand-file-name ".ocamlformat" root)
+                              "version = 0.27.0\nprofile = janestreet\n")
+    (expect (neocaml-test--style-of (expand-file-name "lib/a.ml" root))
+            :to-be 'janestreet))
+
+  (it "picks the conventional style for the other profiles, or none"
+    (dolist (content '("profile=default\n" "profile = ocamlformat\n" "margin = 90\n"))
+      (neocaml-test--write-file (expand-file-name ".ocamlformat" root) content)
+      (expect (neocaml-test--style-of (expand-file-name "a.ml" root))
+              :to-be 'conventional)))
+
+  (it "falls back to ocp-indent without an .ocamlformat"
+    (expect (neocaml-test--style-of (expand-file-name "a.ml" root))
+            :to-be 'ocp-indent))
+
+  (it "lets the nearest .ocamlformat set an option, up to the project root"
+    (let ((project (expand-file-name "proj/" root)))
+      (neocaml-test--write-file (expand-file-name ".ocamlformat" root) "profile=janestreet\n")
+      (neocaml-test--write-file (expand-file-name "dune-project" project) "(lang dune 3.0)\n")
+      (expect (neocaml-test--style-of (expand-file-name "a.ml" project))
+              :to-be 'ocp-indent)
+      (neocaml-test--write-file (expand-file-name ".ocamlformat" project) "profile=janestreet\n")
+      (neocaml-test--write-file (expand-file-name "lib/.ocamlformat" project) "profile=conventional\n")
+      (expect (neocaml-test--style-of (expand-file-name "lib/a.ml" project))
+              :to-be 'conventional)
+      (expect (neocaml-test--style-of (expand-file-name "bin/a.ml" project))
+              :to-be 'janestreet)))
+
+  (it "takes the offset of case bodies from cases-exp-indent"
+    (neocaml-test--write-file (expand-file-name ".ocamlformat" root) "profile=janestreet\n")
+    (neocaml-test--write-file (expand-file-name "lib/.ocamlformat" root) "cases-exp-indent = 4\n")
+    (let ((code "let f value =
+  match value with
+  | Some payload ->
+      let r = transform payload in
+      finish r
+  | None -> default"))
+      (expect (neocaml-test--reindent #'neocaml-mode code (expand-file-name "lib/a.ml" root))
+              :to-equal code)))
+
+  (it "resets the offset of case bodies to the profile's when a profile follows cases-exp-indent"
+    (neocaml-test--write-file (expand-file-name ".ocamlformat" root) "cases-exp-indent=4\n")
+    (neocaml-test--write-file (expand-file-name "lib/.ocamlformat" root) "profile=janestreet\n")
+    (neocaml-test--write-file (expand-file-name "bin/.ocamlformat" root)
+                              "cases-exp-indent=4\nprofile=janestreet\n")
+    (let ((code "let f value =
+  match value with
+  | Some payload ->
+    finish payload
+  | None -> default"))
+      (expect (neocaml-test--reindent #'neocaml-mode code (expand-file-name "lib/a.ml" root))
+              :to-equal code)
+      (expect (neocaml-test--reindent #'neocaml-mode code (expand-file-name "bin/a.ml" root))
+              :to-equal code)))
+
+  (it "prefers an explicit style to the .ocamlformat's"
+    (neocaml-test--write-file (expand-file-name ".ocamlformat" root)
+                              "profile=janestreet\ncases-exp-indent=4\n")
+    (let ((neocaml-indent-style 'ocp-indent)
+          (code "let f value =
+  match value with
+  | Some payload ->
+    finish payload
+  | None -> default"))
+      (expect (neocaml-test--style-of (expand-file-name "a.ml" root)) :to-be 'ocp-indent)
+      (expect (neocaml-test--reindent #'neocaml-mode code (expand-file-name "a.ml" root))
+              :to-equal code)))
+
+  (it "can be set for the current buffer, and back to the .ocamlformat's"
+    (neocaml-test--write-file (expand-file-name ".ocamlformat" root) "profile=janestreet\n")
+    (with-temp-buffer
+      (setq buffer-file-name (expand-file-name "a.ml" root))
+      (neocaml-set-indent-style 'conventional)
+      (expect (local-variable-p 'neocaml-indent-style) :to-be-truthy)
+      (expect (neocaml--indent-style) :to-be 'conventional)
+      (neocaml-set-indent-style nil)
+      (expect (neocaml--indent-style) :to-be 'janestreet))))
 
 ;;; neocaml-indentation-test.el ends here

@@ -230,39 +230,7 @@ out as a `library` stanza named after its directory), would cover it.
 `C-c C-a` already toggles between `.ml` and `.mli`. `find-sibling-rules` (Emacs 29)
 could handle `lib/foo.ml` ↔ `test/test_foo.ml` the same way. **Priority: low.**
 
-### 16. Indentation styles, starting with Jane Street's
-
-neocaml's indentation sits between ocamlformat's two main profiles. On about
-130,000 lines of OCaml from opam packages, formatted with each profile, it puts 90%
-of the lines where the conventional profile does and 82% where the janestreet one
-does. Part of the gap needs no option, because the other profile never uses the
-layout in question:
-
-- the janestreet profile's leading `;` in records, lists and arrays (about 6,500
-  lines of the gap)
-- a `;;` after a definition inside a module, which should line up with the
-  definition
-- the cases of a `function` that follows an operator (`x >>= function`), which
-  both profiles line up with the start of the line
-
-The rest are real conflicts:
-
-- match case bodies: conventional indents them 4 columns from the `|`, janestreet
-  2, as neocaml does
-- an operator starting a line inside parentheses: conventional puts it under the
-  `(`, janestreet a column right of it
-- the `|` of a parenthesized `match`, which janestreet puts under the `match`
-- parameters on continuation lines, which janestreet indents by 6
-
-`c-ts-mode` shows the shape: a `c-ts-mode-indent-style` defcustom of named styles
-and a command to switch them live. A `neocaml-indent-style` with `conventional` and
-`janestreet` presets would keep the conflicting rules as overrides in front of the
-shared ones, so each preset stays small. Indentation can only follow ocamlformat's
-line breaks, not choose them, so this is for people who indent as they type and
-format later; with format on save, ocamlformat has the last word anyway.
-**Priority: medium, after the fixes that need no option.**
-
-### 17. Prettify and font-lock refinements
+### 16. Prettify and font-lock refinements
 
 Two smaller polish items inspired by sibling modes:
 
@@ -278,14 +246,14 @@ Two smaller polish items inspired by sibling modes:
 Emacs keeps moving capabilities into core. Several map onto things neocaml either
 hand-rolls or doesn't expose yet.
 
-### 18. Grammar install via the Emacs 31 built-ins
+### 17. Grammar install via the Emacs 31 built-ins
 
 Emacs 31 adds `treesit-auto-install-grammar` (offer to fetch and build a missing
 grammar instead of erroring) and `treesit-enabled-modes`. We can lean on these to
 slim down `neocaml-install-grammars` and the "grammar not installed" prompt on 31+,
 while keeping the current path for 29/30. **Priority: medium.**
 
-### 19. Evaluate `define-treesit-generic-mode` and `.scm` font-lock
+### 18. Evaluate `define-treesit-generic-mode` and `.scm` font-lock
 
 Emacs 31 introduces `define-treesit-generic-mode` and the ability to drive
 font-locking from `.scm` query files. Worth evaluating whether the simpler auxiliary
@@ -293,7 +261,7 @@ modes (cram, objinfo) could be expressed more compactly this way, and whether pa
 of our font-lock could move closer to the upstream `highlights.scm`.
 **Priority: later, evaluate.**
 
-### 20. Opt into the newer built-in minor modes
+### 19. Opt into the newer built-in minor modes
 
 - **`completion-preview-mode`** (Emacs 30): inline preview of the top completion.
   It's `capf`-driven, so it works with Eglot and with the completion in the dune
@@ -306,7 +274,7 @@ of our font-lock could move closer to the upstream `highlights.scm`.
 
 **Priority: low, mostly docs.**
 
-### 21. Track upstream tree-sitter fixes and injection improvements
+### 20. Track upstream tree-sitter fixes and injection improvements
 
 Retire neocaml's `treesit-forward-comment` off-by-one workaround once the upstream
 fix is in a release we depend on, and revisit the language-injection setup (used by
@@ -345,11 +313,9 @@ A few patterns worth stealing, noted next to the items they informed:
   (item 3).
 - **VS Code's OCaml Platform and Zed**: automatic switch detection (item 6), and
   viewers for the preprocessed source and the parsetree (item 9).
-- **`rust-ts-mode`**: a `prettify-symbols-compose-predicate` (item 17).
-- **`c-ts-mode`**: selectable indentation styles via a defcustom and a live switch
-  command (item 16).
+- **`rust-ts-mode`**: a `prettify-symbols-compose-predicate` (item 16).
 - **`haskell-ts-mode`**: highlighting only the pattern variables that are actually
-  usable (item 17).
+  usable (item 16).
 
 ## References
 

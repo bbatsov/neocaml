@@ -33,7 +33,7 @@ It's also as cool as Neo from "The Matrix". ;-)
 
 - Tree-sitter based font-locking (4 levels) for `.ml` and `.mli` files
 - Ocamldoc markup rendering in doc comments: `{b bold}`, `{i italic}`, `[code]`, `{[...]}` blocks, `{!references}` and `@tags` are displayed with real faces
-- Tree-sitter based indentation with cycle-indent support
+- Tree-sitter based indentation in three styles (ocp-indent's, and ocamlformat's conventional and janestreet profiles), picked from the project's `.ocamlformat`, with cycle-indent support
 - [OxCaml](https://oxcaml.org/) syntax: modes, kinds, stack allocation, unboxed types and immutable arrays
 - Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`, sentence movement with `M-a`/`M-e`)
 - Imenu with language-specific categories for `.ml` and `.mli`
