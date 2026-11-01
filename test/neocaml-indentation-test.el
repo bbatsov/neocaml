@@ -317,6 +317,11 @@ end"
       "let r = foo ~f:(g a
                   b)")
 
+    (when-indenting-it "puts the body of a fun starting a let body where the fun is"
+      "let f : int -> int =
+  fun x ->
+  x + 1")
+
     (when-indenting-it "aligns the and of a nested let rec with its let"
       "let f () =
   let rec a x = b x

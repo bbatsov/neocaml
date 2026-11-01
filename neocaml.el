@@ -965,6 +965,18 @@ body or cases line up with the start of the operator chain, as
 ocamlformat lays them out."
   (treesit-node-start (neocaml--chain-start (treesit-node-parent parent))))
 
+(defun neocaml--let-fun-body-p (node parent &rest _)
+  "Return non-nil if NODE is the body of PARENT, a `fun' starting a `let' body.
+The body goes where the `fun' would, as ocp-indent and ocamlformat
+lay it out:
+  let f : int -> int =
+    fun x ->
+    x"
+  (and (equal (treesit-node-type parent) "fun_expression")
+       (equal (treesit-node-type (treesit-node-parent parent)) "let_binding")
+       (neocaml--at-bol-p parent)
+       (equal (treesit-node-field-name node) "body")))
+
 (defun neocaml--function-case-offset (_node parent &rest _)
   "Return the offset for a line in the cases of PARENT, a `function'.
 The cases are indented from the line the `function' is on, unless the
@@ -1112,8 +1124,10 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((parent-is "do_clause") parent-bol neocaml-indent-offset)
 
      ;; fun/function expressions.  After an operator (x >>= fun y ->)
-     ;; the body lines up with the operator chain
+     ;; the body lines up with the operator chain, and the body of a
+     ;; fun starting a let body with the fun
      (neocaml--operand-function-p neocaml--operand-function-anchor 0)
+     (neocaml--let-fun-body-p neocaml--grand-parent-bol neocaml-indent-offset)
      ((parent-is "fun_expression") parent-bol neocaml-indent-offset)
      ((parent-is "function_expression") parent-bol neocaml--function-case-offset)
 
