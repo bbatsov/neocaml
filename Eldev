@@ -20,3 +20,6 @@
 (setq checkdoc--interactive-docstring-flag nil)
 
 (setq eldev-project-main-file "neocaml.el")
+
+;; dev/ holds scripts for working on neocaml, not part of the package
+(setf eldev-standard-excludes `(:or ,eldev-standard-excludes "./dev"))

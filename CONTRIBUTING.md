@@ -57,6 +57,27 @@ As [combobulate](https://github.com/mickeynp/combobulate) doesn't support OCaml 
 > and it's hard work. Trust me, I know. I recommend you learn how to use IELM if
 > you decide to go this route.
 
+## Measuring indentation
+
+The specs pin down individual layouts, but to see how a change to the
+indentation rules does on real code, score it against code formatted
+with ocamlformat. `dev/indent-corpus.sh` formats OCaml sources with the
+conventional and janestreet profiles (it needs `ocamlformat` on the
+`PATH`), and `dev/indent-score.el` reports the lines neocaml would
+indent differently, in any of its styles:
+
+```shell
+$ dev/indent-corpus.sh ~/.opam/default/lib /tmp/corpus 300
+$ eldev emacs --batch -l dev/indent-score.el conventional /tmp/corpus/conventional/*
+$ eldev emacs --batch -l dev/indent-score.el janestreet /tmp/corpus/janestreet/*
+```
+
+It ends with a summary like `106220 lines in the conventional style:
+104971 ok (98.8%), 1196 wrong, 53 gaps`, where gaps are lines no rule
+covers. Score before and after a change, and look at the lines that got
+worse. The numbers depend on the ocamlformat version, so compare runs made
+with the same one.
+
 ## Architecture
 
 See [doc/DESIGN.md](doc/DESIGN.md) for internal architecture documentation
