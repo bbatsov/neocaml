@@ -1121,10 +1121,32 @@ own, as ocp-indent and ocamlformat's janestreet profile lay them out:
 See `neocaml--functor-argument-p'."
   (neocaml--node-bol (neocaml--functor-application parent)))
 
-(defun neocaml--functor-body-offset (&rest _)
-  "Return the offset of the body of a structure passed to a functor.
-See `neocaml--functor-argument-p'."
+(defun neocaml--double-offset (&rest _)
+  "Return twice `neocaml-indent-offset'."
   (* 2 neocaml-indent-offset))
+
+(defun neocaml--module-definition (node)
+  "Return the module definition NODE, a struct or sig, is the body of, or nil.
+That's also through a functor, as in `module F = functor (X : S) -> struct'."
+  (when (member (treesit-node-type node) '("structure" "signature"))
+    (let ((outer (treesit-node-parent node)))
+      (while (equal (treesit-node-type outer) "functor")
+        (setq outer (treesit-node-parent outer)))
+      (and (member (treesit-node-type outer) '("module_binding" "module_type_definition"))
+           outer))))
+
+(defun neocaml--module-body-anchor (_node parent &rest _)
+  "Return the anchor for a line in PARENT, a struct, sig or the like.
+That's the start of the line of the module definition PARENT is the
+body of (see `neocaml--module-definition'), or else of PARENT's line.
+The lines of a struct or sig go from the line the definition starts
+on, as ocp-indent and ocamlformat lay them out, also when that's not
+the line of the struct or sig:
+  module M
+    : S = struct
+    let x = 1
+  end"
+  (neocaml--node-bol (or (neocaml--module-definition parent) parent)))
 
 (defun neocaml--attribute-anchor (node &rest _)
   "Return the anchor for NODE, an attribute after an item.
@@ -1392,7 +1414,7 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((node-is "done") parent-bol 0)
      ((and (node-is "end") neocaml--functor-argument-p)
       neocaml--functor-anchor neocaml-indent-offset)
-     ((node-is "end") parent-bol 0)
+     ((node-is "end") neocaml--module-body-anchor 0)
 
      ;; "with" keyword aligns with match/try (see `neocaml--with-anchor')
      ((match "\\`with\\'" "\\`\\(?:match\\|try\\)_expression\\'") neocaml--with-anchor 0)
@@ -1452,9 +1474,9 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ;; Module structures and signatures.  The @@ of an OxCaml sig @@
      ;; portable starting a line aligns with the sig, as end does
      ((match "\\`@@\\'" "\\`signature\\'") parent-bol 0)
-     (neocaml--functor-argument-p neocaml--functor-anchor neocaml--functor-body-offset)
-     ((parent-is "structure") parent-bol neocaml-indent-offset)
-     ((parent-is "signature") parent-bol neocaml-indent-offset)
+     (neocaml--functor-argument-p neocaml--functor-anchor neocaml--double-offset)
+     ((parent-is "\\`\\(?:structure\\|signature\\|open_module_signature\\)\\'")
+      neocaml--module-body-anchor neocaml-indent-offset)
 
      ;; Loop bodies
      ((parent-is "do_clause") parent-bol neocaml-indent-offset)
@@ -1520,6 +1542,13 @@ The return value is suitable for `treesit-simple-indent-rules'."
      ((node-is "\\`attribute_payload\\'") parent-bol neocaml--payload-offset)
      ((parent-is "\\`attribute_payload\\'")
       neocaml--grand-parent-bol neocaml--payload-offset)
+
+     ;; Module definitions broken across lines, as ocp-indent and
+     ;; ocamlformat lay them out: parameters two steps in, a struct or sig
+     ;; starting a line under the module, and the rest one step in
+     ((match "\\`module_parameter\\'" "\\`module_binding\\'") parent-bol neocaml--double-offset)
+     ((match "\\`\\(?:structure\\|signature\\)\\'" "\\`module_binding\\'") parent-bol 0)
+     ((parent-is "\\`\\(?:module_binding\\|module_application\\)\\'") parent-bol neocaml-indent-offset)
 
      ;; OxCaml.  No other rule matches these parents, so they come last,
      ;; where lines of plain OCaml don't have to try them.
