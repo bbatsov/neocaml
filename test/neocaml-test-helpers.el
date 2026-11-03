@@ -265,6 +265,19 @@ its lines."
     (prog1 (buffer-string)
       (set-buffer-modified-p nil))))
 
+(defun neocaml-test--indent-region (code &optional mode)
+  "Return CODE as `indent-region' in MODE leaves it.
+MODE defaults to `neocaml-mode'.  Unlike `neocaml-test--reindent', this
+indents CODE as it is, so it shows what happens to lines that have an
+indentation of their own, but it also leaves the last resort rule out."
+  (with-temp-buffer
+    (insert code)
+    (funcall (or mode #'neocaml-mode))
+    (setq-local treesit-simple-indent-rules
+                (neocaml--without-last-resort-rule treesit-simple-indent-rules))
+    (indent-region (point-min) (point-max))
+    (buffer-string)))
+
 (defmacro when-indenting--it (mode style description &rest code-strings)
   "Create a Buttercup test that asserts each CODE-STRING indents correctly.
 MODE is the major mode function to use, and STYLE the value of
