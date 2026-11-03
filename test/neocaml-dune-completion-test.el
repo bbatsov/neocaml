@@ -16,10 +16,13 @@
 ;; real defcustom lives in neocaml-dune-interaction.el).
 (defvar neocaml-dune-use-opam-exec)
 
-(defun neocaml-dune-test--capf (content)
+(defun neocaml-dune-test--capf (content &optional file)
   "Run the dune capf on CONTENT, where `|' marks point.
-Return the raw capf result, or nil."
+With FILE, a file name, the buffer visits a file of that name.  Return
+the raw capf result, or nil."
   (with-temp-buffer
+    (when file
+      (setq buffer-file-name (expand-file-name file temporary-file-directory)))
     (insert content)
     (goto-char (point-min))
     (search-forward "|")
@@ -27,12 +30,14 @@ Return the raw capf result, or nil."
     (let ((pos (point)))
       (neocaml-dune-mode)
       (goto-char pos))
-    (neocaml-dune-completion-at-point)))
+    (prog1 (neocaml-dune-completion-at-point)
+      (set-buffer-modified-p nil))))
 
-(defun neocaml-dune-test--candidates (content)
+(defun neocaml-dune-test--candidates (content &optional file)
   "Return the candidate list the dune capf offers for CONTENT.
-Resolves both plain lists and dynamic completion tables."
-  (let ((result (neocaml-dune-test--capf content)))
+FILE is as for `neocaml-dune-test--capf'.  Resolves both plain lists
+and dynamic completion tables."
+  (let ((result (neocaml-dune-test--capf content file)))
     (when result
       (all-completions "" (nth 2 result)))))
 
@@ -51,6 +56,20 @@ Resolves both plain lists and dynamic completion tables."
     (it "offers stanza names right after the opening paren"
       (expect (member "test" (neocaml-dune-test--candidates "(|"))
               :to-be-truthy))
+
+    (it "offers the stanzas of a dune-project file in one"
+      (let ((cands (neocaml-dune-test--candidates "(lang dune 3.16)\n(|"
+                                                  "dune-project")))
+        (expect (member "generate_opam_files" cands) :to-be-truthy)
+        (expect (member "package" cands) :to-be-truthy)
+        (expect (member "library" cands) :to-be nil)))
+
+    (it "offers the stanzas of a dune-workspace file in one"
+      (dolist (file '("dune-workspace" "dune-workspace.dev"))
+        (let ((cands (neocaml-dune-test--candidates "(lang dune 3.16)\n(|" file)))
+          (expect (member "context" cands) :to-be-truthy)
+          (expect (member "display" cands) :to-be-truthy)
+          (expect (member "library" cands) :to-be nil))))
 
     (it "spans the partial stanza name being typed"
       (let ((result (neocaml-dune-test--capf "(lib|")))
@@ -102,6 +121,19 @@ Resolves both plain lists and dynamic completion tables."
         (expect (member "depends" cands) :to-be-truthy)
         (expect (member "tags" cands) :to-be-truthy)
         (expect (member "libraries" cands) :to-be nil)))
+
+    (it "offers no dune file fields in dune-project and dune-workspace stanzas"
+      (expect (neocaml-dune-test--capf "(lang dune 3.16)\n(source (|"
+                                       "dune-project")
+              :to-be nil)
+      (expect (neocaml-dune-test--capf "(lang dune 3.16)\n(context (|"
+                                       "dune-workspace")
+              :to-be nil)
+      (expect (member "depends"
+                      (neocaml-dune-test--candidates
+                       "(lang dune 3.16)\n(package\n (name p)\n (|"
+                       "dune-project"))
+              :to-be-truthy))
 
     (it "offers profiles right inside env, and env fields inside a profile"
       (let ((cands (neocaml-dune-test--candidates "(env (d|")))
