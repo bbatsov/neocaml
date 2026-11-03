@@ -239,8 +239,14 @@ the attributes of other JSX transforms, set `neocaml-mlx-jsx-attribute-regexp`:
 (setq neocaml-mlx-jsx-attribute-regexp "\\(react\\.component\\|jsx\\)")
 ```
 
-The OCaml grammar doesn't know about JSX, so the JSX lines are indented by
-the OCaml rules, which can get them wrong.
+With the `tsx` grammar, the JSX lines are indented by its elements: children
+and props go `neocaml-indent-offset` past the start of the line their element
+starts on, and closing tags line up with that. The OCaml in the JSX (children like
+`(React.string name)` and the values of props) is left to the OCaml grammar,
+so it's highlighted and indented as OCaml, and so is any JSX inside it, like
+the `<li>` in `<ul>(List.map (fun x -> <li>x</li>) xs)</ul>`. Without the
+`tsx` grammar, the JSX lines are indented by the OCaml rules, which can get
+them wrong.
 
 ## Useful Commands
 

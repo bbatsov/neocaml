@@ -25,7 +25,7 @@
 ;; `[@react.component]'), finds the JSX element they contain, and feeds
 ;; it, without the OCaml in it, to a `tsx' parser of its own, reusing
 ;; the built-in `typescript-ts-mode' font-lock rules for the embedded
-;; JSX.  See
+;; JSX and indenting its lines by its elements.  See
 ;; `neocaml-mlx-jsx-attribute-regexp' to teach it about other PPXes.
 ;;
 ;; For the host grammar, see
@@ -40,8 +40,8 @@
 ;; ... </div>' as a tangle of infix expressions and `ERROR' nodes, and
 ;; the `tsx' one has no notion of OCaml.  JSX inside OCaml that's inside
 ;; JSX, like the `<li>' in `<ul>(List.map (fun x -> <li>x</li>) xs)</ul>',
-;; is highlighted as OCaml.  Every line is indented with the OCaml
-;; parser, the JSX ones too, so those can come out wrong.  The OCaml
+;; is highlighted as OCaml.  Without the `tsx' grammar, the JSX lines are
+;; indented by the OCaml rules, which can get them wrong.  The OCaml
 ;; parser skips whatever looks like the end of a JSX element, OCaml
 ;; operators like `( /> )' too.
 
@@ -413,44 +413,75 @@ to either mode's feature levels are reflected here automatically."
 
 ;;; Indentation
 
+(defun neocaml-mlx--jsx-text-anchor (_node parent _bol)
+  "Return the first non-blank position on the line of PARENT's element.
+PARENT is a `jsx_text' node, for the lines inside text that starts on
+an earlier line."
+  (save-excursion
+    (goto-char (treesit-node-start (treesit-node-parent parent)))
+    (back-to-indentation)
+    (point)))
+
 (defun neocaml-mlx--jsx-indent-rules ()
-  "Return JSX-specific indentation rules for `neocaml-mlx-mode'.
-These rules are based on the neovim MLX support queries (indents.scm),
-translated to the tsx grammar node names (jsx_opening_element,
-jsx_closing_element, jsx_self_closing_element, jsx_expression, etc.).
+  "Return the indentation rules for the lines inside JSX elements.
+They go by the `tsx' parse of the JSX: children and attributes go
+`neocaml-indent-offset' past the start of the line their element starts
+on, and closing tags, and a `>' or `/>' on a line of its own, line up
+with that."
+  `(((node-is "jsx_closing_element") parent-bol 0)
+    ((match ,(rx bos (or ">" "/" "/>") eos)
+            ,(rx bos "jsx_" (or "opening" "self_closing") "_element" eos))
+     parent-bol 0)
+    ((parent-is ,(rx bos "jsx_" (or "element" "fragment" "opening_element"
+                                    "self_closing_element")
+                     eos))
+     parent-bol neocaml-indent-offset)
+    ((parent-is "jsx_text") neocaml-mlx--jsx-text-anchor neocaml-indent-offset)))
 
-The translation from neovim indent queries to Emacs treesit rules:
-- @indent.begin on jsx_element_opening/self_closing/expression:
-  children of these nodes are indented by `neocaml-indent-offset'.
-- @indent.end on \">\" in jsx_element_closing and \"/>\" in self-closing:
-  these delimiters end an indent block.
-- @indent.branch on jsx_element_closing and \">\":
-  closing elements and their delimiters align with the opening element.
-- @indent.branch on \"/>\" in self-closing:
-  the self-closing delimiter aligns with the opening tag."
-  `(;; JSX closing elements align with parent jsx_element (branch)
-    ((node-is "jsx_closing_element") parent-bol 0)
+(defun neocaml-mlx--jsx-parser-at (bol)
+  "Return the `tsx' parser of the JSX that the line at BOL is inside.
+Return nil when the line isn't inside JSX, or is the line an outermost
+element starts on, or continues OCaml in the JSX, all of which go by
+the code around them."
+  (seq-find
+   (lambda (parser)
+     (let ((ranges (treesit-parser-included-ranges parser)))
+       (and (< (caar ranges) bol (cdar (last ranges)))
+            ;; Not inside the OCaml between the ranges
+            (treesit-parser-range-on parser bol))))
+   (neocaml-mlx--tsx-parsers)))
 
-    ;; > delimiter aligns with parent opening element (branch/end)
-    ((node-is ">") parent-bol 0)
+(defun neocaml-mlx--jsx-node-and-parent (bol)
+  "Return the `tsx' node and parent to indent the line at BOL by.
+That's a cons of the largest node starting at BOL, or nil, and its
+parent, for a line inside a JSX element (see
+`neocaml-mlx--jsx-parser-at'), and nil for the other lines."
+  (when-let* ((parser (neocaml-mlx--jsx-parser-at bol)))
+    (let* ((root (treesit-parser-root-node parser))
+           (node (treesit-parent-while
+                  (treesit-node-at bol parser)
+                  (lambda (node)
+                    (and (= (treesit-node-start node) bol)
+                         (not (treesit-node-eq node root))))))
+           (parent (if node
+                       (treesit-node-parent node)
+                     (treesit-node-on bol bol parser))))
+      (when (treesit-parent-until
+             parent
+             (lambda (node) (string-prefix-p "jsx_" (treesit-node-type node)))
+             t)
+        (cons node parent)))))
 
-    ;; /> delimiter aligns with parent self-closing element (branch/end)
-    ((node-is "/>") parent-bol 0)
-
-    ;; Content inside JSX elements is indented (begin)
-    ((parent-is "jsx_element") parent-bol neocaml-indent-offset)
-
-    ;; Content inside JSX fragments is indented (begin)
-    ((parent-is "jsx_fragment") parent-bol neocaml-indent-offset)
-
-    ;; Attributes on new lines in opening elements are indented (begin)
-    ((parent-is "jsx_opening_element") parent-bol neocaml-indent-offset)
-
-    ;; Attributes on new lines in self-closing elements are indented (begin)
-    ((parent-is "jsx_self_closing_element") parent-bol neocaml-indent-offset)
-
-    ;; Content inside JSX expressions { } is indented (begin)
-    ((parent-is "jsx_expression") parent-bol neocaml-indent-offset)))
+(defun neocaml-mlx--indent (node parent bol)
+  "Indent the lines inside JSX elements by their `tsx' parse.
+Indent the other lines, and those no JSX rule covers, by NODE and
+PARENT, as `neocaml-mode' does.  NODE, PARENT and BOL are as for
+`treesit-simple-indent'."
+  (or (pcase (neocaml-mlx--jsx-node-and-parent bol)
+        (`(,jsx-node . ,jsx-parent)
+         (let ((indent (treesit-simple-indent jsx-node jsx-parent bol)))
+           (and (car indent) indent))))
+      (treesit-simple-indent node parent bol)))
 
 ;;; Mode definition
 
@@ -463,9 +494,9 @@ for embedded JSX.  When the `tsx' tree-sitter grammar is installed,
 `let' bindings marked with a JSX-transform attribute (see
 `neocaml-mlx-jsx-attribute-regexp', default `[@react.component]') have
 their JSX bodies highlighted via language injection using the built-in
-`typescript-ts-mode' font-lock rules, with JSX-aware indentation rules
-appended for the injected regions.  If the `tsx' grammar is absent,
-the mode degrades gracefully to plain `neocaml-mode' behaviour.
+`typescript-ts-mode' font-lock rules, and indented by their elements.
+If the `tsx' grammar is absent, the mode degrades gracefully to plain
+`neocaml-mode' behaviour.
 
 \\{neocaml-base-mode-map}"
   (setq-local treesit-simple-imenu-settings neocaml--imenu-settings)
@@ -495,18 +526,18 @@ the mode degrades gracefully to plain `neocaml-mode' behaviour.
         (treesit-font-lock-recompute-features)
         (font-lock-flush)))
 
-    ;; Append JSX-specific indent rules for the tsx parser.
-    ;; The OCaml indent rules (set up by `neocaml--setup-mode') handle
-    ;; OCaml regions; these rules handle JSX regions parsed by tsx.
+    ;; Indent the lines inside JSX elements by the tsx rules, and the
+    ;; rest by the OCaml ones (set up by `neocaml--setup-mode').
     (setq-local treesit-simple-indent-rules
                 (append treesit-simple-indent-rules
                         `((tsx ,@(neocaml-mlx--jsx-indent-rules)))))
+    (setq-local treesit-indent-function #'neocaml-mlx--indent)
     ;; Emacs 30 picks the parser to indent a line with by the language
     ;; at it, and without this takes the first parser in the buffer,
-    ;; which can be the tsx one.  The OCaml parser covers the whole
-    ;; buffer and the tsx one only the structure of the JSX, so OCaml is
-    ;; the language everywhere, as it is for Emacs 31 with the OCaml
-    ;; parser as the primary one.
+    ;; which can be a tsx one.  The OCaml parser covers the whole buffer
+    ;; and the tsx ones only the JSX, so OCaml is the language
+    ;; everywhere, as it is for Emacs 31 with the OCaml parser as the
+    ;; primary one.
     (setq-local treesit-language-at-point-function (lambda (_pos) 'ocaml)))
 
   ;; Offer to install the JSX grammar so highlighting works out of the

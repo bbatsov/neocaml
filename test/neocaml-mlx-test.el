@@ -237,6 +237,67 @@ let[@react.component] b () = <span>(React.string \"b\")</span>"
        '(("div" typescript-ts-jsx-tag-face)
          ("span" typescript-ts-jsx-tag-face))))
 
+    (describe "indentation"
+      :var ((code "module App = struct
+  let[@react.component] make ~name ~subtitle ~items () =
+    <div className=\"greeting\">
+      <h1>(React.string name)</h1>
+      <Components.Header
+        title=\"Test\"
+        ?subtitle
+        count=42
+        on_click=(fun () -> print_endline \"clicked\")
+      />
+      <ul>
+        (List.map (fun item -> <li>item</li>) items
+         |> React.list)
+      </ul>
+      <div
+        id=\"main\"
+      >
+        some text
+      </div>
+    </div>
+  ;;
+end
+
+let[@react.component] fragment () =
+  <>
+    <p className=[%cx \"a\"]>(React.string \"x\")</p>
+  </>
+
+let[@react.component] inline () = <div>
+  <p>(React.string \"y\")</p>
+</div>
+
+let after = 1"))
+
+      (it "indents the JSX by its elements, and the OCaml in it as OCaml"
+        (expect (neocaml-test--reindent #'neocaml-mlx-mode code) :to-equal code))
+
+      (it "indents the JSX line by line"
+        (with-temp-buffer
+          (insert (neocaml-test--strip-indentation code))
+          (neocaml-mlx-mode)
+          (goto-char (point-min))
+          (while (not (eobp))
+            (unless (looking-at-p "$")
+              (indent-for-tab-command))
+            (forward-line 1))
+          (expect (buffer-string) :to-equal code)))
+
+      (it "indents files longer than a batch of `indent-region'"
+        (let ((code (mapconcat (lambda (n)
+                                 (format "let[@react.component] c%d () =
+  <div>
+    <p>x</p>
+  </div>
+" n))
+                               (number-sequence 1 120)
+                               "\n")))
+          (expect (neocaml-test--reindent #'neocaml-mlx-mode code)
+                  :to-equal code))))
+
     (it "parses the JSX of each component on its own"
       (with-neocaml-test-buffer neocaml-mlx-mode
           "let[@react.component] a () = <div />\n\nlet[@react.component] b () = <p>x</p>"
