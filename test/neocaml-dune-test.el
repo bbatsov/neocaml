@@ -314,6 +314,36 @@ DESCRIPTION is the test name.  Uses `neocaml-dune-mode'."
         (expect (get-text-property (match-beginning 0) 'face)
                 :to-equal 'font-lock-comment-face)))))
 
+(defun neocaml-dune-test--neocaml-warnings ()
+  "Return how many times `display-warning', a spy, warned about neocaml.
+Emacs 31 warns of its own when font-lock rules don't fit the grammar."
+  (seq-count (lambda (args) (eq (car args) 'neocaml))
+             (spy-calls-all-args 'display-warning)))
+
+(describe "neocaml-dune grammar check"
+  (before-all
+    (unless (treesit-language-available-p 'dune)
+      (signal 'buttercup-pending "tree-sitter dune grammar not available")))
+
+  (before-each
+    (spy-on 'display-warning))
+
+  (it "warns once a session when the grammar predates tree-sitter-dune 0.1.0"
+    (spy-on 'neocaml-dune--grammar-outdated-p :and-return-value t)
+    (let ((neocaml-dune--grammar-checked nil))
+      (dotimes (_ 2)
+        (with-temp-buffer (neocaml-dune-mode)))
+      (expect (neocaml-dune-test--neocaml-warnings) :to-equal 1)))
+
+  (it "doesn't warn when the grammar is recent enough"
+    (spy-on 'neocaml-dune--grammar-outdated-p :and-return-value nil)
+    (let ((neocaml-dune--grammar-checked nil))
+      (with-temp-buffer (neocaml-dune-mode))
+      (expect (neocaml-dune-test--neocaml-warnings) :to-equal 0)))
+
+  (it "finds the grammar neocaml-dune installs recent enough"
+    (expect (neocaml-dune--grammar-outdated-p) :to-be nil)))
+
 (describe "neocaml-dune defun-name"
   (before-all
     (unless (treesit-language-available-p 'dune)
