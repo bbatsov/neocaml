@@ -19,6 +19,16 @@
 (setq checkdoc-permit-comma-termination-flag t)
 (setq checkdoc--interactive-docstring-flag nil)
 
+;; package-lint warns about every `with-eval-after-load', but neocaml.el
+;; uses it on purpose, to register its modes with eglot and dape
+;; whenever those load.
+(with-eval-after-load 'package-lint
+  (advice-add 'package-lint--check-eval-after-load :around
+              (lambda (check)
+                (unless (equal (file-name-nondirectory (or buffer-file-name ""))
+                               "neocaml.el")
+                  (funcall check)))))
+
 (setq eldev-project-main-file "neocaml.el")
 
 ;; dev/ holds scripts for working on neocaml, not part of the package

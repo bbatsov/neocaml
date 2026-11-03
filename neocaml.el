@@ -2825,24 +2825,26 @@ the language-specific parts of the mode."
       (setq-local transpose-sexps-function
                   #'transpose-sexps-default-function))))
 
-(defun neocaml--register-with-eglot ()
-  "Register neocaml modes with eglot if loaded."
-  (when (boundp 'eglot-server-programs)
-    (add-to-list 'eglot-server-programs
-                 '(((neocaml-mode :language-id "ocaml")
-                    (neocaml-interface-mode
-                     :language-id "ocaml.interface"))
-                   "ocamllsp"))))
+(defvar eglot-server-programs)
+(defvar dape-configs)
 
-(defun neocaml--register-with-dape ()
-  "Register neocaml modes with dape's ocamlearlybird config if loaded."
-  (when (boundp 'dape-configs)
-    (when-let* ((cfg (alist-get 'ocamlearlybird dape-configs)))
-      (let ((modes (plist-get cfg 'modes)))
-        (unless (memq 'neocaml-mode modes)
-          (plist-put cfg 'modes
-                     (append '(neocaml-mode neocaml-interface-mode)
-                             modes)))))))
+;; Register our modes with eglot and dape when they load, so they know
+;; about them even when they load after the first OCaml buffer was
+;; opened.  The eglot entry goes last, so the user's own entries for
+;; our modes take precedence.
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+               '(((neocaml-mode :language-id "ocaml")
+                  (neocaml-interface-mode :language-id "ocaml.interface"))
+                 "ocamllsp")
+               t))
+
+(with-eval-after-load 'dape
+  (when-let* ((cfg (alist-get 'ocamlearlybird dape-configs)))
+    (let ((modes (plist-get cfg 'modes)))
+      (unless (memq 'neocaml-mode modes)
+        (plist-put cfg 'modes
+                   (append '(neocaml-mode neocaml-interface-mode) modes))))))
 
 (define-derived-mode neocaml-base-mode prog-mode "OCaml"
   "Base major mode for OCaml files, providing shared setup.
@@ -2914,13 +2916,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
   (setq-local ff-other-file-alist neocaml-other-file-alist)
 
   ;; Setup prettify-symbols (users enable prettify-symbols-mode via hooks)
-  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist))
-
-  ;; Register neocaml modes with eglot so it knows to start ocamllsp.
-  (neocaml--register-with-eglot)
-
-  ;; Register neocaml modes with dape's ocamlearlybird config.
-  (neocaml--register-with-dape))
+  (setq-local prettify-symbols-alist (neocaml--prettify-symbols-alist)))
 
 ;;;###autoload
 (define-derived-mode neocaml-mode neocaml-base-mode "OCaml"
