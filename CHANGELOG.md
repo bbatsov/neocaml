@@ -51,6 +51,7 @@
 
 ### Bug fixes
 
+- [#120](https://github.com/bbatsov/neocaml/pull/120): Parse the code after a JSX element in `neocaml-mlx-mode`, which ended up in an error node with the rest of the buffer, so only the first component's JSX was highlighted, and the code after it could indent wrong and go missing from imenu.
 - [#117](https://github.com/bbatsov/neocaml/pull/117): Make completion in `neocaml-dune-mode` fit where point is:
   - Offer field names only where a field goes, right inside a stanza or inside a profile of `env`, and not inside the value of a field.
   - Offer profile names right inside `env`, and the fields of a dune-project `package` stanza inside one.

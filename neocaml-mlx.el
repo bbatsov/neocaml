@@ -23,7 +23,7 @@
 ;; highlighted via language injection: Emacs detects `let' bindings
 ;; carrying a configurable JSX-transform attribute (by default
 ;; `[@react.component]'), finds the JSX element they contain, and feeds
-;; just that region to a `tsx' parser, reusing the built-in
+;; it to a `tsx' parser of its own, reusing the built-in
 ;; `typescript-ts-mode' font-lock rules for the embedded JSX.  See
 ;; `neocaml-mlx-jsx-attribute-regexp' to teach it about other PPXes.
 ;;
@@ -38,7 +38,8 @@
 ;; The OCaml grammar itself has no notion of JSX, so it parses `<div>
 ;; ... </div>' as a tangle of infix expressions and `ERROR' nodes.
 ;; Every line is indented with the OCaml parser, the JSX ones too, so
-;; those can come out wrong.
+;; those can come out wrong.  The OCaml parser skips whatever looks like
+;; the end of a JSX element, OCaml operators like `( /> )' too.
 
 ;;; License:
 
@@ -121,16 +122,71 @@ Requires Emacs 30+ and the `tsx' tree-sitter grammar."
   (and (>= emacs-major-version 30)
        (treesit-language-available-p 'tsx)))
 
+(defun neocaml-mlx--tsx-parsers ()
+  "Return the buffer's `tsx' parsers."
+  ;; Emacs 29's `treesit-parser-list' takes no language to filter by.
+  (seq-filter (lambda (parser) (eq (treesit-parser-language parser) 'tsx))
+              (treesit-parser-list)))
+
+(defconst neocaml-mlx--jsx-start-regexp
+  (rx "<" (or (in "A-Za-z_") (seq ">" (not (in " \t")))))
+  "Regexp matching the start of a JSX element or fragment.
+A `<>' with a space after it is OCaml's inequality operator.")
+
+(defconst neocaml-mlx--jsx-end-regexp
+  (rx (or (seq "</" (? (in "A-Za-z_") (* (in "A-Za-z0-9_.'")))
+               (* (in " \t\n")) ">")
+          "/>"))
+  "Regexp matching the end of a JSX element, a closing tag or a `/>'.")
+
+(defvar-local neocaml-mlx--ranges-state nil
+  "The `buffer-chars-modified-tick' and bounds the ranges were set for.
+Emacs trims the parsers' ranges to the accessible part of a narrowed
+buffer, so those count too.")
+
+(defun neocaml-mlx--gaps (beg end spans)
+  "Return the ranges between BEG and END that SPANS leave out.
+SPANS are sorted by their start, and can overlap."
+  (let (ranges)
+    (dolist (span spans)
+      (when (< beg (car span))
+        (push (cons beg (car span)) ranges))
+      (setq beg (max beg (cdr span))))
+    (when (< beg end)
+      (push (cons beg end) ranges))
+    (nreverse ranges)))
+
+(defun neocaml-mlx--ocaml-ranges ()
+  "Return the ranges of the buffer for the `ocaml' parser to parse.
+That's all of it but the ends of JSX elements, or nil (the whole
+buffer) when there are none.  To the OCaml grammar `<div>...</div>' is
+a chain of infix operators, and the final `>' has nothing on its right,
+so the parser takes the code after it for that and the rest of the
+buffer ends up in an `ERROR' node.  Without the ends, the JSX reads as
+an expression ending in a name.  The ends in strings and comments go
+too, which leaves those as they are, faces and all, but so do OCaml
+operators that look like them, such as `( /> )'."
+  (let (ends)
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward neocaml-mlx--jsx-end-regexp nil t)
+        (push (cons (match-beginning 0) (match-end 0)) ends)))
+    (when ends
+      (neocaml-mlx--gaps (point-min) (point-max) (nreverse ends)))))
+
 (defun neocaml-mlx--jsx-range (node _offset)
   "Return the JSX region contained in NODE as a list of (BEG . END).
 NODE is the `let_binding' of a React (or other JSX-transform) component
-binding.  We locate the first `<tag' that opens a JSX element and span
-up to the last `>' at or immediately after NODE's end.  Return nil when
+binding.  We locate the first `<tag' (or `<>') that opens a JSX element
+and span up to the last `>' at or after NODE's end.  Return nil when
 NODE contains no JSX.
 
-The OCaml parser's error recovery can place the end of NODE immediately
-before the final `>' of a closing tag.  Account for that boundary before
-looking backwards for the last delimiter.
+The OCaml parser doesn't see the ends of JSX elements (see
+`neocaml-mlx--ocaml-ranges'), so NODE ends before those that end its
+JSX, and its error recovery can place the end of NODE immediately
+before the `>' of an opening tag, in `<div></div>' or an unclosed
+`<div>'.  Account for both before looking backwards for the last
+delimiter.
 
 This function avoids narrowing to prevent conflicts with `syntax-propertize'
 during jit-lock fontification."
@@ -140,53 +196,114 @@ during jit-lock fontification."
       (widen)
       (save-excursion
         (goto-char start)
-        (when (re-search-forward (rx "<" (in "A-Za-z_")) end t)
+        (when (re-search-forward neocaml-mlx--jsx-start-regexp end t)
           (let ((jsx-start (match-beginning 0)))
             (when (eq (char-after end) ?>)
               (setq end (1+ end)))
             (goto-char end)
+            (while (progn (skip-chars-forward " \t\n")
+                          (looking-at neocaml-mlx--jsx-end-regexp))
+              (goto-char (setq end (match-end 0))))
+            (goto-char end)
             (when (re-search-backward ">" jsx-start t)
               (list (cons jsx-start (match-end 0))))))))))
 
-(defun neocaml-mlx--set-ranges (_start _end)
-  "Set `tsx' parser ranges for JSX component bindings.
-START and END are described in `treesit-range-rules'.  This function
-recomputes ranges for the whole buffer, which encompasses that region."
-  (save-restriction
-    ;; Range functions can run while syntax-propertize has narrowed the
-    ;; buffer.  Querying in that restriction both misses definitions and
-    ;; can let query predicates invoke syntax-propertize out of order.
-    (widen)
-    (let* ((tsx-parser (treesit-parser-create 'tsx))
-           ;; NB: don't pass NODE-ONLY to `treesit-query-capture' - on
-           ;; Emacs 30 that drops the capture names before the :match
-           ;; predicates run, which then error with "Cannot find
-           ;; captured node".  Filter the (NAME . NODE) alist instead.
-           (captures
-            (treesit-query-capture
-             (treesit-buffer-root-node 'ocaml)
-             `(((value_definition
-                 (attribute (attribute_id) @_jsx_attr)
-                 (let_binding) @mlx)
-                (:match ,neocaml-mlx-jsx-attribute-regexp @_jsx_attr)
-                (:match "<[A-Za-z_]" @mlx)))))
-           (ranges (mapcan (lambda (capture)
-                             (when (eq (car capture) 'mlx)
-                               (neocaml-mlx--jsx-range (cdr capture) nil)))
-                           captures)))
-      ;; An empty list makes a parser cover the whole buffer, so use a
-      ;; degenerate range when there is no JSX to parse.
-      (treesit-parser-set-included-ranges
-       tsx-parser (or ranges `((,(point-min) . ,(point-min))))))))
+(defvar neocaml-mlx--jsx-query nil
+  "A cons of `neocaml-mlx-jsx-attribute-regexp' and the query for it.
+The query, compiled, finds the bindings `neocaml-mlx--jsx-ranges' looks
+for JSX in.")
 
-(defun neocaml-mlx--range-settings ()
-  "Return range settings for injecting `tsx' into OCaml JSX regions.
-Returns nil when injection is not available.  The ranges share a single
-`tsx' parser; each detected component binding contributes one span
-covering the entire JSX region from the first tag to the end of the
-let binding."
-  (when (neocaml-mlx--injection-available-p)
-    (treesit-range-rules #'neocaml-mlx--set-ranges)))
+(defun neocaml-mlx--jsx-ranges ()
+  "Return the ranges of the JSX in component bindings."
+  (unless (equal (car neocaml-mlx--jsx-query) neocaml-mlx-jsx-attribute-regexp)
+    (setq neocaml-mlx--jsx-query
+          (cons neocaml-mlx-jsx-attribute-regexp
+                (treesit-query-compile
+                 'ocaml
+                 `(((value_definition
+                     (attribute (attribute_id) @_jsx_attr)
+                     (let_binding) @mlx)
+                    (:match ,neocaml-mlx-jsx-attribute-regexp @_jsx_attr)
+                    (:match ,neocaml-mlx--jsx-start-regexp @mlx)))
+                 t))))
+  ;; NB: don't pass NODE-ONLY to `treesit-query-capture' - on Emacs 30
+  ;; that drops the capture names before the :match predicates run,
+  ;; which then error with "Cannot find captured node".  Filter the
+  ;; (NAME . NODE) alist instead.
+  (mapcan (lambda (capture)
+            (when (eq (car capture) 'mlx)
+              (neocaml-mlx--jsx-range (cdr capture) nil)))
+          (treesit-query-capture (treesit-buffer-root-node 'ocaml)
+                                 (cdr neocaml-mlx--jsx-query))))
+
+(defun neocaml-mlx--sync-tsx-parsers (blocks)
+  "Make the buffer's `tsx' parsers parse BLOCKS, a parser for each.
+A parser reads all its ranges as one text, so with a single parser the
+JSX of one binding would run into that of the next.  Parsers already
+parsing one of BLOCKS keep it."
+  (let ((parsers (neocaml-mlx--tsx-parsers))
+        unparsed)
+    (dolist (ranges (mapcar #'list blocks))
+      (if-let* ((parser (seq-find (lambda (parser)
+                                    (equal (treesit-parser-included-ranges parser)
+                                           ranges))
+                                  parsers)))
+          (setq parsers (delq parser parsers))
+        (push ranges unparsed)))
+    (dolist (ranges unparsed)
+      (treesit-parser-set-included-ranges
+       (or (pop parsers) (treesit-parser-create 'tsx nil t))
+       ranges))
+    (mapc #'treesit-parser-delete parsers)))
+
+(defun neocaml-mlx--set-ranges (_start _end)
+  "Set the ranges of the `ocaml' parser and the `tsx' ones.
+The OCaml parser skips the ends of JSX elements, and a `tsx' parser
+parses the JSX of each component binding.  START and END are described
+in `treesit-range-rules'.  This function recomputes ranges for the whole
+buffer, which encompasses that region, when it changed since the last
+time."
+  (unless (equal neocaml-mlx--ranges-state
+                 (list (buffer-chars-modified-tick) (point-min) (point-max)))
+    (save-restriction
+      ;; Range functions can run while syntax-propertize has narrowed the
+      ;; buffer.  Querying in that restriction both misses definitions and
+      ;; can let query predicates invoke syntax-propertize out of order.
+      (widen)
+      (let ((parser (treesit-parser-create 'ocaml))
+            (ranges (neocaml-mlx--ocaml-ranges)))
+        (unless (equal ranges (treesit-parser-included-ranges parser))
+          (treesit-parser-set-included-ranges parser ranges)))
+      (when (neocaml-mlx--injection-available-p)
+        (neocaml-mlx--sync-tsx-parsers (neocaml-mlx--jsx-ranges))))
+    (setq neocaml-mlx--ranges-state
+          (list (buffer-chars-modified-tick) (point-min) (point-max)))))
+
+(defun neocaml-mlx--shift-ranges (beg end old-len)
+  "Move the parsers' ranges with the text after a change.
+BEG, END and OLD-LEN are as for `after-change-functions'.  The ranges
+move as markers would, so they stay on the text they were set for
+until `neocaml-mlx--set-ranges' recomputes them.  That's for the
+parses in between: `treesit-indent-region' changes the buffer between
+its batches of lines, and Emacs can parse the buffer, for imenu, say,
+before it next fontifies it."
+  (let* ((old-end (+ beg old-len))
+         (delta (- end old-end))
+         (shift (lambda (pos)
+                  (cond ((< pos beg) pos)
+                        ((< pos old-end) beg)
+                        (t (+ pos delta))))))
+    (unless (zerop delta)
+      (save-restriction
+        (widen)
+        (dolist (parser (treesit-parser-list))
+          (when-let* ((ranges (treesit-parser-included-ranges parser)))
+            (treesit-parser-set-included-ranges
+             parser
+             (mapcar (lambda (range)
+                       (cons (funcall shift (car range))
+                             (funcall shift (cdr range))))
+                     ranges))))))))
 
 ;;; Font-lock
 
@@ -303,15 +420,16 @@ the mode degrades gracefully to plain `neocaml-mode' behaviour.
 \\{neocaml-base-mode-map}"
   (setq-local treesit-simple-imenu-settings neocaml--imenu-settings)
 
-  ;; Set up embedded-JSX injection before the OCaml setup creates the
-  ;; OCaml parser and runs `treesit-major-mode-setup'; the range
-  ;; settings reference the host `ocaml' grammar and are honoured once
-  ;; that parser exists.  The TSX parser only covers JSX structural
-  ;; elements (tags, attributes, delimiters), not the content between
-  ;; tags — that content is left to the host OCaml parser so OCaml
+  ;; Set up the parser ranges before the OCaml setup creates the OCaml
+  ;; parser and runs `treesit-major-mode-setup'; the range settings
+  ;; reference the host `ocaml' grammar and are honoured once that
+  ;; parser exists.  The OCaml parser skips the ends of JSX elements, so
+  ;; the code after them parses, with or without the `tsx' grammar.  The
+  ;; OCaml parser still covers the content between tags, so OCaml
   ;; expressions like `(React.string "...")' are highlighted correctly.
-  (when (neocaml-mlx--injection-available-p)
-    (setq-local treesit-range-settings (neocaml-mlx--range-settings)))
+  (setq-local treesit-range-settings
+              (treesit-range-rules #'neocaml-mlx--set-ranges))
+  (add-hook 'after-change-functions #'neocaml-mlx--shift-ranges nil t)
 
   ;; Full OCaml setup: ocaml parser, font-lock, indent, navigation, ...
   (neocaml--setup-mode 'ocaml)
