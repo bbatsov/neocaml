@@ -40,6 +40,7 @@
 ;;; Code:
 
 (require 'treesit)
+(require 'neocaml-common)
 
 (declare-function neocaml-mode--font-lock-settings "neocaml")
 
@@ -159,6 +160,8 @@ Returns nil if injection is not available."
 
 (defvar neocaml-menhir--indent-rules
   `((menhir
+     ;; Comment continuation lines keep their place in the comment
+     ((parent-is "\\`\\(?:ocaml_\\)?comment\\'") parent neocaml-common-comment-line-offset)
      ((parent-is "source_file") column-0 0)
      ((node-is "}") parent-bol 0)
      ((node-is "%}") column-0 0)

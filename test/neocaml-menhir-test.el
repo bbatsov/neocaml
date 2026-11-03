@@ -95,6 +95,17 @@ DESCRIPTION is the test name.  Uses `neocaml-menhir-mode'."
     (unless (treesit-language-available-p 'menhir)
       (signal 'buttercup-pending "tree-sitter Menhir grammar not available")))
 
+  (it "keeps the lines of a comment where they are in it, and moves them with it"
+    (pcase-dolist (`(,code ,expected)
+                   '(("/* NOTE: foo bar\n *       foo bar\n         foo bar\n */\n%token EOF\n%%"
+                      "/* NOTE: foo bar\n *       foo bar\n         foo bar\n */\n%token EOF\n%%")
+                     ("(* a\n * b\n *)\n%token EOF\n%%"
+                      "(* a\n * b\n *)\n%token EOF\n%%")
+                     ("  /* a\n   * b\n   */\n%token EOF\n%%"
+                      "/* a\n * b\n */\n%token EOF\n%%")))
+      (expect (neocaml-test--indent-region code #'neocaml-menhir-mode)
+              :to-equal expected)))
+
   (when-indenting-menhir-it "indents declarations at column 0"
     "%token EOF
 %%")
