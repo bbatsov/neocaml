@@ -51,6 +51,7 @@
 
 ### Bug fixes
 
+- [#120](https://github.com/bbatsov/neocaml/pull/120): Register `neocaml-mlx-mode` with Eglot too, with the `ocaml.mlx` language ID ocamllsp expects.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Indent the JSX in `neocaml-mlx-mode` by its elements when the `tsx` grammar is installed, which went by the OCaml rules instead.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Keep the OCaml in JSX (children like `(React.string name)`, the values of props and the `?` of optional ones) from the `tsx` parser in `neocaml-mlx-mode`, so a prop like `onClick=(fun _ -> ...)` doesn't break the highlighting of the JSX after it.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Parse the code after a JSX element in `neocaml-mlx-mode`, which ended up in an error node with the rest of the buffer, so only the first component's JSX was highlighted, and the code after it could indent wrong and go missing from imenu.

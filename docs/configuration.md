@@ -530,8 +530,8 @@ repository:
 
 ## Eglot (LSP)
 
-Eglot is auto-configured - neocaml registers both modes with the correct
-language IDs so `M-x eglot` just works. See
+Eglot is auto-configured - neocaml registers its OCaml modes (`.mlx` too)
+with the correct language IDs so `M-x eglot` just works. See
 [Getting Started](usage.md#eglot-lsp) for setup details and
 [ocaml-eglot](usage.md#ocaml-eglot) for OCaml-specific extensions.
 

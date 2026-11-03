@@ -2816,7 +2816,8 @@ the language-specific parts of the mode."
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
                '(((neocaml-mode :language-id "ocaml")
-                  (neocaml-interface-mode :language-id "ocaml.interface"))
+                  (neocaml-interface-mode :language-id "ocaml.interface")
+                  (neocaml-mlx-mode :language-id "ocaml.mlx"))
                  "ocamllsp")
                t))
 
@@ -2941,6 +2942,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 ;; derive the correct language-id from the major-mode name.
 (put 'neocaml-mode 'eglot-language-id "ocaml")
 (put 'neocaml-interface-mode 'eglot-language-id "ocaml.interface")
+(put 'neocaml-mlx-mode 'eglot-language-id "ocaml.mlx")
 
 (provide 'neocaml)
 
