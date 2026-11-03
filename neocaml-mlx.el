@@ -23,8 +23,9 @@
 ;; highlighted via language injection: Emacs detects `let' bindings
 ;; carrying a configurable JSX-transform attribute (by default
 ;; `[@react.component]'), finds the JSX element they contain, and feeds
-;; it to a `tsx' parser of its own, reusing the built-in
-;; `typescript-ts-mode' font-lock rules for the embedded JSX.  See
+;; it, without the OCaml in it, to a `tsx' parser of its own, reusing
+;; the built-in `typescript-ts-mode' font-lock rules for the embedded
+;; JSX.  See
 ;; `neocaml-mlx-jsx-attribute-regexp' to teach it about other PPXes.
 ;;
 ;; For the host grammar, see
@@ -36,10 +37,13 @@
 ;; Limitations:
 ;;
 ;; The OCaml grammar itself has no notion of JSX, so it parses `<div>
-;; ... </div>' as a tangle of infix expressions and `ERROR' nodes.
-;; Every line is indented with the OCaml parser, the JSX ones too, so
-;; those can come out wrong.  The OCaml parser skips whatever looks like
-;; the end of a JSX element, OCaml operators like `( /> )' too.
+;; ... </div>' as a tangle of infix expressions and `ERROR' nodes, and
+;; the `tsx' one has no notion of OCaml.  JSX inside OCaml that's inside
+;; JSX, like the `<li>' in `<ul>(List.map (fun x -> <li>x</li>) xs)</ul>',
+;; is highlighted as OCaml.  Every line is indented with the OCaml
+;; parser, the JSX ones too, so those can come out wrong.  The OCaml
+;; parser skips whatever looks like the end of a JSX element, OCaml
+;; operators like `( /> )' too.
 
 ;;; License:
 
@@ -236,6 +240,52 @@ for JSX in.")
           (treesit-query-capture (treesit-buffer-root-node 'ocaml)
                                  (cdr neocaml-mlx--jsx-query))))
 
+(defconst neocaml-mlx--ocaml-holes-query
+  '([(parenthesized_expression) (list_expression) (array_expression)
+     (record_expression) (string) (quoted_string) (character) (comment)
+     (extension) (quoted_extension)]
+    @hole)
+  "Query for the OCaml in JSX that the `tsx' parser skips.")
+
+(defvar neocaml-mlx--compiled-ocaml-holes-query nil
+  "`neocaml-mlx--ocaml-holes-query', compiled the first time it's used.")
+
+(defun neocaml-mlx--ocaml-holes (beg end)
+  "Return the spans of OCaml in the JSX between BEG and END, sorted.
+Those are the strings, comments, extensions and bracketed expressions,
+such as children like `(React.string name)', the values of props with
+their `=', and the `?' of optional props, all of which the `tsx'
+grammar would take for broken JSX.  The spans can overlap."
+  (let (holes)
+    (dolist (node (treesit-query-capture
+                   'ocaml
+                   (or neocaml-mlx--compiled-ocaml-holes-query
+                       (setq neocaml-mlx--compiled-ocaml-holes-query
+                             (treesit-query-compile
+                              'ocaml neocaml-mlx--ocaml-holes-query t)))
+                   beg end t))
+      (when (and (<= beg (treesit-node-start node))
+                 (<= (treesit-node-end node) end))
+        (push (cons (treesit-node-start node) (treesit-node-end node)) holes)))
+    (save-excursion
+      (goto-char beg)
+      (while (re-search-forward
+              (rx (or (seq (in " \t\n") (group "?") (in "a-z_"))
+                      (seq (in "A-Za-z0-9_'") (group "=")
+                           (* (in "A-Za-z0-9_.'`#!~-")))))
+              end t)
+        (push (if (match-beginning 1)
+                  (cons (match-beginning 1) (match-end 1))
+                (cons (match-beginning 2) (match-end 0)))
+              holes)))
+    (sort holes #'car-less-than-car)))
+
+(defun neocaml-mlx--tsx-ranges (block)
+  "Return the ranges for the `tsx' parser of BLOCK, a JSX range.
+That's BLOCK without the OCaml in it (see `neocaml-mlx--ocaml-holes')."
+  (neocaml-mlx--gaps (car block) (cdr block)
+                     (neocaml-mlx--ocaml-holes (car block) (cdr block))))
+
 (defun neocaml-mlx--sync-tsx-parsers (blocks)
   "Make the buffer's `tsx' parsers parse BLOCKS, a parser for each.
 A parser reads all its ranges as one text, so with a single parser the
@@ -243,7 +293,7 @@ JSX of one binding would run into that of the next.  Parsers already
 parsing one of BLOCKS keep it."
   (let ((parsers (neocaml-mlx--tsx-parsers))
         unparsed)
-    (dolist (ranges (mapcar #'list blocks))
+    (dolist (ranges (mapcar #'neocaml-mlx--tsx-ranges blocks))
       (if-let* ((parser (seq-find (lambda (parser)
                                     (equal (treesit-parser-included-ranges parser)
                                            ranges))
