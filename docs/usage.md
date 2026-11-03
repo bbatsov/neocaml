@@ -222,6 +222,26 @@ opam install ocaml-lsp-server merlin ocamlformat
 With that switch on Emacs's `PATH`, `M-x eglot` starts its `ocamllsp`
 and `M-x neocaml-format-buffer` runs its `ocamlformat`.
 
+## mlx
+
+`neocaml-mlx-mode` is for `.mlx` files, OCaml with JSX in it, as used by
+Melange and React. It's built on the same base as `neocaml-mode`, so the
+OCaml in those files gets the usual font-lock, indentation and navigation.
+
+On Emacs 30+, with the `tsx` grammar installed (`M-x
+neocaml-mlx-install-grammar`, which the mode offers to run), the JSX is
+highlighted too, as the `jsx` font-lock feature at level 3. neocaml looks for
+the `let` bindings that have a `[@react.component]` attribute and highlights
+the JSX in them with the rules of `typescript-ts-mode`. To have it look for
+the attributes of other JSX transforms, set `neocaml-mlx-jsx-attribute-regexp`:
+
+```emacs-lisp
+(setq neocaml-mlx-jsx-attribute-regexp "\\(react\\.component\\|jsx\\)")
+```
+
+The OCaml grammar doesn't know about JSX, so the JSX lines are indented by
+the OCaml rules, which can get them wrong.
+
 ## Useful Commands
 
 | Command | Description |

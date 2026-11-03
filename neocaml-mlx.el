@@ -37,9 +37,8 @@
 ;;
 ;; The OCaml grammar itself has no notion of JSX, so it parses `<div>
 ;; ... </div>' as a tangle of infix expressions and `ERROR' nodes.
-;; JSX-aware indentation is provided by appending tsx indent rules
-;; for the injected JSX regions, but the boundaries between OCaml and
-;; JSX may still produce imprecise results in some cases.
+;; Every line is indented with the OCaml parser, the JSX ones too, so
+;; those can come out wrong.
 
 ;;; License:
 
