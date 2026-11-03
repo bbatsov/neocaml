@@ -40,7 +40,9 @@ Or with `use-package` on Emacs 30+:
     `M-x neocaml-opam-install-grammar`,
     `M-x neocaml-ocamllex-install-grammar`,
     `M-x neocaml-menhir-install-grammar`, and
-    `M-x neocaml-odoc-install-grammar`.
+    `M-x neocaml-odoc-install-grammar`. `neocaml-mlx-mode` uses the OCaml
+    grammar, plus the `tsx` grammar to highlight the JSX in `.mlx` files,
+    which `M-x neocaml-mlx-install-grammar` installs.
 
 !!! tip
     If you have another OCaml major mode installed (e.g. `tuareg` or `caml-mode`),

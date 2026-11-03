@@ -5,13 +5,13 @@
 neocaml requires Emacs 29.1+ but Emacs 30+ is recommended. Some features
 are only available on newer versions:
 
-- **Emacs 30+**: language injection for OCamllex/Menhir, sentence
-  navigation (`M-a`/`M-e`), `outline-minor-mode` integration,
-  tree-sitter-aware list navigation (`forward-list`, `backward-list`,
-  `down-list`)
+- **Emacs 30+**: language injection for OCamllex/Menhir, embedded JSX
+  highlighting in `neocaml-mlx-mode`, sentence navigation (`M-a`/`M-e`),
+  `outline-minor-mode` integration, tree-sitter-aware list navigation
+  (`forward-list`, `backward-list`, `down-list`)
 - **Emacs 31+**: native `backward-up-list` support via the `list`
   thing (on earlier versions, neocaml provides `neocaml-backward-up-list`
-  as a workaround), and embedded JSX highlighting in `neocaml-mlx-mode`
+  as a workaround)
 
 ## How do I install grammars for dune, opam, OCamllex, Menhir, or odoc?
 
