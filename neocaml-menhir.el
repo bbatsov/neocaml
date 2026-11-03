@@ -61,7 +61,7 @@
 
 (defconst neocaml-menhir-grammar-recipes
   '((menhir "https://github.com/tmcgilchrist/tree-sitter-menhir"
-            "master"
+            "v0.5.0"
             "src"))
   "Tree-sitter grammar recipe for Menhir files.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
