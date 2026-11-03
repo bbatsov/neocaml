@@ -32,6 +32,7 @@
 
 ### Changes
 
+- [#118](https://github.com/bbatsov/neocaml/pull/118): Pin the menhir grammar to release v0.5.0 of tree-sitter-menhir instead of its `master` branch.
 - [#93](https://github.com/bbatsov/neocaml/pull/93): Switch the dune grammar to release 0.1.0 of [ocaml-dune/tree-sitter-dune](https://github.com/ocaml-dune/tree-sitter-dune), the grammar's new home. Reinstall it with `C-u M-x neocaml-dune-install-grammar`.
   - Fontify more dune syntax: pforms, package tags, the ordered set language, package constraint operators, dependency and source kinds, and rule modes.
   - Indent a field's value on a continuation line one column past the field's name, as dune's formatter does.
