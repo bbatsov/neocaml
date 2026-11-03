@@ -50,6 +50,10 @@
 
 ### Bug fixes
 
+- [#117](https://github.com/bbatsov/neocaml/pull/117): Make completion in `neocaml-dune-mode` fit where point is:
+  - Offer field names only where a field goes, right inside a stanza or inside a profile of `env`, and not inside the value of a field.
+  - Offer profile names right inside `env`, and the fields of a dune-project `package` stanza inside one.
+  - Offer action names inside an `action` field and inside the actions that take actions.
 - [#115](https://github.com/bbatsov/neocaml/pull/115): Keep the lines of a comment where they are relative to it when indenting (in ocamllex and menhir files too), instead of moving them all to the column of its text, so code examples in doc comments and comments with a `*` starting each line keep their layout.
 - [#114](https://github.com/bbatsov/neocaml/pull/114): Register `neocaml-mode` and `neocaml-interface-mode` with Eglot and dape when those load, so `M-x eglot` knows to start ocamllsp even when Eglot loads after the first OCaml buffer was opened, and add the Eglot entry after the user's own.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Indent the OCaml in `neocaml-mlx-mode` buffers on Emacs 30 when the `tsx` grammar is installed, which went by the JSX rules instead.

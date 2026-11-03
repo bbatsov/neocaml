@@ -79,7 +79,57 @@ Resolves both plain lists and dynamic completion tables."
 
     (it "falls back to the union of fields for unknown stanzas"
       (let ((cands (neocaml-dune-test--candidates "(mystery_stanza (|")))
-        (expect (member "name" cands) :to-be-truthy))))
+        (expect (member "name" cands) :to-be-truthy)
+        ;; dune-project's package fields don't go in dune files
+        (expect (member "homepage" cands) :to-be nil)))
+
+    (it "completes the stanzas in a subdir as at top level"
+      (expect (member "library" (neocaml-dune-test--candidates "(subdir foo\n (|"))
+              :to-be-truthy)
+      (expect (member "libraries"
+                      (neocaml-dune-test--candidates
+                       "(subdir foo\n (subdir bar\n  (library (lib|"))
+              :to-be-truthy))
+
+    (it "offers no field names inside a field's value"
+      (expect (neocaml-dune-test--capf "(package\n (name p)\n (tags (e|")
+              :to-be nil)
+      (expect (neocaml-dune-test--capf "(library\n (libraries (re_|")
+              :to-be nil))
+
+    (it "offers the fields of a dune-project package stanza"
+      (let ((cands (neocaml-dune-test--candidates "(package\n (name p)\n (|")))
+        (expect (member "depends" cands) :to-be-truthy)
+        (expect (member "tags" cands) :to-be-truthy)
+        (expect (member "libraries" cands) :to-be nil)))
+
+    (it "offers profiles right inside env, and env fields inside a profile"
+      (let ((cands (neocaml-dune-test--candidates "(env (d|")))
+        (expect (member "dev" cands) :to-be-truthy)
+        (expect (member "flags" cands) :to-be nil))
+      (expect (member "flags" (neocaml-dune-test--candidates "(env (dev (fl|"))
+              :to-be-truthy)))
+
+  (describe "action-name completion"
+    (it "offers action names inside an action field"
+      (let ((cands (neocaml-dune-test--candidates "(rule\n (action (r|")))
+        (expect (member "run" cands) :to-be-truthy)
+        (expect (member "targets" cands) :to-be nil)))
+
+    (it "offers action names inside nested actions"
+      (expect (member "run"
+                      (neocaml-dune-test--candidates
+                       "(rule\n (action\n  (progn\n   (with-stdout-to out (|"))
+              :to-be-truthy))
+
+    (it "offers no action names among an action's arguments"
+      (expect (neocaml-dune-test--capf "(rule\n (action (run foo (b|")
+              :to-be nil))
+
+    (it "spans action names with # and ? in them"
+      (let ((result (neocaml-dune-test--capf "(rule\n (action (diff?|")))
+        (expect (member "diff?" (all-completions "" (nth 2 result))) :to-be-truthy)
+        (expect (- (nth 1 result) (nth 0 result)) :to-equal 5))))
 
   (describe "library-name completion"
     ;; Stub the candidate source so these tests don't shell out to ocamlfind

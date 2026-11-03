@@ -298,16 +298,25 @@ text with the formatted output, touching only the parts that changed
     ("ocamllex"
      . ("modules" "mode" "enabled_if"))
     ("ocamlyacc"
-     . ("modules" "mode" "enabled_if")))
+     . ("modules" "mode" "enabled_if"))
+    ;; dune-project's package stanza
+    ("package"
+     . ("name" "synopsis" "description" "depends" "conflicts" "depopts"
+        "tags" "deprecated_package_names" "license" "authors" "maintainers"
+        "maintenance_intent" "source" "bug_reports" "homepage"
+        "documentation" "sites" "allow_empty")))
   "Alist mapping a dune stanza name to its valid field names.
 Stanzas not listed here fall back to `neocaml-dune--all-fields'.")
 
 (defvar neocaml-dune--all-fields
-  (delete-dups (apply #'append (mapcar #'cdr neocaml-dune--stanza-fields)))
-  "Union of all known dune field names, used as a fallback.")
+  (delete-dups
+   (apply #'append
+          (mapcar #'cdr (remove (assoc "package" neocaml-dune--stanza-fields)
+                                neocaml-dune--stanza-fields))))
+  "Union of the field names of dune file stanzas, used as a fallback.")
 
-(defconst neocaml-dune--atom-chars "[:alnum:]_.+-"
-  "Characters that make up a dune atom (stanza, field, or library name).")
+(defconst neocaml-dune--atom-chars "[:alnum:]_.+#?-"
+  "Characters that make up a dune atom (stanza, field, action or library name).")
 
 (defun neocaml-dune--atom-bounds ()
   "Return the bounds of the dune atom at point as a cons (START . END).
@@ -335,6 +344,25 @@ When point is not on an atom, both ends equal point."
   "Return the field names valid inside STANZA, or the union fallback."
   (or (cdr (assoc stanza neocaml-dune--stanza-fields))
       neocaml-dune--all-fields))
+
+(defvar neocaml-dune--action-names
+  '("bash" "cat" "chdir" "cmp" "concurrent" "copy" "copy#" "diff" "diff?"
+    "dynamic-run" "echo" "format-dune-file" "ignore-outputs" "ignore-stderr"
+    "ignore-stdout" "no-infer" "pipe-outputs" "pipe-stderr" "pipe-stdout"
+    "progn" "run" "setenv" "system" "with-accepted-exit-codes"
+    "with-outputs-to" "with-stderr-to" "with-stdin-from" "with-stdout-to"
+    "write-file")
+  "Action names for completion inside an `action' field.")
+
+(defvar neocaml-dune--action-parents
+  '("action" "chdir" "concurrent" "ignore-outputs" "ignore-stderr"
+    "ignore-stdout" "no-infer" "pipe-outputs" "pipe-stderr" "pipe-stdout"
+    "progn" "setenv" "with-accepted-exit-codes" "with-outputs-to"
+    "with-stderr-to" "with-stdin-from" "with-stdout-to")
+  "The `action' field, and the actions that take actions.")
+
+(defvar neocaml-dune--env-profiles '("_" "dev" "release")
+  "Build profiles for completion right inside an `env' stanza.")
 
 (defvar neocaml-dune--library-fields '("libraries" "pps")
   "Field names whose values are findlib library names.")
@@ -446,36 +474,50 @@ a library to the project, so the next completion is up to date."
   (message "neocaml-dune: library cache cleared"))
 
 (defun neocaml-dune-completion-at-point ()
-  "Complete dune stanza and field names at point.
-Intended for `completion-at-point-functions'."
+  "Complete dune stanza, field, profile and action names at point.
+Also library names inside the fields that take them (see
+`neocaml-dune-complete-libraries').  Intended for
+`completion-at-point-functions'."
   (let ((ppss (syntax-ppss)))
     (when-let* (((not (nth 3 ppss)))    ; not inside a string
                 ((not (nth 4 ppss)))    ; not inside a comment
                 (opens (nth 9 ppss)))   ; enclosing open parens
+      ;; The stanzas in a (subdir DIR ...) go as they do at top level.
+      (while (and (cdr opens)
+                  (equal (neocaml-dune--head-after (car opens)) "subdir"))
+        (setq opens (cdr opens)))
       (let* ((bounds (neocaml-dune--atom-bounds))
              (start (car bounds))
              (end (cdr bounds))
              (depth (length opens))
              (inner (car (last opens)))
-             (outer (car opens))
-             (head-p (= start (neocaml-dune--first-atom-pos inner))))
-        (cond
-         ((and (= depth 1) head-p)
-          (neocaml-common-capf start end neocaml-dune--stanza-names
-                               "stanza" 'keyword))
-         ((and (>= depth 2) head-p)
-          (neocaml-common-capf start end
-                               (neocaml-dune--fields-for
-                                (neocaml-dune--head-after outer))
-                               "field" 'property))
-         ((and neocaml-dune-complete-libraries
-               (not head-p)
-               (member (neocaml-dune--head-after inner)
-                       neocaml-dune--library-fields))
-          (neocaml-common-capf start end
-                               (completion-table-dynamic
-                                (lambda (_) (neocaml-dune--library-candidates)))
-                               "library" 'module)))))))
+             (stanza (neocaml-dune--head-after (car opens)))
+             (parent (and (> depth 1)
+                          (neocaml-dune--head-after (car (last opens 2))))))
+        (if (= start (neocaml-dune--first-atom-pos inner))
+            (cond
+             ((= depth 1)
+              (neocaml-common-capf start end neocaml-dune--stanza-names
+                                   "stanza" 'keyword))
+             ((member parent neocaml-dune--action-parents)
+              (neocaml-common-capf start end neocaml-dune--action-names
+                                   "action" 'function))
+             ;; Fields go right inside their stanza, except in `env',
+             ;; where profiles go, and the fields inside those, e.g.
+             ;; (env (dev (flags ...))).
+             ((and (= depth 2) (equal stanza "env"))
+              (neocaml-common-capf start end neocaml-dune--env-profiles
+                                   "profile" 'constant))
+             ((= depth (if (equal stanza "env") 3 2))
+              (neocaml-common-capf start end (neocaml-dune--fields-for stanza)
+                                   "field" 'property)))
+          (when (and neocaml-dune-complete-libraries
+                     (member (neocaml-dune--head-after inner)
+                             neocaml-dune--library-fields))
+            (neocaml-common-capf start end
+                                 (completion-table-dynamic
+                                  (lambda (_) (neocaml-dune--library-candidates)))
+                                 "library" 'module)))))))
 
 ;;; Imenu
 
