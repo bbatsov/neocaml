@@ -12,6 +12,29 @@
 
 (require 'buttercup)
 (require 'neocaml)
+(require 'neocaml-dune)
+(require 'neocaml-opam)
+(require 'neocaml-ocamllex)
+(require 'neocaml-menhir)
+(require 'neocaml-odoc)
+(require 'neocaml-mlx)
+
+(describe "grammar recipes"
+  (it "pin every grammar to a release, not a branch"
+    ;; A grammar's master branch can change its node types at any time,
+    ;; and the font-lock queries that name them fail with it.
+    (let ((recipes (mapcan (lambda (var) (copy-sequence (symbol-value var)))
+                           '(neocaml-grammar-recipes
+                             neocaml-dune-grammar-recipes
+                             neocaml-opam-grammar-recipes
+                             neocaml-ocamllex-grammar-recipes
+                             neocaml-menhir-grammar-recipes
+                             neocaml-odoc-grammar-recipes
+                             neocaml-mlx-grammar-recipes))))
+      (expect (seq-filter (lambda (recipe)
+                            (member (nth 2 recipe) '("master" "main")))
+                          recipes)
+              :to-equal nil))))
 
 (describe "neocaml-install-grammars"
   (it "skips installation when all grammars are available"
