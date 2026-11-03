@@ -148,6 +148,28 @@ let after = 1"))
           (expect (string-search "<h1>" text) :to-be-truthy)
           (expect (string-search "</h1>" text) :to-be-truthy))))
 
+    (it "leaves the OCaml in the JSX out of the tsx ranges"
+      (with-neocaml-test-buffer neocaml-mlx-mode "
+          let[@react.component] make () =
+            <div>
+              <input ?disabled count=42 onClick=(fun _ -> go ()) id=\"x\"
+                     className=[%cx \"a\"] />
+              <p>(React.string \"x\")</p>
+            </div>"
+        (treesit-update-ranges)
+        (expect (mapconcat (lambda (range)
+                             (buffer-substring-no-properties (car range) (cdr range)))
+                           (neocaml-mlx-test--tsx-ranges))
+                :to-equal (concat "<div>\n"
+                                  "    <input disabled count onClick id\n"
+                                  "           className />\n"
+                                  "    <p></p>\n"
+                                  "  </div>"))
+        (expect (treesit-node-check
+                 (treesit-parser-root-node (neocaml-mlx-test--tsx-parser))
+                 'has-error)
+                :not :to-be-truthy)))
+
     (it "takes `<>' for a fragment, but not the operator"
       (with-neocaml-test-buffer neocaml-mlx-mode
           "let[@react.component] make () = <><p>x</p></>"
@@ -157,6 +179,19 @@ let after = 1"))
           "let[@react.component] make ~a ~b () = if a <> b then <p /> else <br />"
         (treesit-update-ranges)
         (expect (neocaml-mlx-test--jsx-text) :to-equal "<p /> else <br />")))
+
+    (it "fontifies the JSX after props with OCaml values"
+      (neocaml-test--check-face-specs
+       #'neocaml-mlx-mode
+       "let[@react.component] make () =
+  <div>
+    <button onClick=(fun _ -> go ()) count=42>
+      (React.string \"Go\")
+    </button>
+  </div>"
+       '(("count" typescript-ts-jsx-attribute-face)
+         ("button" typescript-ts-jsx-tag-face)
+         ("div" typescript-ts-jsx-tag-face))))
 
     (it "computes injection ranges from the widened buffer"
       (with-neocaml-test-buffer neocaml-mlx-mode neocaml-mlx-test--react-component
