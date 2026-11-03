@@ -49,7 +49,7 @@
 
 ### Bug fixes
 
-- [#115](https://github.com/bbatsov/neocaml/pull/115): Keep the lines of a comment where they are relative to it when indenting, instead of moving them all to the column of its text, so code examples in doc comments and comments with a `*` starting each line keep their layout.
+- [#115](https://github.com/bbatsov/neocaml/pull/115): Keep the lines of a comment where they are relative to it when indenting (in ocamllex and menhir files too), instead of moving them all to the column of its text, so code examples in doc comments and comments with a `*` starting each line keep their layout.
 - [#114](https://github.com/bbatsov/neocaml/pull/114): Register `neocaml-mode` and `neocaml-interface-mode` with Eglot and dape when those load, so `M-x eglot` knows to start ocamllsp even when Eglot loads after the first OCaml buffer was opened, and add the Eglot entry after the user's own.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Indent the OCaml in `neocaml-mlx-mode` buffers on Emacs 30 when the `tsx` grammar is installed, which went by the JSX rules instead.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Tell the lines inside a string from the parse tree alone, so the lines of a quoted string with text that looks like char literals in it (C code, say), and of a top-level quoted extension like `{%%raw|...|}`, stay as they are.

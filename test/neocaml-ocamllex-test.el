@@ -104,6 +104,11 @@ DESCRIPTION is the test name.  Uses `neocaml-ocamllex-mode'."
     (unless (treesit-language-available-p 'ocamllex)
       (signal 'buttercup-pending "tree-sitter OCamllex grammar not available")))
 
+  (it "keeps the lines of a comment where they are in it"
+    (let ((code "(* NOTE: foo bar\n *       foo bar\n         foo bar\n *)\nlet digit = ['0'-'9']"))
+      (expect (neocaml-test--indent-region code #'neocaml-ocamllex-mode)
+              :to-equal code)))
+
   (when-indenting-ocamllex-it "indents named regexps at column 0"
     "let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z']")

@@ -40,6 +40,7 @@
 ;;; Code:
 
 (require 'treesit)
+(require 'neocaml-common)
 
 (declare-function neocaml-mode--font-lock-settings "neocaml")
 
@@ -157,6 +158,8 @@ Returns nil if injection is not available."
 
 (defvar neocaml-ocamllex--indent-rules
   `((ocamllex
+     ;; Comment continuation lines keep their place in the comment
+     ((parent-is "comment") parent neocaml-common-comment-line-offset)
      ((parent-is "lexer_definition") column-0 0)
      ((node-is "}") parent-bol 0)
      ;; Don't reindent inside OCaml code blocks
