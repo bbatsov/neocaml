@@ -447,6 +447,15 @@ the box:
 These commands respect both regular comments (`(* ... *)`) and doc comments
 (`(** ... *)`), and work correctly for indented comments.
 
+Indenting code doesn't touch the layout of a comment, much like ocp-indent.
+Each line keeps its place relative to the start of the comment, so the code
+examples in doc comments keep their indentation, and when you indent a region
+(e.g. with `indent-region`), a comment moves as a whole along with the code
+around it. A line only moves on its own when it's left of the comment's text
+(it goes to the text then), or when it starts with a `*` that's left of the `*`
+in `(*` (it goes under it). A `*)` starting a line goes under the `*` of `(*`
+when the lines above it start with stars, and under the `(` otherwise.
+
 ## Clickable Links in Comments
 
 neocaml enables `goto-address-prog-mode` and `bug-reference-prog-mode` in

@@ -688,6 +688,38 @@ let g x = x]")
       "(** First line.\n\n|Second line. *)"
       "(** First line.\n\n    |Second line. *)")
 
+    (it "keeps the lines of a comment where they are in it"
+      (dolist (code '("(* NOTE: foo bar\n *       foo bar\n         foo bar\n *)\nlet x = 1"
+                      "(** Example:\n    {[\n      let x = 1 in\n      x\n    ]} *)\nlet y = 2"
+                      "(** Items:\n    * one\n    * two\n    and more *)"
+                      "(** Items:\n    * one\n*)"
+                      "(* On its own\n   line\n*)"
+                      "let x = 1 (* a\n             b *)"))
+        (expect (neocaml-test--indent-region code) :to-equal code)))
+
+    (it "moves the lines of a comment along with it, but not left of its text or star"
+      (pcase-dolist (`(,code ,expected)
+                     '(("let y =\n      (* moved: foo\n       *  bar\n             baz\n       *)\n  2"
+                        "let y =\n  (* moved: foo\n   *  bar\n         baz\n   *)\n  2")
+                       ("(* text\nunder\n* star\n       *)"
+                        "(* text\n   under\n * star\n *)")
+                       ("(* text\n   under\n       *)"
+                        "(* text\n   under\n*)")
+                       ("(*\nfoo\n*)" "(*\n  foo\n*)")
+                       ("(* \nfoo\n*)" "(* \n  foo\n*)")))
+        (expect (neocaml-test--indent-region code) :to-equal expected)
+        (expect (neocaml-test--indent-region expected) :to-equal expected)))
+
+    (it "lines a closing *) up with the stars above it when indenting line by line"
+      (with-temp-buffer
+        (insert "let y =\n(* a\n * b\n *)\n  2")
+        (neocaml-mode)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (indent-according-to-mode)
+          (forward-line))
+        (expect (buffer-string) :to-equal "let y =\n  (* a\n   * b\n   *)\n  2")))
+
     (when-indenting-it "lines up a comment between definitions with them"
       "type t = A
 (* c *)

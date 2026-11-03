@@ -969,20 +969,6 @@ child is indented."
       (back-to-indentation)
       (point))))
 
-(defun neocaml--comment-body-anchor (node parent _bol &rest _)
-  "Return the position of the comment body start.
-Uses NODE if non-nil, otherwise PARENT (for continuation lines
-where NODE is nil).  Used as an indentation anchor so that lines
-inside a multi-line comment align with the text after the opening
-delimiter."
-  (let ((comment (or node parent)))
-    (save-excursion
-      (goto-char (treesit-node-start comment))
-      (if (looking-at "(\\*+[ \t]*")
-          (goto-char (match-end 0))
-        (forward-char))
-      (point))))
-
 (defun neocaml--exclave-body-anchor (_node parent bol &rest _)
   "Return the anchor for the line at BOL in the body of PARENT, an `exclave_'.
 `exclave_' doesn't nest: as ocamlformat lays it out, its body goes
@@ -1669,10 +1655,10 @@ which lines the other rules cover."
   "Return tree-sitter indentation rules for LANGUAGE.
 The return value is suitable for `treesit-simple-indent-rules'."
   `((,language
-     ;; Comment continuation lines: align with the body text after
-     ;; the opening delimiter.  Must come before `no-node' because
-     ;; lines inside a multi-line comment have node=nil, parent=comment.
-     ((parent-is "comment") neocaml--comment-body-anchor 0)
+     ;; Comment continuation lines keep their place in the comment (see
+     ;; the function).  Must come before `no-node' because lines inside
+     ;; a multi-line comment have node=nil, parent=comment.
+     ((parent-is "comment") parent neocaml-common-comment-line-offset)
 
      ;; Lines starting inside a string stay as they are, but after a
      ;; backslash go past the opening quote (see the functions).  Must
@@ -2517,13 +2503,8 @@ was in a comment, nil otherwise to let the default handler run."
 
 (defun neocaml--comment-body-column ()
   "Return the column of the comment body text start, or nil."
-  (let* ((comment (neocaml--comment-at-point)))
-    (when comment
-      (save-excursion
-        (goto-char (treesit-node-start comment))
-        (when (looking-at "(\\*+[ \t]*")
-          (goto-char (match-end 0))
-          (current-column))))))
+  (when-let* ((comment (neocaml--comment-at-point)))
+    (neocaml-common-comment-text-column comment)))
 
 (defun neocaml--forward-comment (&optional count)
   "Corrected `forward-comment-function' for OCaml block comments.

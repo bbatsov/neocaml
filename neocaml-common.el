@@ -148,6 +148,54 @@ in the buffer.  When PROGRAM fails, signal a `user-error' with NAME
       (kill-buffer outbuf)
       (delete-file errfile))))
 
+(declare-function treesit-node-start "treesit.c")
+
+(defun neocaml-common-comment-text-column (comment)
+  "Return the starting column of the text of COMMENT, a tree-sitter node.
+That's past the opening delimiter and the blanks after it, or right past
+the delimiter when nothing follows it on its line.  Both OCaml's `(*'
+and C's `/*' delimiters work."
+  (save-excursion
+    (goto-char (treesit-node-start comment))
+    (forward-char)
+    (skip-chars-forward "*")
+    (let ((column (current-column)))
+      (skip-chars-forward " \t")
+      (if (eolp) column (current-column)))))
+
+(defun neocaml-common--comment-stars-p (comment bol)
+  "Return non-nil if the lines of COMMENT before BOL start with a star.
+That is, if the nearest of them starting with a star has it no further
+in than the star of the opening delimiter, where indenting puts it."
+  (let* ((start (treesit-node-start comment))
+         (column (save-excursion (goto-char start) (1+ (current-column)))))
+    (save-excursion
+      (goto-char bol)
+      (catch 'found
+        (while (and (zerop (forward-line -1)) (> (point) start))
+          (skip-chars-forward " \t")
+          (when (eq (char-after) ?*)
+            (throw 'found (<= (current-column) column))))))))
+
+(defun neocaml-common-comment-line-offset (_node parent bol &rest _)
+  "Return the offset of the line at BOL from the start of PARENT, a comment.
+Much like ocp-indent, a line keeps its place relative to the comment, so
+the comment moves as a whole, but a line starting with a star goes at
+least as far in as the star of the opening delimiter, and other lines
+at least as far as the text after it.  A closing delimiter starting a
+line goes under that star when the lines above it start with stars,
+and under the opening paren (or slash) otherwise."
+  (save-excursion
+    (let ((column (progn (goto-char (treesit-node-start parent))
+                         (current-column))))
+      (goto-char bol)
+      (let ((offset (- (current-column) column)))
+        (cond ((looking-at-p "\\*[)/]")
+               (if (neocaml-common--comment-stars-p parent bol) 1 0))
+              ((eq (char-after) ?*) (max 1 offset))
+              (t (max offset (- (neocaml-common-comment-text-column parent)
+                                column))))))))
+
 (provide 'neocaml-common)
 
 ;;; neocaml-common.el ends here
