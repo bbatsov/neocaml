@@ -94,6 +94,28 @@ With prefix argument FORCE, reinstall even if already installed."
     (let ((treesit-language-source-alist neocaml-dune-grammar-recipes))
       (treesit-install-language-grammar 'dune))))
 
+(defvar neocaml-dune--grammar-checked nil
+  "Non-nil if the dune grammar has already been checked this session.")
+
+(defun neocaml-dune--grammar-outdated-p ()
+  "Return non-nil if the installed dune grammar predates tree-sitter-dune 0.1.0.
+Those grammars don't wrap a stanza's fields in `stanza_field' nodes,
+which the font-lock rules name, so most of the highlighting fails."
+  (condition-case nil
+      (progn (treesit-query-compile 'dune '((stanza_field) @field) t) nil)
+    (treesit-query-error t)))
+
+(defun neocaml-dune--check-grammar ()
+  "Warn, once a session, if the installed dune grammar is too old."
+  (unless neocaml-dune--grammar-checked
+    (setq neocaml-dune--grammar-checked t)
+    (when (neocaml-dune--grammar-outdated-p)
+      (display-warning
+       'neocaml
+       "The installed tree-sitter dune grammar is older than the version \
+required by neocaml-dune.  Run C-u M-x neocaml-dune-install-grammar to \
+reinstall it."))))
+
 ;;; Formatting
 
 (defun neocaml-dune-format-buffer ()
@@ -511,6 +533,7 @@ tree-sitter >= 0.24" (treesit-library-abi-version)))
       (neocaml-dune-install-grammar))
     (unless (treesit-ready-p 'dune)
       (error "Cannot activate neocaml-dune-mode without the dune grammar")))
+  (neocaml-dune--check-grammar)
   (treesit-parser-create 'dune)
 
   ;; Comments
