@@ -36,7 +36,8 @@
                   (car (last eglot-server-programs))))
               :to-equal '(((neocaml-mode :language-id "ocaml")
                            (neocaml-interface-mode
-                            :language-id "ocaml.interface"))
+                            :language-id "ocaml.interface")
+                           (neocaml-mlx-mode :language-id "ocaml.mlx"))
                           "ocamllsp"))))
 
   (it "adds the modes to dape's ocamlearlybird config when dape loads"

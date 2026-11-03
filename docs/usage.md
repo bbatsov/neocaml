@@ -83,7 +83,7 @@ with `C-c C-z` again.
 
 ## Eglot (LSP)
 
-neocaml auto-registers both modes with Eglot, so `M-x eglot` will
+neocaml auto-registers its OCaml modes with Eglot, so `M-x eglot` will
 start `ocamllsp` with the correct language IDs automatically. To start
 Eglot whenever you open an OCaml file:
 
@@ -92,9 +92,11 @@ Eglot whenever you open an OCaml file:
 ```
 
 !!! note
-    neocaml sets the `eglot-language-id` symbol property on both modes
-    (`"ocaml"` for `.ml` and `"ocaml.interface"` for `.mli`), so the correct
-    language IDs are sent to the server automatically.
+    neocaml sets the `eglot-language-id` symbol property on its OCaml modes
+    (`"ocaml"` for `.ml`, `"ocaml.interface"` for `.mli` and `"ocaml.mlx"` for
+    `.mlx`), so the correct language IDs are sent to the server automatically.
+    ocamllsp handles `.mlx` files from version 1.25.0, with `ocamlmerlin-mlx`
+    installed.
 
 ### ocaml-eglot
 
