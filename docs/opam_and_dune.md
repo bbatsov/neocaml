@@ -120,7 +120,8 @@ offers context-aware candidates. They also plug into UIs built on
 In dune files you get:
 
 - **stanza names** (`library`, `executable`, `rule`, ...) at the head of
-  a top-level form
+  a top-level form, and in dune-project and dune-workspace files the
+  stanzas of those (`package`, `generate_opam_files`, `context`, ...)
 - **field names** for the enclosing stanza (so a `library` offers
   `libraries`, `modules`, `public_name`, ... while a `rule` offers
   `targets`, `deps`, `action`, ...)

@@ -242,6 +242,36 @@ text with the formatted output, touching only the parts that changed
     "include_subdirs" "files")
   "Top-level stanza names for `neocaml-dune-mode' completion.")
 
+(defvar neocaml-dune--project-stanza-names
+  '("lang" "name" "version" "using" "package" "generate_opam_files"
+    "opam_file_location" "license" "authors" "maintainers"
+    "maintenance_intent" "source" "homepage" "bug_reports" "documentation"
+    "formatting" "dialect" "cram" "warnings" "pin" "subst"
+    "implicit_transitive_deps" "wrapped_executables"
+    "executables_implicit_empty_intf" "explicit_js_mode"
+    "expand_aliases_in_sandbox" "map_workspace_root"
+    "accept_alternative_dune_file_name" "use_standard_c_and_cxx_flags")
+  "Top-level stanza names for dune-project files.")
+
+(defvar neocaml-dune--workspace-stanza-names
+  '("lang" "context" "env" "profile" "lock_dir" "pin" "pkg" "repository"
+    ;; The stanzas of dune's config file go in a workspace too.
+    "action_stderr_on_success" "action_stdout_on_success" "cache"
+    "cache_check_probability" "cache_storage_mode" "display" "jobs"
+    "project_defaults" "sandboxing_preference" "terminal_persistence")
+  "Top-level stanza names for dune-workspace files.")
+
+(defun neocaml-dune--file-kind ()
+  "Return the kind of dune file in the buffer.
+That's `project' for a dune-project file, `workspace' for a
+dune-workspace one and `dune' otherwise."
+  (let ((name (and buffer-file-name (file-name-nondirectory buffer-file-name))))
+    (cond ((null name) 'dune)
+          ((string= name "dune-project") 'project)
+          ((string-match-p "\\`dune-workspace\\(?:\\..*\\)?\\'" name)
+           'workspace)
+          (t 'dune))))
+
 (defvar neocaml-dune--stanza-fields
   '(("library"
      . ("name" "public_name" "package" "synopsis" "modules" "libraries"
@@ -306,7 +336,8 @@ text with the formatted output, touching only the parts that changed
         "maintenance_intent" "source" "bug_reports" "homepage"
         "documentation" "sites" "allow_empty")))
   "Alist mapping a dune stanza name to its valid field names.
-Stanzas not listed here fall back to `neocaml-dune--all-fields'.")
+In dune files, stanzas not listed here fall back to
+`neocaml-dune--all-fields'.")
 
 (defvar neocaml-dune--all-fields
   (delete-dups
@@ -341,9 +372,11 @@ When point is not on an atom, both ends equal point."
         (buffer-substring-no-properties beg (point))))))
 
 (defun neocaml-dune--fields-for (stanza)
-  "Return the field names valid inside STANZA, or the union fallback."
+  "Return the field names valid inside STANZA.
+In a dune file, fall back to the fields of all the stanzas, as that's
+where those stanzas go."
   (or (cdr (assoc stanza neocaml-dune--stanza-fields))
-      neocaml-dune--all-fields))
+      (and (eq (neocaml-dune--file-kind) 'dune) neocaml-dune--all-fields)))
 
 (defvar neocaml-dune--action-names
   '("bash" "cat" "chdir" "cmp" "concurrent" "copy" "copy#" "diff" "diff?"
@@ -497,7 +530,11 @@ Also library names inside the fields that take them (see
         (if (= start (neocaml-dune--first-atom-pos inner))
             (cond
              ((= depth 1)
-              (neocaml-common-capf start end neocaml-dune--stanza-names
+              (neocaml-common-capf start end
+                                   (pcase (neocaml-dune--file-kind)
+                                     ('project neocaml-dune--project-stanza-names)
+                                     ('workspace neocaml-dune--workspace-stanza-names)
+                                     (_ neocaml-dune--stanza-names))
                                    "stanza" 'keyword))
              ((member parent neocaml-dune--action-parents)
               (neocaml-common-capf start end neocaml-dune--action-names
@@ -509,8 +546,8 @@ Also library names inside the fields that take them (see
               (neocaml-common-capf start end neocaml-dune--env-profiles
                                    "profile" 'constant))
              ((= depth (if (equal stanza "env") 3 2))
-              (neocaml-common-capf start end (neocaml-dune--fields-for stanza)
-                                   "field" 'property)))
+              (when-let* ((fields (neocaml-dune--fields-for stanza)))
+                (neocaml-common-capf start end fields "field" 'property))))
           (when (and neocaml-dune-complete-libraries
                      (member (neocaml-dune--head-after inner)
                              neocaml-dune--library-fields))

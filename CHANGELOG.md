@@ -51,6 +51,7 @@
 
 ### Bug fixes
 
+- [#121](https://github.com/bbatsov/neocaml/pull/121): Offer the stanzas of dune-project and dune-workspace files at their top level in `neocaml-dune-mode`, instead of those of dune files, and no dune file fields inside them.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Register `neocaml-mlx-mode` with Eglot too, with the `ocaml.mlx` language ID ocamllsp expects.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Indent the JSX in `neocaml-mlx-mode` by its elements when the `tsx` grammar is installed, which went by the OCaml rules instead.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Keep the OCaml in JSX (children like `(React.string name)`, the values of props and the `?` of optional ones) from the `tsx` parser in `neocaml-mlx-mode`, so a prop like `onClick=(fun _ -> ...)` doesn't break the highlighting of the JSX after it.
