@@ -178,7 +178,21 @@
           (goto-char 5)
           (fill-paragraph))
         (expect (buffer-string) :to-match "\n    @param x the input")
-        (expect (buffer-string) :to-match "\n    @return the output"))))
+        (expect (buffer-string) :to-match "\n    @return the output")))
+
+    (it "fills the paragraph at point"
+      (with-temp-buffer
+        (insert (concat "(* First paragraph\n   on two lines.\n\n"
+                        "   Second paragraph,\n   also on two lines. *)"))
+        (neocaml-mode)
+        (let ((fill-column 70))
+          (goto-char (point-min))
+          (search-forward "Second")
+          (fill-paragraph))
+        (expect (buffer-string)
+                :to-equal
+                (concat "(* First paragraph\n   on two lines.\n\n"
+                        "   Second paragraph, also on two lines. *)")))))
 
   (describe "comment continuation"
     (it "inserts newline with correct indentation in regular comment"
