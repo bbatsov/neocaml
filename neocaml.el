@@ -2455,62 +2455,99 @@ Intended for use in `find-file-hook'."
    (lambda (n) (equal (treesit-node-type n) "comment"))
    t))
 
+(defun neocaml--doc-code-blocks (start end)
+  "Return the code and verbatim blocks between START and END.
+Each is a (BEG . END) cons.  An opener that isn't closed doesn't start
+a block, as in font-lock."
+  (save-excursion
+    (goto-char start)
+    (let (blocks)
+      (while (re-search-forward neocaml--doc-code-block-regexp end t)
+        (let ((beg (match-beginning 0))
+              (closer (neocaml--doc-code-block-closer)))
+          ;; After an odd number of backslashes the brace is escaped
+          (when (and (zerop (% (save-excursion
+                                 (goto-char beg)
+                                 (skip-chars-backward "\\\\"))
+                               2))
+                     (search-forward closer end t))
+            (push (cons beg (point)) blocks))))
+      (nreverse blocks))))
+
 (defun neocaml--fill-paragraph (&optional _justify)
   "Fill the OCaml comment at point.
 Uses tree-sitter to find comment boundaries, then narrows to the
-comment body (excluding delimiters) and fills.  Returns t if point
+comment body (excluding delimiters) and fills.  Code and verbatim
+blocks ({[ ... ]}, {@lang[ ... ]} and {v ... v}) are left as they are,
+and the text around them is filled up to them.  Returns t if point
 was in a comment, nil otherwise to let the default handler run."
-  (let* ((comment (neocaml--comment-at-point)))
-    (when comment
-      (let ((pos (point))
-            (start (treesit-node-start comment))
-            (end (treesit-node-end comment)))
-        (save-excursion
-          (save-restriction
-            ;; Narrow to comment body: skip (* prefix and *) suffix
-            (goto-char start)
-            (when (looking-at "(\\*+[ \t]*")
-              (setq start (match-end 0)))
-            (goto-char end)
-            (when (looking-back "\\*+)" nil)
-              (goto-char (match-beginning 0))
-              (skip-chars-backward " \t")
-              (setq end (point)))
-            ;; Compute body column before narrowing.
-            (goto-char start)
-            (let ((body-col (current-column)))
-              (narrow-to-region start end)
-              ;; Back to where point was, within the body.
-              (goto-char pos)
-              ;; Treat list items (- foo, * foo, + foo) and odoc tags
-              ;; (@param, @return) as paragraph boundaries so they
-              ;; don't get merged into prose.
-              (let* ((paragraph-start
-                      (concat paragraph-start
-                              "\\|[ \t]*[-*+][ \t]"
-                              "\\|[ \t]*@[a-z]+\\b"))
-                     par-start par-end)
-                ;; Find the paragraph containing point (without
-                ;; fill-prefix set, so list items are recognized as
-                ;; paragraph boundaries).
-                (save-excursion
-                  (skip-chars-forward " \t")
-                  (backward-paragraph)
-                  (skip-chars-forward " \t\n")
-                  (setq par-start (point))
-                  (forward-paragraph)
-                  (setq par-end (point)))
-                ;; Use body-col for first-line paragraphs, actual
-                ;; indentation for indented paragraphs (list items).
-                (let* ((par-col (save-excursion
-                                  (goto-char par-start)
-                                  (skip-chars-forward " \t")
-                                  (current-column)))
-                       (fill-prefix
-                        (make-string (max body-col par-col) ?\s))
-                       (fill-paragraph-function nil))
-                  (fill-region-as-paragraph par-start par-end)))))
-          t)))))
+  (when-let* ((comment (neocaml--comment-at-point)))
+    (let ((pos (point))
+          (start (treesit-node-start comment))
+          (end (treesit-node-end comment)))
+      (save-excursion
+        (save-restriction
+          ;; Narrow to comment body: skip (* prefix and *) suffix
+          (goto-char start)
+          (when (looking-at "(\\*+[ \t]*")
+            (setq start (match-end 0)))
+          (goto-char end)
+          (when (looking-back "\\*+)" nil)
+            (goto-char (match-beginning 0))
+            (skip-chars-backward " \t")
+            (setq end (point)))
+          ;; Compute body column before narrowing.
+          (let* ((body-col (progn (goto-char start) (current-column)))
+                 ;; Treat list items (- foo, * foo, + foo) and odoc tags
+                 ;; (@param, @return) as paragraph boundaries so they
+                 ;; don't get merged into prose.
+                 (paragraph-start
+                  (concat paragraph-start
+                          "\\|[ \t]*[-*+][ \t]"
+                          "\\|[ \t]*@[a-z]+\\b"))
+                 in-block par-start par-end)
+            (narrow-to-region start end)
+            ;; Back to where point was, within the body.
+            (goto-char pos)
+            (setq pos (point))
+            ;; Find the paragraph containing point (without
+            ;; fill-prefix set, so list items are recognized as
+            ;; paragraph boundaries).
+            (save-excursion
+              (skip-chars-forward " \t")
+              (backward-paragraph)
+              (skip-chars-forward " \t\n")
+              (setq par-start (point))
+              (forward-paragraph)
+              (setq par-end (point)))
+            ;; Stop the paragraph at the code blocks around point,
+            ;; and don't fill at all inside one.
+            (pcase-dolist (`(,block-beg . ,block-end)
+                           (neocaml--doc-code-blocks (point-min) (point-max)))
+              (cond
+               ((< block-beg pos block-end) (setq in-block t))
+               ((<= block-end pos)
+                (goto-char block-end)
+                (skip-chars-forward " \t\n")
+                (setq par-start (max par-start (point))))
+               ((< par-start block-beg par-end)
+                (goto-char block-beg)
+                (skip-chars-backward " \t\n")
+                (setq par-end (point)))))
+            ;; Use body-col for first-line paragraphs and text after a
+            ;; block on its line, actual indentation for indented
+            ;; paragraphs (list items).
+            (unless (or in-block (>= par-start par-end))
+              (let* ((par-col (save-excursion
+                                (goto-char par-start)
+                                (if (looking-back "^[ \t]*" (pos-bol))
+                                    (current-column)
+                                  0)))
+                     (fill-prefix
+                      (make-string (max body-col par-col) ?\s))
+                     (fill-paragraph-function nil))
+                (fill-region-as-paragraph par-start par-end)))))
+        t))))
 
 ;;;; Comment continuation (M-j)
 

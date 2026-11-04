@@ -192,7 +192,89 @@
         (expect (buffer-string)
                 :to-equal
                 (concat "(* First paragraph\n   on two lines.\n\n"
-                        "   Second paragraph, also on two lines. *)")))))
+                        "   Second paragraph, also on two lines. *)"))))
+
+    (it "leaves a code block right after the text alone"
+      (let ((code (concat "(** Parse the input, e.g.\n"
+                          "    {[\n"
+                          "      let x = parse s in\n"
+                          "      print x\n"
+                          "    ]} *)")))
+        (with-temp-buffer
+          (insert code)
+          (neocaml-mode)
+          (let ((fill-column 70))
+            (goto-char 6)
+            (fill-paragraph))
+          (expect (buffer-string) :to-equal code))))
+
+    (it "fills the text around code blocks, but not the blocks"
+      (with-temp-buffer
+        (insert (concat "(** Some text that\n"
+                        "    wraps. {[ let x =\n"
+                        "      1 ]} More text\n"
+                        "    that wraps.\n"
+                        "    {v verbatim\n"
+                        "       text v}\n"
+                        "    {@ocaml env=f[\n"
+                        "      let y = 2\n"
+                        "    ]} *)"))
+        (neocaml-mode)
+        (let ((fill-column 70))
+          (goto-char 6)
+          (fill-paragraph)
+          (search-forward "More")
+          (fill-paragraph))
+        (expect (buffer-string)
+                :to-equal
+                (concat "(** Some text that wraps. {[ let x =\n"
+                        "      1 ]} More text that wraps.\n"
+                        "    {v verbatim\n"
+                        "       text v}\n"
+                        "    {@ocaml env=f[\n"
+                        "      let y = 2\n"
+                        "    ]} *)"))))
+
+    (it "wraps the text after a block on its line at the body's column"
+      (with-temp-buffer
+        (insert (concat "(** Text. {[ let x =\n"
+                        "      1 ]} More text that is long enough to wrap *)"))
+        (neocaml-mode)
+        (let ((fill-column 40))
+          (goto-char (point-min))
+          (search-forward "More")
+          (fill-paragraph))
+        (expect (buffer-string)
+                :to-equal
+                (concat "(** Text. {[ let x =\n"
+                        "      1 ]} More text that is long enough\n"
+                        "    to wrap *)"))))
+
+    (it "fills the text after an opener that isn't closed"
+      (with-temp-buffer
+        (insert "(** Opens {[ but\n    never closes. *)")
+        (neocaml-mode)
+        (let ((fill-column 70))
+          (goto-char (point-min))
+          (search-forward "never")
+          (fill-paragraph))
+        (expect (buffer-string)
+                :to-equal "(** Opens {[ but never closes. *)")))
+
+    (dolist (block '(("{[" . "{[\n      let x =\n        1\n    ]}")
+                     ("{v" . "{v\n      some\n      text\n    v}")
+                     ("{@ocaml[" . "{@ocaml[\n      let x =\n        1\n    ]}")))
+      (it (format "leaves the code in a %s block alone when point is in it"
+                  (car block))
+        (let ((code (concat "(** Text.\n    " (cdr block) " *)")))
+          (with-temp-buffer
+            (insert code)
+            (neocaml-mode)
+            (goto-char (point-min))
+            (forward-line 2)
+            (fill-paragraph)
+            (expect (buffer-string) :to-equal code))))))
+
 
   (describe "comment continuation"
     (it "inserts newline with correct indentation in regular comment"
