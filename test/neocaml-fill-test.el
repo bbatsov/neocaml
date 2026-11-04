@@ -275,7 +275,6 @@
             (fill-paragraph)
             (expect (buffer-string) :to-equal code))))))
 
-
   (describe "comment continuation"
     (it "inserts newline with correct indentation in regular comment"
       (with-temp-buffer
@@ -303,6 +302,39 @@
         (neocaml--comment-indent-new-line)
         (expect (line-number-at-pos) :to-equal 2)
         (expect (current-column) :to-equal 5)))
+
+    (it "continues the * starting a line"
+      (with-temp-buffer
+        (insert "  (*\n   * first line\n   *)")
+        (neocaml-mode)
+        (goto-char (point-min))
+        (search-forward "first line")
+        (neocaml--comment-indent-new-line)
+        (insert "next")
+        (expect (buffer-string)
+                :to-equal "  (*\n   * first line\n   * next\n   *)")))
+
+    (it "continues a * with no text after it"
+      (with-temp-buffer
+        (insert "(*\n *\n *)")
+        (neocaml-mode)
+        (goto-char (point-min))
+        (forward-line 1)
+        (end-of-line)
+        (neocaml--comment-indent-new-line)
+        (insert "next")
+        (expect (buffer-string) :to-equal "(*\n *\n * next\n *)")))
+
+    (it "doesn't continue a * further in than the opening one"
+      (with-temp-buffer
+        (insert "(* Items:\n   * first item *)")
+        (neocaml-mode)
+        (goto-char (point-min))
+        (search-forward "first item")
+        (neocaml--comment-indent-new-line)
+        (insert "next")
+        (expect (buffer-string)
+                :to-equal "(* Items:\n   * first item\n   next *)")))
 
     (it "falls back outside comments"
       (with-temp-buffer
