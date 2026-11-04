@@ -375,6 +375,15 @@ The layouts and kind abbreviations of https://oxcaml.org/documentation/kinds/syn
   "Regexp matching the text of a doc comment node ((** ...).
 The [^*] excludes (*** separator comments.")
 
+(defconst neocaml--doc-code-block-regexp
+  "{\\(?:\\[\\|@[[:alnum:]_.-]+[^[\n}]*\\[\\|\\(v\\)[ \t\n]\\)"
+  "Regexp matching the opening of a code or verbatim block in a comment.
+That's {[, {@lang[ (with optional metadata before the [) or {v.")
+
+(defun neocaml--doc-code-block-closer ()
+  "Return the closer of the block `neocaml--doc-code-block-regexp' matched."
+  (if (match-beginning 1) "v}" "]}"))
+
 (defface neocaml-doc-markup-face
   '((t :inherit font-lock-doc-markup-face))
   "Face for ocamldoc markup delimiters and @tags in doc comments."
@@ -480,11 +489,12 @@ later."
                (if (memq (char-after (1+ (point))) '(?\{ ?\} ?\[ ?\] ?@)) 2 1)))
              ((eq c ?\{)
               (cond
-               ;; {[ code block ]} and {v verbatim v} - no markup inside
-               ((looking-at "{\\(?:\\(\\[\\)\\|v[ \t\n]\\)")
+               ;; {[ code block ]}, {@lang[ code block ]} and
+               ;; {v verbatim v} - no markup inside
+               ((looking-at neocaml--doc-code-block-regexp)
                 (let* ((open (point))
                        (opener-end (match-end 0))
-                       (closer (if (match-beginning 1) "]}" "v}"))
+                       (closer (neocaml--doc-code-block-closer))
                        (close (save-excursion
                                 (search-forward closer limit t))))
                   (if (not close)
