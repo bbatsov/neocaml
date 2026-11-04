@@ -2452,7 +2452,8 @@ comment body (excluding delimiters) and fills.  Returns t if point
 was in a comment, nil otherwise to let the default handler run."
   (let* ((comment (neocaml--comment-at-point)))
     (when comment
-      (let ((start (treesit-node-start comment))
+      (let ((pos (point))
+            (start (treesit-node-start comment))
             (end (treesit-node-end comment)))
         (save-excursion
           (save-restriction
@@ -2469,6 +2470,8 @@ was in a comment, nil otherwise to let the default handler run."
             (goto-char start)
             (let ((body-col (current-column)))
               (narrow-to-region start end)
+              ;; Back to where point was, within the body.
+              (goto-char pos)
               ;; Treat list items (- foo, * foo, + foo) and odoc tags
               ;; (@param, @return) as paragraph boundaries so they
               ;; don't get merged into prose.

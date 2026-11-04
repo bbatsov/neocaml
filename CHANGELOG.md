@@ -51,6 +51,7 @@
 
 ### Bug fixes
 
+- [#122](https://github.com/bbatsov/neocaml/pull/122): Fill the paragraph at point with `M-q` in a comment, instead of always the comment's first paragraph.
 - [#121](https://github.com/bbatsov/neocaml/pull/121): Offer the stanzas of dune-project and dune-workspace files at their top level in `neocaml-dune-mode`, instead of those of dune files, and no dune file fields inside them.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Register `neocaml-mlx-mode` with Eglot too, with the `ocaml.mlx` language ID ocamllsp expects.
 - [#120](https://github.com/bbatsov/neocaml/pull/120): Indent the JSX in `neocaml-mlx-mode` by its elements when the `tsx` grammar is installed, which went by the OCaml rules instead.
