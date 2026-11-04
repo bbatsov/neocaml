@@ -107,6 +107,11 @@ Lets a spec inspect the matcher's own outcome without failing itself."
       ("(** {[ let x = 1 ]} *)"
        ("let x = 1" (neocaml-doc-code-face font-lock-doc-face))))
 
+    (when-fontifying-it "renders odoc's {@lang[...]} code blocks as code"
+      ("(** {@ocaml env=f[ let x = {b y} ]} *)"
+       ("@ocaml env=f[" (neocaml-doc-markup-face font-lock-doc-face))
+       ("let x = {b y}" (neocaml-doc-code-face font-lock-doc-face))))
+
     (when-fontifying-it "highlights references and links"
       ("(** see {!List.map} and {{:https://ocaml.org} the manual} *)"
        ("List.map" (neocaml-doc-reference-face font-lock-doc-face))

@@ -29,6 +29,7 @@
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Take the indentation style from the project's `.ocp-indent` when it has no `.ocamlformat`: its `JaneStreet` preset selects the `janestreet` style, and its `match_clause` how far the bodies of match cases go.
 - [#113](https://github.com/bbatsov/neocaml/pull/113): Make the locations of errors, warnings and backtraces in files clickable in the `neocaml-utop` transcript, as they are in `neocaml-repl`.
 - [#117](https://github.com/bbatsov/neocaml/pull/117): Warn when the installed dune grammar is older than release 0.1.0 of tree-sitter-dune, which `neocaml-dune-mode` needs, and say how to reinstall it.
+- [#122](https://github.com/bbatsov/neocaml/pull/122): Render odoc's `{@ocaml[ ... ]}` code blocks in doc comments as code, like `{[ ... ]}` ones.
 
 ### Changes
 
