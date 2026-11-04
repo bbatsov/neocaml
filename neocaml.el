@@ -2551,11 +2551,6 @@ was in a comment, nil otherwise to let the default handler run."
 
 ;;;; Comment continuation (M-j)
 
-(defun neocaml--comment-body-column ()
-  "Return the column of the comment body text start, or nil."
-  (when-let* ((comment (neocaml--comment-at-point)))
-    (neocaml-common-comment-text-column comment)))
-
 (defun neocaml--forward-comment (&optional count)
   "Corrected `forward-comment-function' for OCaml block comments.
 Emacs 31's `treesit-forward-comment' has an off-by-one bug: it
@@ -2591,13 +2586,22 @@ package supports 29.1."
 
 (defun neocaml--comment-indent-new-line (&optional soft)
   "Break line at point and indent, continuing comment if within one.
-SOFT works the same as in `comment-indent-new-line'."
-  (let ((body-col (neocaml--comment-body-column)))
-    (if body-col
-        (progn
-          (if soft (insert-and-inherit ?\n) (newline 1))
-          (insert-char ?\s body-col))
-      (comment-indent-new-line soft))))
+In a comment that starts its lines with a `*', the new line gets the
+same prefix.  SOFT works the same as in `comment-indent-new-line'."
+  (if-let* ((comment (neocaml--comment-at-point)))
+      (let ((prefix (save-excursion
+                      (beginning-of-line)
+                      (when (looking-at "\\([ \t]*\\*+\\)\\(?:\\([ \t]+\\)\\|$\\)")
+                        (let ((prefix (concat (match-string 1)
+                                              (or (match-string 2) " "))))
+                          ;; A star past the opening one is a bullet
+                          (when (neocaml-common--comment-stars-p
+                                 comment (line-beginning-position 2))
+                            prefix)))))
+            (column (neocaml-common-comment-text-column comment)))
+        (if soft (insert-and-inherit ?\n) (newline 1))
+        (insert (or prefix (make-string column ?\s))))
+    (comment-indent-new-line soft)))
 
 ;;;; Utility commands
 
