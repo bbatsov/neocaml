@@ -11,23 +11,15 @@
 ### New features
 
 - [#60](https://github.com/bbatsov/neocaml/issues/60): Render ocamldoc markup in doc comments - `{b bold}`, `{i italic}`, `[code]`, `{[...]}` code blocks, `{!references}` and `@tags` are now displayed with real faces via the new `doc-markup` font-lock feature (enabled at the default font-lock level).
-- [#46](https://github.com/bbatsov/neocaml/pull/46): New `neocaml-odoc-mode` for [odoc](https://ocaml.github.io/odoc/) documentation pages (`.mld`), with font-lock for headings, inline markup, code spans, references, links, tags, lists and tables, indentation, imenu, and language injection into `{@lang[...]}` code blocks for OCaml, dune and opam (Emacs 30+). Install its grammar with `M-x neocaml-odoc-install-grammar`.
+- [#46](https://github.com/bbatsov/neocaml/pull/46): New `neocaml-odoc-mode` for [odoc](https://ocaml.github.io/odoc/) documentation pages (`.mld`), with font-lock, indentation, imenu, and language injection into `{@lang[...]}` code blocks for OCaml, dune and opam (Emacs 30+). Install its grammar with `M-x neocaml-odoc-install-grammar`.
 - [#77](https://github.com/bbatsov/neocaml/pull/77): Add `neocaml-mlx-mode`, a major mode for `.mlx` files (OCaml with embedded JSX, as used by Melange/React), with JSX highlighting via `tsx` grammar injection (Emacs 30+).
 - [#95](https://github.com/bbatsov/neocaml/pull/95): Complete findlib package names in `neocaml-repl-require` and `neocaml-utop-require`, using the packages `ocamlfind list` reports for the project's opam switch.
-- [#96](https://github.com/bbatsov/neocaml/pull/96): Add commands for working with the current file's tests:
-  - `neocaml-dune-test-file` (`C-c C-o T`) runs a cram test on its own, or the tests of the file's directory for other files.
-  - `neocaml-dune-promotion-diff` (`C-c C-o =`) shows the file's pending promotion in a `diff-mode` buffer (with a prefix argument, every pending promotion).
-  - `neocaml-dune-promote-file` (`C-c C-o P`) promotes only that file and reverts its buffer.
-  - In `neocaml-cram-mode`, `C-c C-c` runs the test, `C-c C-r` shows its correction and `C-c C-p` promotes it.
-- [#102](https://github.com/bbatsov/neocaml/pull/102): Fontify [OxCaml](https://oxcaml.org/) syntax: the `stack_`, `exclave_`, `local_`, `global_`, `borrow_`, `kind_` and `kind_of_` keywords, modes and modalities, kinds, immutable arrays, unboxed types and literals (`float#`, `#1.0`, `#true`, `#(...)`, `#{...}`, `.#field`), and the new builtin types (`float32`, `int8`, `int16`, `or_null` and the unboxed `#` variants).
-- [#102](https://github.com/bbatsov/neocaml/pull/102): Indent OxCaml code: the bodies of `exclave_`, `stack_`, `local_` and `borrow_` on the next line, kind definitions, `mod` bounds, and the `for` and `when` clauses of comprehensions.
-- [#102](https://github.com/bbatsov/neocaml/pull/102): Treat OxCaml kind definitions as definitions for imenu (under "Kind"), defun navigation, `which-function` and sentence motion, immutable arrays as lists, and the `@`/`@@` of modes and modalities as punctuation in sexp motion.
-- [#107](https://github.com/bbatsov/neocaml/pull/107): Fontify OxCaml's builtin kinds (`value`, `immediate`, `float64`, etc.) and SIMD vector types (`int8x16`, `float64x2#`, etc.) as builtins, and the predefined `floatarray`, `extension_constructor`, `eff`, `continuation`, `atomic_loc` and `lexing_position` types too.
-- [#107](https://github.com/bbatsov/neocaml/pull/107): Indent the `@@` of an OxCaml `sig @@ portable` starting a line like `end`.
-- [#107](https://github.com/bbatsov/neocaml/pull/107): Indent an attribute on a line of its own after a body, like the `[@nontail]` and `[@exclave_if_stack a]` of Jane Street code, like the body.
+- [#96](https://github.com/bbatsov/neocaml/pull/96): Add `neocaml-dune-test-file` (`C-c C-o T`), `neocaml-dune-promotion-diff` (`C-c C-o =`) and `neocaml-dune-promote-file` (`C-c C-o P`) for running the current file's tests and reviewing and promoting their output, with `C-c C-c`, `C-c C-r` and `C-c C-p` doing the same in `neocaml-cram-mode`.
+- [#102](https://github.com/bbatsov/neocaml/pull/102): Support [OxCaml](https://oxcaml.org/) syntax, with font-lock and indentation for its keywords (`stack_`, `exclave_`, `local_`, etc.), modes and modalities, kinds, unboxed types and literals, immutable arrays and comprehensions, and kind definitions in imenu and defun navigation.
+- [#107](https://github.com/bbatsov/neocaml/pull/107): Fontify OxCaml's builtin kinds (`value`, `immediate`, etc.), its SIMD vector types and the other predefined types (`floatarray`, `eff`, etc.) as builtins, and indent the `@@` of a `sig @@ portable` starting a line, and an attribute like `[@nontail]` on its own line after a body.
 - [#108](https://github.com/bbatsov/neocaml/pull/108): Fontify the toplevel's responses in `neocaml-repl` and `neocaml-utop` with tree-sitter, the signatures as in `.mli` buffers and the values as in `.ml` buffers (toggle with `neocaml-repl-fontify-output` and `neocaml-utop-fontify-output`).
 - [#110](https://github.com/bbatsov/neocaml/pull/110): Add indentation styles: `neocaml-indent-style` selects `ocp-indent` (the default), or `conventional` and `janestreet` after ocamlformat's profiles, and when it's `nil` the style comes from the `profile` and `cases-exp-indent` of the project's `.ocamlformat`. `M-x neocaml-set-indent-style` and the OCaml menu switch the style of the current buffer.
-- [#112](https://github.com/bbatsov/neocaml/pull/112): Take the indentation style from the project's `.ocp-indent` when it has no `.ocamlformat`: its `JaneStreet` preset selects the `janestreet` style, and its `match_clause` how far the bodies of match cases go.
+- [#112](https://github.com/bbatsov/neocaml/pull/112): Take the indentation style from the project's `.ocp-indent` when it has no `.ocamlformat`, and ignore an `.ocamlformat` for the files ocamlformat leaves alone.
 - [#113](https://github.com/bbatsov/neocaml/pull/113): Make the locations of errors, warnings and backtraces in files clickable in the `neocaml-utop` transcript, as they are in `neocaml-repl`.
 - [#117](https://github.com/bbatsov/neocaml/pull/117): Warn when the installed dune grammar is older than release 0.1.0 of tree-sitter-dune, which `neocaml-dune-mode` needs, and say how to reinstall it.
 - [#122](https://github.com/bbatsov/neocaml/pull/122): Render odoc's `{@ocaml[ ... ]}` code blocks in doc comments as code, like `{[ ... ]}` ones.
@@ -35,70 +27,31 @@
 ### Changes
 
 - [#118](https://github.com/bbatsov/neocaml/pull/118): Pin the menhir grammar to release v0.5.0 of tree-sitter-menhir instead of its `master` branch.
-- [#93](https://github.com/bbatsov/neocaml/pull/93): Switch the dune grammar to release 0.1.0 of [ocaml-dune/tree-sitter-dune](https://github.com/ocaml-dune/tree-sitter-dune), the grammar's new home. Reinstall it with `C-u M-x neocaml-dune-install-grammar`.
-  - Fontify more dune syntax: pforms, package tags, the ordered set language, package constraint operators, dependency and source kinds, and rule modes.
-  - Indent a field's value on a continuation line one column past the field's name, as dune's formatter does.
+- [#93](https://github.com/bbatsov/neocaml/pull/93): Switch the dune grammar to release 0.1.0 of [ocaml-dune/tree-sitter-dune](https://github.com/ocaml-dune/tree-sitter-dune), the grammar's new home, which fontifies more dune syntax (pforms, package tags, the ordered set language, etc.) and indents a field's value on a continuation line as dune's formatter does. Reinstall it with `C-u M-x neocaml-dune-install-grammar`.
 - [#88](https://github.com/bbatsov/neocaml/pull/88): Switch the `ocaml` and `ocaml-interface` grammars to tree-sitter-ocaml v0.26.0 (the `v0.26.0-abi14` tag), which parses the OxCaml extensions. Reinstall them with `C-u M-x neocaml-install-grammars`.
-- [#99](https://github.com/bbatsov/neocaml/pull/99): Move the keys that clashed with ocaml-eglot and merlin:
-  - In `neocaml-repl-minor-mode` and `neocaml-utop-minor-mode`, sending the phrase at point is now `C-c C-e` (was `C-c C-p`), sending it and moving to the next one `C-c C-s` (was `C-c C-n`), loading the file `C-c C-u` (was `C-c C-l`) and interrupting the toplevel `C-c C-q` (was `C-c C-i`).
-  - The dune commands move from the `C-c C-d` prefix to `C-c C-o`, and live in `neocaml-dune-command-map`, so they can be bound under another prefix.
+- [#99](https://github.com/bbatsov/neocaml/pull/99): Move the keys that clashed with ocaml-eglot and merlin: the REPL minor modes send the phrase at point with `C-c C-e` (was `C-c C-p`), send it and step with `C-c C-s` (was `C-c C-n`), load the file with `C-c C-u` (was `C-c C-l`) and interrupt with `C-c C-q` (was `C-c C-i`), and the dune commands move from `C-c C-d` to `C-c C-o`, in `neocaml-dune-command-map`.
 - [#80](https://github.com/bbatsov/neocaml/pull/80): Use the hybrid forward-sexp function on every Emacs version, so `C-M-f` moves over whole keyword-led forms (`fun`, `match`, `if`, etc.) on Emacs 31+ instead of stopping after the keyword.
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Give each dune project in a monorepo its own REPL session, named with its path below the `project.el` root (e.g. `*OCaml: mono/pkgs/core*`), so `dune utop` loads the libraries of the project you're working in.
-- [#111](https://github.com/bbatsov/neocaml/pull/111): Indent the signature of a functor's parameter as ocp-indent and ocamlformat's janestreet profile do, in the `ocp-indent` and `janestreet` styles: on a module definition's first line (`module F (X : sig`) its body goes 4 columns in and its `end` 2, like a structure passed to a functor, and elsewhere from inside the parameter's parentheses.
-- [#110](https://github.com/bbatsov/neocaml/pull/110): Indent as ocp-indent does by default, which moves a few layouts:
-  - The cases and the `with` of a `(match ...)` or `(try ...)` go under the `match`, and an operator starting a line inside parentheses under the first operand.
-  - Parameters on continuation lines go 4 columns in, arguments after `=`, `then` and the like 4 past the start of the line, and arguments after an operator past the start of the chain.
-  - The body of a structure passed to a functor (`F (struct`) goes 4 columns in and its `end` 2, and the body of a `begin` or `(` opening a match case's body 2 past where the case's body goes.
-  - The body of a `(fun x ->` starting a line goes past the `fun`, and that of one further along a line 4 past the start of the line.
+- [#111](https://github.com/bbatsov/neocaml/pull/111): Indent the signature of a functor's parameter as ocp-indent and ocamlformat's janestreet profile do, in the `ocp-indent` and `janestreet` styles.
+- [#110](https://github.com/bbatsov/neocaml/pull/110): Indent as ocp-indent does by default, which moves a few layouts, like the cases of a `(match ...)`, parameters and arguments on continuation lines, and the bodies of `F (struct` and `(fun x ->`.
 
 ### Bug fixes
 
-- [#122](https://github.com/bbatsov/neocaml/pull/122): Fill the paragraph at point with `M-q` in a comment, instead of always the comment's first paragraph.
-- [#122](https://github.com/bbatsov/neocaml/pull/122): Leave code and verbatim blocks in comments (`{[ ... ]}`, `{@ocaml[ ... ]}` and `{v ... v}`) as they are with `M-q`, which merged a block that came right after the text into the text.
-- [#122](https://github.com/bbatsov/neocaml/pull/122): Continue the `*` that starts the lines of a comment with `M-j`.
+- [#122](https://github.com/bbatsov/neocaml/pull/122): Fix `M-q` and `M-j` in comments: `M-q` fills the paragraph at point instead of the comment's first one and leaves code and verbatim blocks as they are, and `M-j` continues the `*` starting a line.
 - [#121](https://github.com/bbatsov/neocaml/pull/121): Offer the stanzas of dune-project and dune-workspace files at their top level in `neocaml-dune-mode`, instead of those of dune files, and no dune file fields inside them.
-- [#120](https://github.com/bbatsov/neocaml/pull/120): Register `neocaml-mlx-mode` with Eglot too, with the `ocaml.mlx` language ID ocamllsp expects.
-- [#120](https://github.com/bbatsov/neocaml/pull/120): Indent the JSX in `neocaml-mlx-mode` by its elements when the `tsx` grammar is installed, which went by the OCaml rules instead.
-- [#120](https://github.com/bbatsov/neocaml/pull/120): Keep the OCaml in JSX (children like `(React.string name)`, the values of props and the `?` of optional ones) from the `tsx` parser in `neocaml-mlx-mode`, so a prop like `onClick=(fun _ -> ...)` doesn't break the highlighting of the JSX after it.
-- [#120](https://github.com/bbatsov/neocaml/pull/120): Parse the code after a JSX element in `neocaml-mlx-mode`, which ended up in an error node with the rest of the buffer, so only the first component's JSX was highlighted, and the code after it could indent wrong and go missing from imenu.
-- [#117](https://github.com/bbatsov/neocaml/pull/117): Make completion in `neocaml-dune-mode` fit where point is:
-  - Offer field names only where a field goes, right inside a stanza or inside a profile of `env`, and not inside the value of a field.
-  - Offer profile names right inside `env`, and the fields of a dune-project `package` stanza inside one.
-  - Offer action names inside an `action` field and inside the actions that take actions.
+- [#120](https://github.com/bbatsov/neocaml/pull/120): Make `neocaml-mlx-mode` work with Eglot (with the `ocaml.mlx` language ID ocamllsp expects), indent JSX by its elements, keep the OCaml inside JSX from the `tsx` parser, and parse the code after a JSX element, which ended up in an error node with the rest of the buffer.
+- [#117](https://github.com/bbatsov/neocaml/pull/117): Make completion in `neocaml-dune-mode` fit where point is, offering field names only where a field goes, profile names inside `env` and action names inside actions.
 - [#115](https://github.com/bbatsov/neocaml/pull/115): Keep the lines of a comment where they are relative to it when indenting (in ocamllex and menhir files too), instead of moving them all to the column of its text, so code examples in doc comments and comments with a `*` starting each line keep their layout.
 - [#114](https://github.com/bbatsov/neocaml/pull/114): Register `neocaml-mode` and `neocaml-interface-mode` with Eglot and dape when those load, so `M-x eglot` knows to start ocamllsp even when Eglot loads after the first OCaml buffer was opened, and add the Eglot entry after the user's own.
 - [#112](https://github.com/bbatsov/neocaml/pull/112): Indent the OCaml in `neocaml-mlx-mode` buffers on Emacs 30 when the `tsx` grammar is installed, which went by the JSX rules instead.
-- [#112](https://github.com/bbatsov/neocaml/pull/112): Tell the lines inside a string from the parse tree alone, so the lines of a quoted string with text that looks like char literals in it (C code, say), and of a top-level quoted extension like `{%%raw|...|}`, stay as they are.
-- [#112](https://github.com/bbatsov/neocaml/pull/112): Indent a line continuing a string after a backslash one column past the string's opening quote, as ocp-indent and ocamlformat do.
-- [#112](https://github.com/bbatsov/neocaml/pull/112): Indent the parameters of a type and the type applied to them on lines of their own (`( 'key,` followed by `'value ) Hashtbl.t`), and a module type, or its `sig`, on the line after `module type S =`.
-- [#112](https://github.com/bbatsov/neocaml/pull/112): Move a line no indentation rule covers along with the line its parent starts on when the code around it is reindented, instead of leaving it where it was typed.
-- [#112](https://github.com/bbatsov/neocaml/pull/112): Don't take the indentation style from an `.ocamlformat` for the files ocamlformat leaves alone: when it says `disable = true` and no `.ocamlformat-enable` lists the file, or when an `.ocamlformat-ignore` lists it.
-- [#111](https://github.com/bbatsov/neocaml/pull/111): Stop moving a comment that no indentation rule covers further right every time it's indented.
-- [#111](https://github.com/bbatsov/neocaml/pull/111): Leave the lines inside a multi-line string, `{|...|}` ones (as in `[%expect]` blocks) included, as they are when indenting, instead of indenting them like code, which changed the string.
-- [#111](https://github.com/bbatsov/neocaml/pull/111): Indent the continuation lines no rule covered, which neocaml left where they were typed:
-  - The arguments of a constructor on the line after it, in patterns and declarations, and the type or value of a record field after its `:` or `=`.
-  - The type of a typed pattern, the `:` of a typed expression, the type after a polymorphic annotation, and a binding on the line after a `let%ext`, as each indentation style lays them out.
-  - The elements of a tuple type, a leading comma in type parameters, and the rest of an `include`, `open`, `functor`, local open or class binding.
-  - Comments between the definitions of a `let rec ... and` or a `type ... and`, which line up with the definitions.
-- [#111](https://github.com/bbatsov/neocaml/pull/111): Indent module definitions broken across lines, as ocp-indent and ocamlformat do:
-  - Functor parameters on continuation lines go 4 columns in, and a `struct` or `sig` starting a line under the `module`.
-  - A module type or body after `:` or `=` goes 2 columns in, and the arguments of a functor on lines of their own 2 past the functor.
-  - The body and `end` of a module whose header spans lines line up with the `module`.
-- [#110](https://github.com/bbatsov/neocaml/pull/110): Indent the arguments of a function that comes after a parenthesis or a bracket past the function, as ocp-indent and ocamlformat do, instead of past the start of the line.
-- [#110](https://github.com/bbatsov/neocaml/pull/110): Indent the body of a `fun` that starts the body of a `let` on a line of its own (`let f : t =` followed by `fun x ->`) where the `fun` is, as ocp-indent and ocamlformat do.
+- [#112](https://github.com/bbatsov/neocaml/pull/112): Indent more lines as ocp-indent and ocamlformat do, like string continuations after a backslash, type parameters on lines of their own and the module type after `module type S =`, and move the lines no rule covers along with their parent.
+- [#112](https://github.com/bbatsov/neocaml/pull/112): Tell the lines inside a string from the parse tree alone, so quoted strings with text that looks like char literals in them, and top-level quoted extensions like `{%%raw|...|}`, keep their lines as they are.
+- [#111](https://github.com/bbatsov/neocaml/pull/111): Leave the lines inside multi-line strings (the `{|...|}` ones of `[%expect]` blocks included) as they are when indenting, and stop moving a comment no rule covers further right every time it's indented.
+- [#111](https://github.com/bbatsov/neocaml/pull/111): Indent the continuation lines no rule covered, like constructor arguments, record field types and values, typed patterns and module definitions broken across lines, as ocp-indent and ocamlformat do.
+- [#110](https://github.com/bbatsov/neocaml/pull/110): Indent the arguments of a function that comes after a parenthesis or a bracket past the function, and the body of a `fun` on the line after `let f : t =` where the `fun` is, as ocp-indent and ocamlformat do.
 - [#103](https://github.com/bbatsov/neocaml/pull/103): Indent with spaces in `neocaml-mode` and `neocaml-interface-mode`, as ocamlformat does, instead of a mix of tabs and spaces past column 8.
-- [#104](https://github.com/bbatsov/neocaml/pull/104): Indent the lines that no indentation rule covered, which `TAB` and `indent-region` used to leave where they were. They now follow ocamlformat's layout:
-  - continuation lines of operator chains (`|>`, `&&`, `^`, `::`, `:=`, `<-`) and of multi-line function types
-  - tuple elements, and the fields of record patterns
-  - `and` in a nested `let rec` (and `and+` of a `let+` inside parentheses), or-patterns, and polymorphic variant types broken before a `|`
-  - a `match` or `if` subject on a line of its own, and a labeled argument's value after `~label:`
-  - the leading `,`, `;`, `->` and `<-` of ocamlformat's janestreet profile
-- [#106](https://github.com/bbatsov/neocaml/pull/106): Follow more of ocamlformat's layout when indenting:
-  - a leading `;` in records, lists and arrays goes under the opening bracket
-  - `;;` inside a module aligns with the definition it ends
-  - the body of `x >>= fun y ->` and the cases of `x >>= function` line up with `x`, and the cases of a `function` starting its line with the `function`
-  - item attributes (`[@@deriving ...]`) on a line of their own align with their item
-  - attribute and extension payloads on the next line are indented, except the items of a ppx_template `[%%template ...]` holding several of them
+- [#104](https://github.com/bbatsov/neocaml/pull/104): Indent the lines that no indentation rule covered, which `TAB` and `indent-region` used to leave where they were, the way ocamlformat lays them out, like the continuation lines of operator chains and function types, tuple elements, or-patterns and labeled arguments.
+- [#106](https://github.com/bbatsov/neocaml/pull/106): Follow more of ocamlformat's layout when indenting, like a leading `;` in records and lists, `;;` inside modules, the body of `x >>= fun y ->`, and item attributes and attribute payloads on lines of their own.
 - [#102](https://github.com/bbatsov/neocaml/pull/102): Fontify the `_` wildcard in patterns and types again, which tree-sitter-ocaml v0.26.0 parses as nodes of its own, and warn when the installed OCaml grammars are older than that.
 - [#78](https://github.com/bbatsov/neocaml/pull/78): Don't treat `"` and `'` delimiter nodes as sexps, so `treesit-thing-at` before a string or char literal returns the whole literal instead of the bare quote.
 - [#79](https://github.com/bbatsov/neocaml/pull/79): Fix a segfault on Emacs 31.1 when font-locking a buffer containing a builtin type or value (`let x : int = 42` was enough to trigger it).
@@ -106,11 +59,8 @@
 - [#91](https://github.com/bbatsov/neocaml/issues/91): Fix the `dune-utop` flavor of `neocaml-utop` failing to start - it passed the project root to `dune utop` as an absolute path, which dune rejects, so it now runs `dune utop .` from the project root instead.
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Make the `dune-utop` flavor of both REPL backends run `dune utop` with `neocaml-dune-program` and `neocaml-dune-use-opam-exec`, and make `neocaml-repl-flavor` set to `dune-utop` (e.g. from `.dir-locals.el`) run `dune utop` from the project root instead of the plain toplevel.
 - [#100](https://github.com/bbatsov/neocaml/pull/100): Make `neocaml-dune-project-root-files` pick the nearest directory containing any of the listed files, as documented, instead of trying the files in order and taking the first match at any depth, and honor it in library and package completion too.
-- [#108](https://github.com/bbatsov/neocaml/pull/108): Fix font-lock in `neocaml-repl` buffers failing on every fontification, which kept prompts from being highlighted and the input from being fontified with tree-sitter.
-- [#108](https://github.com/bbatsov/neocaml/pull/108): Keep the errors in the `neocaml-utop` transcript highlighted, instead of font-lock clearing their face as soon as it fontified them.
-- [#108](https://github.com/bbatsov/neocaml/pull/108): Highlight the toplevel's errors and uncaught exceptions in `neocaml-repl` buffers, where errors got the function name face of `compilation-shell-minor-mode` instead, and its warnings and alerts in their current form (`Warning 26 [unused-var]:`).
-- [#109](https://github.com/bbatsov/neocaml/pull/109): Don't take `//toplevel//`, the toplevel's name for its input, for a file in OCaml compilation messages, so the backtrace frames that mention it aren't listed as errors.
-- [#109](https://github.com/bbatsov/neocaml/pull/109): Make the file locations in the toplevel's errors, warnings and backtraces clickable in `neocaml-repl` buffers, using the regexp of compilation buffers instead of the REPL's own, which matched nothing the toplevel prints.
+- [#108](https://github.com/bbatsov/neocaml/pull/108): Fix the highlighting in REPL buffers: font-lock in `neocaml-repl` failed on every fontification, the errors in the `neocaml-utop` transcript lost their face, and `neocaml-repl` didn't highlight the toplevel's errors, uncaught exceptions, and warnings in their current form (`Warning 26 [unused-var]:`).
+- [#109](https://github.com/bbatsov/neocaml/pull/109): Make the file locations in the toplevel's errors, warnings and backtraces clickable in `neocaml-repl` buffers, and don't take `//toplevel//`, the toplevel's name for its input, for a file.
 
 ## 0.10.0 (2026-07-10)
 
