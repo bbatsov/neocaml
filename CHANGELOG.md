@@ -26,6 +26,7 @@
 
 ### Changes
 
+- [#???] Switch the menhir grammar to release v0.6.1 of tree-sitter-menhir, which parses Menhir 20260209: `%merge` functions for the GLR back-end, attributes after semantic actions (as in Menhir's `standard.mly`), a type variable before a closing brace, postludes containing `}`, comments containing `{|`, and character literals such as `'\}'` in actions. Files using these lost their highlighting from the first one on. Fontify `%merge`, `%prec` and `let` as keywords. Reinstall the grammar with `C-u M-x neocaml-menhir-install-grammar`.
 - [#118](https://github.com/bbatsov/neocaml/pull/118): Pin the menhir grammar to release v0.5.0 of tree-sitter-menhir instead of its `master` branch.
 - [#93](https://github.com/bbatsov/neocaml/pull/93): Switch the dune grammar to release 0.1.0 of [ocaml-dune/tree-sitter-dune](https://github.com/ocaml-dune/tree-sitter-dune), the grammar's new home, which fontifies more dune syntax (pforms, package tags, the ordered set language, etc.) and indents a field's value on a continuation line as dune's formatter does. Reinstall it with `C-u M-x neocaml-dune-install-grammar`.
 - [#88](https://github.com/bbatsov/neocaml/pull/88): Switch the `ocaml` and `ocaml-interface` grammars to tree-sitter-ocaml v0.26.0 (the `v0.26.0-abi14` tag), which parses the OxCaml extensions. Reinstall them with `C-u M-x neocaml-install-grammars`.

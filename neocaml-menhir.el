@@ -61,7 +61,7 @@
 
 (defconst neocaml-menhir-grammar-recipes
   '((menhir "https://github.com/tmcgilchrist/tree-sitter-menhir"
-            "v0.5.0"
+            "v0.6.1"
             "src"))
   "Tree-sitter grammar recipe for Menhir files.
 Each entry is a list of (LANGUAGE URL REV SOURCE-DIR).
@@ -92,6 +92,7 @@ With prefix argument FORCE, reinstall even if already installed."
       "%left" "%right" "%nonassoc"
       "%parameter" "%attribute"
       "%public" "%inline"
+      "%prec" "%merge" "let"
       "%%"]
      @font-lock-keyword-face
      (priority_keyword) @font-lock-keyword-face)
