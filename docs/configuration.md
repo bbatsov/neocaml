@@ -55,6 +55,10 @@ cherry-picking individual features from it (see [Selecting features](#selecting-
 The `doc-markup` feature renders the ocamldoc markup in doc comments
 (`(** ... *)`), so a `{b bold}` word shows up in bold, `[code]` and code
 blocks look like code, and references and `@tags` stand out from the prose.
+Here's how that looks in an interface file:
+
+![Doc comments in an OCaml interface file, with bold and italic text, inline code, a code block, references and @param tags rendered by neocaml](images/neocaml-doc-comments.png)
+
 Each kind of markup has a face of its own, so you can remap them separately:
 
 | Face | Markup |

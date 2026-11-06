@@ -206,6 +206,8 @@ get font-lock and indentation, and kind definitions show up in imenu and
 defun navigation. The extensions only appear in code that uses them, so
 plain OCaml looks the same as before.
 
+![OxCaml code with kinds, unboxed types and literals, modes, stack allocation, an immutable array and a comprehension, highlighted by neocaml](images/neocaml-oxcaml.png)
+
 This needs tree-sitter-ocaml 0.26 or newer, which is what
 `M-x neocaml-install-grammars` installs. If you installed the grammars
 with an older neocaml, upgrade them with `C-u M-x neocaml-install-grammars`.

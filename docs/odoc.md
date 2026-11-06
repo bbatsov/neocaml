@@ -6,6 +6,8 @@ neocaml includes a dedicated tree-sitter mode for
 provides font-lock, indentation, imenu, and language injection into
 code blocks.
 
+![An odoc .mld page in neocaml-odoc-mode, with headings, inline markup, references and highlighted dune and OCaml code blocks](images/neocaml-odoc-mode.png)
+
 ## Grammar Installation
 
 The mode requires its own tree-sitter grammar, separate from the main

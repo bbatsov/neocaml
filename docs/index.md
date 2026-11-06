@@ -24,6 +24,8 @@ directly in Emacs via `ocamlobjinfo`.
 
 It's also as cool as Neo from "The Matrix". ;-)
 
+![An OCaml file in neocaml-mode with the OCaml toplevel below it, its responses highlighted like OCaml code](images/neocaml-repl-output.png)
+
 ## Why?
 
 Because `caml-mode` is ancient, and `tuareg`, while very powerful, has

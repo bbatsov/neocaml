@@ -137,6 +137,8 @@ would be in an `.ml` buffer, while the values the toplevel doesn't
 print, such as `<fun>` and `<abstr>`, stay plain. The `Exception:` of an
 uncaught exception gets the warning face, like errors and warnings do.
 
+![An OCaml file and neocaml's REPL below it, with the toplevel's responses highlighted like regular OCaml code](images/neocaml-repl-output.png)
+
 To keep just the basic highlighting for the output:
 
 ```emacs-lisp

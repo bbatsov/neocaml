@@ -25,6 +25,8 @@ directly in Emacs via `ocamlobjinfo`.
 
 It's also as cool as Neo from "The Matrix". ;-)
 
+![An OCaml file in neocaml-mode with the OCaml toplevel below it, its responses highlighted like OCaml code](docs/images/neocaml-repl-output.png)
+
 > [!TIP]
 > For detailed configuration, usage guides, and migration help, see the
 > [full documentation](https://bbatsov.github.io/neocaml).
