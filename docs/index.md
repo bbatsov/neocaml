@@ -46,22 +46,22 @@ One last thing - we really need more Emacs packages with fun names! :D
 ## Features
 
 - Tree-sitter based font-locking (4 levels) for `.ml` and `.mli` files
-- Ocamldoc markup rendering in doc comments: `{b bold}`, `{i italic}`, `[code]`, `{[...]}` blocks, `{!references}` and `@tags` are displayed with real faces
+- Ocamldoc markup rendering in doc comments: `{b bold}`, `{i italic}`, `[code]`, `{[...]}` and `{@ocaml[...]}` blocks, headings, `{!references}` and `@tags` are displayed with real faces
 - Tree-sitter based indentation in [three styles](configuration.md#indentation-styles) (ocp-indent's, and ocamlformat's conventional and janestreet profiles), picked from the project's `.ocamlformat` or `.ocp-indent`, with cycle-indent support
 - [OxCaml](https://oxcaml.org/) syntax: modes, kinds, stack allocation, unboxed types and immutable arrays (see [Getting Started](usage.md#oxcaml))
 - Navigation (`beginning-of-defun`, `end-of-defun`, `forward-sexp`, sentence movement with `M-a`/`M-e`)
 - Imenu with language-specific categories for `.ml` and `.mli`
 - Toggling between implementation and interface via `ff-find-other-file` (`C-c C-a`)
-- OCaml toplevel (REPL) integration (`neocaml-repl`)
+- OCaml toplevel (REPL) integration (`neocaml-repl`), with the toplevel's responses highlighted like OCaml code, clickable error locations, and findlib package completion for `#require`, plus an alternative [utop backend](repl.md#the-utop-protocol-backend) (`neocaml-utop`) that speaks utop's native protocol for precise error highlighting and completion
 - Comment support: `fill-paragraph` (`M-q`), comment continuation (`M-j`), and `comment-dwim` (`M-;`)
 - Electric indentation on delimiter characters
 - opam file editing (`neocaml-opam-mode`) with font-lock, indentation, imenu, and `opam lint` integration (flymake and [flycheck](https://github.com/flycheck/flycheck))
 - dune file editing (`neocaml-dune-mode`) for dune, dune-project, and dune-workspace files
-- dune build commands (`neocaml-dune-interaction-mode`) - build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
+- dune build commands (`neocaml-dune-interaction-mode`) - build, test, clean, promote, fmt, exec (with watch mode via prefix arg), plus running the current file's tests and reviewing and promoting their output
 - OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - OCaml/JSX file editing (`neocaml-mlx-mode`) for `.mlx` files (Melange/React and similar PPX-driven OCaml-JSX), with embedded JSX highlighting via `tsx` language injection (Emacs 30+)
-- Cram test file editing (`neocaml-cram-mode`) with font-lock for commands, output, modifiers, and prose
+- Cram test file editing (`neocaml-cram-mode`) with font-lock for commands, output, modifiers, and prose, and keys for running the test and promoting its output
 - odoc documentation editing (`neocaml-odoc-mode`) with font-lock, indentation, imenu, and language injection into `{@lang[...]}` code blocks for OCaml, dune, and opam (Emacs 30+)
 - Easy installation of `ocaml` and `ocaml-interface` tree-sitter grammars via `M-x neocaml-install-grammars` (and the `tsx`/JSX grammar via `M-x neocaml-mlx-install-grammar`)
 - Compilation error regexp for `M-x compile` (errors, warnings, alerts, backtraces)
@@ -81,6 +81,8 @@ support. The table below focuses on where they differ.
 | Required Emacs version     | 29.1+ (30+ recommended)    | 24+           | 26+          |
 | Font-lock engine           | Tree-sitter (4 levels)     | Regex         | Regex        |
 | Indentation engine         | Tree-sitter + cycle-indent | Custom engine | SMIE         |
+| Follows `.ocamlformat`     | Yes (and `.ocp-indent`)    | No            | No           |
+| OxCaml syntax              | Yes                        | No            | Partial      |
 | LSP (Eglot) integration    | Auto-configured            | Manual        | Manual       |
 | Debugger                   | dape + ocamlearlybird      | ocamldebug    | ocamldebug   |
 | `_build` directory aware   | Yes                        | No            | Yes          |
@@ -89,7 +91,12 @@ support. The table below focuses on where they differ.
 | OCamllex support           | Yes (with OCaml injection) | No            | Yes          |
 | Menhir support             | Yes (with OCaml injection) | No            | Yes          |
 | Cram test support          | Yes                        | No            | No           |
+| odoc (`.mld`) support      | Yes                        | No            | No           |
+| mlx support                | Yes                        | No            | No           |
 | Code templates / skeletons | No                         | Yes           | Yes          |
+
+`tuareg` highlights OxCaml's `local_`, `global_` and `exclave_` keywords, but
+not the rest of its syntax.
 
 Keep in mind also that `tuareg` uses `caml-mode` internally for some functionality.
 I think both modes will probably be folded into one down the road.

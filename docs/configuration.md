@@ -50,6 +50,25 @@ cherry-picking individual features from it (see [Selecting features](#selecting-
 - `label` - labeled arguments: `x` in `~x:1`, `y` in `?y:2`
 - `function` - function calls: `f` in `f x`, `map` in `List.map`, pipe targets `x |> f`
 
+### Doc comments
+
+The `doc-markup` feature renders the ocamldoc markup in doc comments
+(`(** ... *)`), so a `{b bold}` word shows up in bold, `[code]` and code
+blocks look like code, and references and `@tags` stand out from the prose.
+Each kind of markup has a face of its own, so you can remap them separately:
+
+| Face | Markup |
+|------|--------|
+| `neocaml-doc-markup-face` | the delimiters and `@tags` |
+| `neocaml-doc-bold-face` | `{b ...}` |
+| `neocaml-doc-italic-face` | `{i ...}` and `{e ...}` |
+| `neocaml-doc-heading-face` | `{0 ...}` through `{5 ...}` |
+| `neocaml-doc-code-face` | `[inline code]`, code blocks and `{v ... v}` |
+| `neocaml-doc-reference-face` | `{!references}` and `{:links}` |
+
+The `.mld` pages of `neocaml-odoc-mode` have faces of their own (see
+[odoc](odoc.md#font-lock)).
+
 ### Selecting features
 
 You don't have to use the level system. If you want fine-grained control over

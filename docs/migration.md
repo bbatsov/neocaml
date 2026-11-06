@@ -101,6 +101,11 @@ section for the setup snippet.
 
 - Tree-sitter powered font-locking (more accurate, 4 configurable levels)
 - Tree-sitter powered navigation (sexp, sentence, defun)
+- Indentation that follows the project's `.ocamlformat` or `.ocp-indent`, in
+  ocp-indent's style or that of ocamlformat's `conventional` and `janestreet`
+  profiles (see [Indentation Styles](configuration.md#indentation-styles))
+- [OxCaml](usage.md#oxcaml) syntax support
+- Modes for dune files, cram tests, odoc pages and `.mlx` files
 - Built-in Eglot integration with automatic language ID configuration
 - `_build` directory awareness
 - Simpler, more maintainable codebase

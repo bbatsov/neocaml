@@ -258,6 +258,8 @@ them wrong.
 | `M-x neocaml-bug-report-info` | Copy debug info (versions, grammar status) to the kill ring |
 | `M-x neocaml-report-bug` | Open the neocaml issue tracker in your browser |
 | `M-x neocaml-browse-ocaml-docs` | Open the OCaml documentation in your browser |
+| `M-x neocaml-set-indent-style` | Switch the buffer's indentation style (see [Configuration](configuration.md#switching-styles)) |
+| `M-x neocaml-set-font-lock-level` | Change the buffer's font-lock level |
 | `M-x neocaml-cycle-indent-function` | Toggle between tree-sitter and `indent-relative` indentation |
 | `C-c C-f` (`neocaml-format-buffer`) | Format the buffer with `ocamlformat` (see [Configuration](configuration.md#formatting)) |
 
