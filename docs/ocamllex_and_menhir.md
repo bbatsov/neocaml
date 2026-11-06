@@ -18,8 +18,8 @@ With a prefix argument (`C-u`), these commands reinstall even if the
 grammar is already present.
 
 !!! note
-    The OCamllex grammar requires tree-sitter ABI version 15+
-    (tree-sitter >= 0.25.0). If your Emacs was built against an
+    The OCamllex grammar requires tree-sitter ABI version 14+
+    (tree-sitter >= 0.24). If your Emacs was built against an
     older tree-sitter, you may need to update it. See
     [Troubleshooting](troubleshooting.md) for details.
 

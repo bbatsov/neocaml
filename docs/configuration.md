@@ -441,9 +441,13 @@ the box:
   and indents the continuation line to align with the comment body text. For
   example, pressing `M-j` inside `(** doc text` produces a new line indented to
   column 4 (after `(** `), keeping the comment open rather than closing and
-  reopening it.
-- **`M-q`** (`fill-paragraph`) -- refills the current comment, wrapping text at
-  `fill-column` with continuation lines properly indented to the body column.
+  reopening it. In a comment whose lines start with a `*`, the new line gets
+  the `*` too.
+- **`M-q`** (`fill-paragraph`) -- refills the paragraph at point, wrapping text
+  at `fill-column` with continuation lines properly indented to the body
+  column. List items and `@tags` start paragraphs of their own, and code and
+  verbatim blocks (`{[ ... ]}`, `{@ocaml[ ... ]}`, `{v ... v}`) are left as
+  they are.
 
 These commands respect both regular comments (`(* ... *)`) and doc comments
 (`(** ... *)`), and work correctly for indented comments.

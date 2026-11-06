@@ -34,8 +34,8 @@ Or with `use-package` on Emacs 30+:
     [Troubleshooting](troubleshooting.md#tree-sitter-abi-version-mismatch).
 
     The modes for dune, opam, OCamllex, Menhir, and odoc files each
-    use their own grammar. These are installed automatically when you
-    first open a file of that type, or you can install them manually
+    use their own grammar. Each mode offers to install its grammar the
+    first time you open a file of that type, or you can install them
     with `M-x neocaml-dune-install-grammar`,
     `M-x neocaml-opam-install-grammar`,
     `M-x neocaml-ocamllex-install-grammar`,

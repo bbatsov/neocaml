@@ -58,8 +58,8 @@ Then recompile Emacs so it picks up the new library.
 
 If `.ml` files open without any font-lock, the tree-sitter grammars are
 probably not installed. Run `M-x neocaml-install-grammars` to install
-the OCaml and OCaml-interface grammars. For dune, opam, OCamllex, and
-Menhir files, each mode has its own install command (see
+the OCaml and OCaml-interface grammars. For dune, opam, OCamllex, Menhir
+and odoc files, each mode has its own install command (see
 [Installation](installation.md)).
 
 ## Highlighting is missing after upgrading neocaml
@@ -110,5 +110,6 @@ turn semantic tokens off as described in the section linked above.
 If neocaml behaves oddly after an upgrade (old features, missing
 commands), Emacs might be loading stale `.elc` files. Look for the
 warning "Source file newer than byte-compiled file" in `*Messages*`.
-Force a recompile by reinstalling the package or, if you installed from
-source, running `make clean && make compile`.
+Force a recompile by reinstalling the package or, if you're running
+neocaml from a checkout of its repository, with `eldev clean && eldev
+compile`.

@@ -70,7 +70,7 @@ table below lists the bindings that actually differ.
 
 | Keybinding | neocaml | tuareg / caml-mode |
 |---|---|---|
-| `C-c C-c` | `compile` (or `neocaml-repl-send-definition` with REPL minor mode) | Eval phrase (caml-mode) |
+| `C-c C-c` | `compile` (or `neocaml-repl-send-definition` with REPL minor mode) | `compile` |
 | `C-c C-s` | Send phrase to REPL and move to the next one | Start the toplevel |
 | `C-c C-q` | Interrupt REPL | Indent phrase |
 | `C-c C-i` | Not bound (ocaml-eglot uses it) | Interrupt the toplevel |
