@@ -79,7 +79,7 @@ The faces used are standard `font-lock-*-face` faces, so any theme applies
 automatically. If you want to tweak how specific syntactic elements look, you
 have two options:
 
-**Buffer-local remapping** (recommended) -- changes apply only to neocaml
+**Buffer-local remapping** (recommended) - changes apply only to neocaml
 buffers, leaving other modes unaffected:
 
 ```emacs-lisp
@@ -96,7 +96,7 @@ definition, so theme settings are preserved as a base. See
 [Face Remapping](https://www.gnu.org/software/emacs/manual/html_node/elisp/Face-Remapping.html)
 in the Emacs Lisp manual for details.
 
-**Global customization** -- changes apply everywhere the face is used:
+**Global customization** - changes apply everywhere the face is used:
 
 ```emacs-lisp
 ;; Change type names globally (affects all modes)
@@ -104,7 +104,7 @@ in the Emacs Lisp manual for details.
  '(font-lock-type-face ((t (:foreground "DarkSeaGreen4")))))
 ```
 
-This is simpler but less precise -- since tree-sitter modes share the same
+This is simpler but less precise - since tree-sitter modes share the same
 `font-lock-*-face` faces, a global change will affect every tree-sitter mode
 (and traditional modes) that uses that face.
 
@@ -137,7 +137,7 @@ Tree-sitter font-lock rules via a hook:
 
 The rules use standard Tree-sitter query syntax with `:override t` to take
 precedence over neocaml's built-in rules. You can target any node type the
-grammar produces -- use `M-x treesit-explore-mode` to inspect the syntax tree
+grammar produces - use `M-x treesit-explore-mode` to inspect the syntax tree
 and find the right node types to match.
 
 ### Prettify Symbols
@@ -435,15 +435,15 @@ requires some mode-level configuration for Emacs comment commands to work well.
 neocaml sets all the necessary variables internally, so everything works out of
 the box:
 
-- **`M-;`** (`comment-dwim`) -- comments/uncomments regions, inserts inline
+- **`M-;`** (`comment-dwim`) - comments/uncomments regions, inserts inline
   comments, etc. Works as expected with OCaml's `(* ... *)` delimiters.
-- **`M-j`** (`default-indent-new-line`) -- inside a comment, inserts a newline
+- **`M-j`** (`default-indent-new-line`) - inside a comment, inserts a newline
   and indents the continuation line to align with the comment body text. For
   example, pressing `M-j` inside `(** doc text` produces a new line indented to
   column 4 (after `(** `), keeping the comment open rather than closing and
   reopening it. In a comment whose lines start with a `*`, the new line gets
   the `*` too.
-- **`M-q`** (`fill-paragraph`) -- refills the paragraph at point, wrapping text
+- **`M-q`** (`fill-paragraph`) - refills the paragraph at point, wrapping text
   at `fill-column` with continuation lines properly indented to the body
   column. List items and `@tags` start paragraphs of their own, and code and
   verbatim blocks (`{[ ... ]}`, `{@ocaml[ ... ]}`, `{v ... v}`) are left as
@@ -489,7 +489,7 @@ of the box:
 
 ## Code Folding
 
-On Emacs 30+, `outline-minor-mode` works out of the box with neocaml -- it
+On Emacs 30+, `outline-minor-mode` works out of the box with neocaml - it
 automatically picks up definition headings from the tree-sitter imenu settings.
 Enable it via a hook:
 

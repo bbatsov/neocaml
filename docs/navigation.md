@@ -27,7 +27,7 @@ standard Emacs keybindings, but backed by the AST rather than heuristics:
 
 "Definitions" include `let` bindings, type definitions, module bindings, class
 definitions, exceptions, and externals. "Statements" cover the same plus
-`open`, `include`, and expression items -- essentially any top-level or
+`open`, `include`, and expression items - essentially any top-level or
 block-level construct.
 
 ## Worked examples
@@ -65,7 +65,7 @@ above it lands back before `List.map`.
 
 ### Diving in and climbing out
 
-`down-list` (`C-M-d`) moves point just inside the next bracketed group -- handy
+`down-list` (`C-M-d`) moves point just inside the next bracketed group - handy
 for jumping into a record or argument list before editing its contents:
 
 ```ocaml
@@ -94,7 +94,7 @@ module M = █struct
 end
 ```
 
-It works the same way for collections -- from inside a list it lands just before
+It works the same way for collections - from inside a list it lands just before
 the opening bracket:
 
 ```ocaml
@@ -147,7 +147,7 @@ let xs = █(List.rev ys) @@ tl
 let xs = █ @@ tl
 ```
 
-`transpose-sexps` (`C-M-t`) swaps the expressions on either side of point -- a
+`transpose-sexps` (`C-M-t`) swaps the expressions on either side of point - a
 quick way to reorder function arguments or operands:
 
 ```ocaml
@@ -171,7 +171,7 @@ let area = pi *. █r *. r
 ```
 
 `raise-sexp` replaces the *enclosing* expression with the sub-expression at
-point. It's the fastest way to strip a wrapper -- here, dropping a `Some` around
+point. It's the fastest way to strip a wrapper - here, dropping a `Some` around
 a call:
 
 ```ocaml
@@ -184,7 +184,7 @@ let result = process █(find_opt key tbl)
 
 !!! note
     `raise-sexp` needs an enclosing bracketed group to raise into. Invoked at the
-    top level of a binding -- where there's nothing surrounding the expression --
+    top level of a binding - where there's nothing surrounding the expression -
     it errors with "Unbalanced parentheses". Reach for it inside a call, list, or
     parenthesized expression.
 
@@ -200,16 +200,16 @@ let result = process █(find_opt key tbl)
 There are a lot of structural commands; in day-to-day OCaml editing you'll keep
 coming back to a small subset:
 
-- **`C-M-f` / `C-M-b`** -- step over an expression. The everyday workhorses for
+- **`C-M-f` / `C-M-b`** - step over an expression. The everyday workhorses for
   moving across arguments, list elements, and whole sub-expressions.
-- **`C-M-u` / `C-M-d`** -- climb out of / dive into the enclosing block. Pair
+- **`C-M-u` / `C-M-d`** - climb out of / dive into the enclosing block. Pair
   them to reposition quickly: `C-M-u` to the top of a `struct` or record, then
   `C-M-d` back into a sibling.
-- **`C-M-SPC`** (`mark-sexp`) -- select exactly one expression, then act on it.
+- **`C-M-SPC`** (`mark-sexp`) - select exactly one expression, then act on it.
   Combined with `C-M-u` first, it selects a whole bracketed group.
-- **`C-M-k`** (`kill-sexp`) -- delete an expression without fiddling with the
+- **`C-M-k`** (`kill-sexp`) - delete an expression without fiddling with the
   closing delimiter. With `mark-sexp` and `C-M-t` it covers most cut/move edits.
-- **`C-M-a` / `C-M-e`** -- jump to the start/end of the current definition; great
+- **`C-M-a` / `C-M-e`** - jump to the start/end of the current definition; great
   before `mark-defun` (`C-M-h`) to grab the whole thing.
 
 !!! tip

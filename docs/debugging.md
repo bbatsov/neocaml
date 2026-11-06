@@ -31,7 +31,7 @@ dape's built-in `ocamlearlybird` configuration.
 
 Set breakpoints with `M-x dape-breakpoint-toggle` (or `C-x C-a b`) on the
 lines where you want execution to pause. Then start a debug session with `M-x
-dape` -- it will offer the `ocamlearlybird` config and guess the program path
+dape` - it will offer the `ocamlearlybird` config and guess the program path
 based on your current buffer name (e.g., `_build/default/bin/main.bc`). You can
 edit the path in the minibuffer if needed.
 

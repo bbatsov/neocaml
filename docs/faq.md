@@ -76,7 +76,7 @@ of which LSP client (or none) you use.
 
 neocaml does not implement electric comment delimiters (tuareg does, but the
 logic is quite complex). Instead, use `M-;` (`comment-dwim`) to insert comment
-delimiters -- it will insert `(* *)` with point positioned between them,
+delimiters - it will insert `(* *)` with point positioned between them,
 properly indented. This is simpler and more predictable.
 
 ## Is the name a Matrix reference?

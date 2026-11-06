@@ -24,10 +24,10 @@ Cannot activate tree-sitter, because language grammar for X is unavailable (vers
 
 This means the grammar requires tree-sitter ABI version 15 (tree-sitter
 0.25.0+), but your Emacs was compiled against an older tree-sitter library that
-only supports ABI 14. You can verify by evaluating `(treesit-library-abi-version)`
--- if it returns 14, that confirms the mismatch.
+only supports ABI 14. You can verify by evaluating `(treesit-library-abi-version)`.
+If it returns 14, that confirms the mismatch.
 
-This isn't specific to neocaml -- any grammar targeting ABI 15 will fail the same
+This isn't specific to neocaml - any grammar targeting ABI 15 will fail the same
 way. The fix is to rebuild Emacs against tree-sitter >= 0.25.0.
 
 ### macOS (Homebrew)

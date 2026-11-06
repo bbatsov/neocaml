@@ -16,8 +16,8 @@ ecosystem: [dune](https://dune.build) build files,
 [OCamllex](https://v2.ocaml.org/manual/lexyacc.html) lexer definitions (`.mll`),
 [Menhir](http://gallium.inria.fr/~fpottier/menhir/) parser definitions (`.mly`),
 [cram](https://dune.readthedocs.io/en/stable/tests.html#cram-tests) test files
-(`.t`), and [odoc](https://ocaml.github.io/odoc/) documentation pages (`.mld`)
--- each with a dedicated major mode.
+(`.t`), and [odoc](https://ocaml.github.io/odoc/) documentation pages (`.mld`),
+each with a dedicated major mode.
 
 You can also view compiled OCaml artifacts (`.cmi`, `.cmo`, `.cmx`, etc.)
 directly in Emacs via `ocamlobjinfo`.
@@ -57,7 +57,7 @@ One last thing - we really need more Emacs packages with fun names! :D
 - Electric indentation on delimiter characters
 - opam file editing (`neocaml-opam-mode`) with font-lock, indentation, imenu, and `opam lint` integration (flymake and [flycheck](https://github.com/flycheck/flycheck))
 - dune file editing (`neocaml-dune-mode`) for dune, dune-project, and dune-workspace files
-- dune build commands (`neocaml-dune-interaction-mode`) -- build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
+- dune build commands (`neocaml-dune-interaction-mode`) - build, test, clean, promote, fmt, exec (with watch mode via prefix arg)
 - OCamllex file editing (`neocaml-ocamllex-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - Menhir file editing (`neocaml-menhir-mode`) with font-lock, indentation, imenu, and OCaml language injection (Emacs 30+)
 - OCaml/JSX file editing (`neocaml-mlx-mode`) for `.mlx` files (Melange/React and similar PPX-driven OCaml-JSX), with embedded JSX highlighting via `tsx` language injection (Emacs 30+)
@@ -97,13 +97,13 @@ I think both modes will probably be folded into one down the road.
 ### The impact of LSP on major modes
 
 Historically, caml-mode and tuareg bundled features like type display,
-completion, jump-to-definition, error checking, and refactoring support
--- all driven by Merlin.  Today, `ocamllsp` provides all of these through
+completion, jump-to-definition, error checking, and refactoring support,
+all driven by Merlin.  Today, `ocamllsp` provides all of these through
 the standard LSP protocol, and Eglot (built into Emacs 29+) acts as the
 client.  There is no reason for a major mode to reimplement any of this.
 
 For OCaml-specific LSP extensions that go beyond the standard protocol
--- type enclosing, case analysis (destruct), hole navigation --
+(type enclosing, case analysis (destruct), hole navigation),
 [ocaml-eglot](https://github.com/tarides/ocaml-eglot) is the recommended
 companion package.
 

@@ -124,7 +124,7 @@ To disable this and use only basic REPL font-lock:
                             #'comint-indent-input-region-default)))
     ```
 
-    This is experimental -- tree-sitter parsers see the entire comint
+    This is experimental - tree-sitter parsers see the entire comint
     buffer (prompts, output, and input), so indentation may be
     approximate for complex multi-line input.
 

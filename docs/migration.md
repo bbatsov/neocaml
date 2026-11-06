@@ -5,7 +5,7 @@ to know.
 
 ## File associations
 
-neocaml automatically registers `.ml` and `.mli` files via `auto-mode-alist` --
+neocaml automatically registers `.ml` and `.mli` files via `auto-mode-alist` -
 you don't need to add any file associations yourself. Importantly, neocaml uses
 **two separate modes**: `neocaml-mode` for `.ml` files (using the `ocaml`
 tree-sitter grammar) and `neocaml-interface-mode` for `.mli` files (using the
@@ -60,7 +60,7 @@ entries after neocaml loads:
 ```
 
 The `neocaml-dune-interaction-mode` (build/test/clean commands) works with
-either major mode -- it doesn't depend on `neocaml-dune-mode`.
+either major mode - it doesn't depend on `neocaml-dune-mode`.
 
 ## Keybinding differences
 
@@ -82,7 +82,7 @@ table below lists the bindings that actually differ.
 
 ## Merlin vs Eglot
 
-Merlin works fine with neocaml -- it's a minor mode that hooks into any major
+Merlin works fine with neocaml - it's a minor mode that hooks into any major
 mode. That said, you might want to consider switching to Eglot + `ocamllsp`,
 which provides the same features (completion, type display, jump-to-definition)
 via the standard LSP protocol. Eglot is built into Emacs 29+ and neocaml
@@ -93,7 +93,7 @@ enclosing and case analysis.
 ## Keeping tuareg's indentation
 
 If you prefer tuareg's SMIE-based indentation over neocaml's tree-sitter
-indentation, you can use it directly -- see the
+indentation, you can use it directly - see the
 [Alternative Indentation Functions](configuration.md#alternative-indentation-functions)
 section for the setup snippet.
 
