@@ -11,6 +11,7 @@
 
 (require 'buttercup)
 (require 'neocaml)
+(require 'neocaml-test-helpers)
 
 (defun neocaml-test--match-compilation (output)
   "Match OUTPUT against `neocaml--compilation-error-regexp' in a temp buffer.
@@ -53,7 +54,18 @@ Returns nil if the regexp does not match."
       (goto-char (point-min))
       (expect (get-text-property (point) 'compilation-message) :to-be nil)
       (forward-line 1)
-      (expect (get-text-property (point) 'compilation-message) :not :to-be nil))))
+      (expect (get-text-property (point) 'compilation-message) :not :to-be nil)))
+
+  (it "are found anywhere on a line"
+    (with-temp-buffer
+      (compilation-mode)
+      (let ((inhibit-read-only t)
+            (compilation-error-regexp-alist '(ocaml)))
+        (insert "\e[41m     \e[m File \"foo.ml\", line 69, characters 45-52:\n"
+                "       File \"bar.ml\", line 10, characters 2-41:\n")
+        (font-lock-ensure))
+      (expect (neocaml-test-compilation-messages)
+              :to-equal '((2 "foo.ml" 69 46) (0 "bar.ml" 10 3))))))
 
 (describe "compilation regexp"
   (it "matches a simple error"
@@ -148,6 +160,30 @@ Returns nil if the regexp does not match."
                  "\tFile \"foo.ml\", line 3, characters 0-5:\n")))
       (expect info :not :to-be nil)
       (expect (plist-get info :file) :to-equal "foo.ml")
+      (expect (plist-get info :severity) :to-equal 2)))
+
+  (it "matches a location after other text on the line"
+    (let ((info (neocaml-test--match-compilation
+                 "[FAIL] File \"foo.ml\", line 3, characters 0-5:\n")))
+      (expect info :not :to-be nil)
+      (expect (plist-get info :file) :to-equal "foo.ml")
+      (expect (plist-get info :severity) :to-equal 2)
+      (expect (plist-get info :line) :to-equal 3)
+      (expect (plist-get info :col) :to-equal 0)))
+
+  (it "matches a location after ANSI escapes"
+    (let ((info (neocaml-test--match-compilation
+                 "\e[41m     \e[m File \"foo.ml\", line 69, characters 45-52:\n")))
+      (expect info :not :to-be nil)
+      (expect (plist-get info :file) :to-equal "foo.ml")
+      (expect (plist-get info :severity) :to-equal 2)
+      (expect (plist-get info :line) :to-equal 69)
+      (expect (plist-get info :col) :to-equal 45)))
+
+  (it "takes 7 spaces for an ancillary location only at the start of a line"
+    (let ((info (neocaml-test--match-compilation
+                 "note:       File \"foo.ml\", line 10, characters 2-41:\n")))
+      (expect info :not :to-be nil)
       (expect (plist-get info :severity) :to-equal 2)))
 
   (it "matches a file location with no characters"

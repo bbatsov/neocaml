@@ -2363,11 +2363,12 @@ Uses tree-sitter sentence navigation to select the entire statement
 
 (defconst neocaml--compilation-error-regexp
   (eval-when-compile
-    (rx bol
-        ;; Leading whitespace: 7 spaces = ancillary location (info level),
-        ;; any other whitespace = default severity (error/warning per group 8).
-        (or (group-n 9 "       ")
-            (* (in " \t")))
+    (rx
+        ;; A location can start anywhere on the line: tools indent them,
+        ;; prefix them, or put ANSI escapes in front.  Only one that's
+        ;; indented by exactly 7 spaces is an ancillary location (info
+        ;; level), the rest get the severity group 8 gives them.
+        (? bol (group-n 9 "       "))
         (group-n 1
                  (or "File "
                      ;; Exception backtraces (OCaml >= 4.11 includes function names)
