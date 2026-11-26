@@ -6,6 +6,10 @@
 
 ## main (unreleased)
 
+### Changes
+
+- [#124](https://github.com/bbatsov/neocaml/pull/124): Recognize the locations of OCaml errors, warnings and backtraces anywhere on a line of compilation output, not only at its start, so the ones a tool prefixes with text or ANSI escapes are clickable too.
+
 ### Bug fixes
 
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `M-q` (`fill-paragraph`) outside comments wrapping the code like prose and breaking string literals across lines; it now does nothing there.

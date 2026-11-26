@@ -429,15 +429,14 @@ For a buffer whose font-lock keywords include
 (defun neocaml-repl--error-navigation-setup (&optional plain)
   "Make the locations of errors, warnings and backtraces in files clickable.
 That's with `compilation-shell-minor-mode' and neocaml's OCaml error
-regexp, made to match past the prompt (see
-`neocaml-repl--after-prompts'), so it has to run after
-`comint-prompt-regexp' is set.  With PLAIN, compilation's own
+regexp, which matches anywhere on a line, so past the prompt as
+well.  With PLAIN, compilation's own
 highlighting is off, for a transcript that already puts the warning
 face on errors, which it would paint over."
   (when plain
     (setq-local compilation-mode-font-lock-keywords nil))
   (setq-local compilation-error-regexp-alist
-              `((,(neocaml-repl--after-prompts neocaml--compilation-error-regexp)
+              `((,neocaml--compilation-error-regexp
                  ;; FILE LINE COLUMN TYPE HYPERLINK, then HIGHLIGHT
                  ,@(if plain
                        (seq-take neocaml--compilation-error-spec 5)
