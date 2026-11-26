@@ -767,7 +767,7 @@ Works whether or not the toplevel is still running."
 (defun neocaml-utop-send-definition ()
   "Send the definition at point to utop."
   (interactive)
-  (if-let* ((node (treesit-defun-at-point))
+  (if-let* ((node (neocaml--toplevel-item-at-point))
             (start (treesit-node-start node))
             (end (treesit-node-end node)))
       (neocaml-utop-send-region start end)
