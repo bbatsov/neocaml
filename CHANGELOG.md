@@ -6,6 +6,10 @@
 
 ## main (unreleased)
 
+### Bug fixes
+
+- [#125](https://github.com/bbatsov/neocaml/pull/125): Fix `neocaml-repl-send-definition` and `neocaml-utop-send-definition` (`C-c C-c`) sending a `let` or `type` definition without its keyword, and finding no definition with point on the keyword.
+
 ## 0.11.0 (2026-11-04)
 
 ### New features

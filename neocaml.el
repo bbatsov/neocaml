@@ -1992,6 +1992,39 @@ Filters out nodes nested inside `let_expression',
        (not (treesit-node-top-level
              node neocaml--nested-context-regexp))))
 
+(defconst neocaml--toplevel-item-regexp
+  (regexp-opt '("value_definition"
+                "type_definition"
+                "kind_definition"
+                "exception_definition"
+                "external"
+                "module_definition"
+                "module_type_definition"
+                "class_definition"
+                "class_type_definition"
+                "open_module"
+                "include_module"
+                "expression_item")
+              'symbols)
+  "Regexp matching the node types of items an OCaml toplevel can evaluate.")
+
+(defun neocaml--toplevel-item-at-point ()
+  "Return the node of the innermost definition around point, or nil.
+That's the whole item, from its `let', `type' or `module' keyword to
+the end of its last `and' binding, which `treesit-defun-at-point'
+doesn't give: its defuns are the bindings, so they leave the keyword
+out and there's none at point when it's on the keyword."
+  (let ((node (treesit-node-at (point))))
+    ;; the `let' of a `let ... in' is a definition node too
+    (while (and node
+                (not (and (string-match-p neocaml--toplevel-item-regexp
+                                          (treesit-node-type node))
+                          (neocaml--defun-valid-p node))))
+      (setq node (treesit-node-parent node)))
+    (and node
+         (<= (treesit-node-start node) (point) (treesit-node-end node))
+         node)))
+
 (defun neocaml--subtree-text (node type &optional depth)
   "Return the text of the first TYPE child in NODE's subtree.
 Search up to DEPTH levels deep (default 1).  Return nil if not found."

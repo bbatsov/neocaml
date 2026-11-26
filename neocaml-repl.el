@@ -586,7 +586,7 @@ restart it as %s? " running-flavor neocaml-repl-flavor)))
 (defun neocaml-repl-send-definition ()
   "Send the current definition to the OCaml REPL."
   (interactive)
-  (if-let* ((node (treesit-defun-at-point))
+  (if-let* ((node (neocaml--toplevel-item-at-point))
             (start (treesit-node-start node))
             (end (treesit-node-end node)))
       (neocaml-repl-send-region start end)

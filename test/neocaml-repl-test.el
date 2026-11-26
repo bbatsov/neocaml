@@ -13,6 +13,7 @@
 
 (require 'neocaml-test-helpers)
 (require 'neocaml-repl)
+(require 'neocaml-utop)
 (require 'neocaml-dune)
 (require 'neocaml-dune-interaction)
 (require 'cl-lib)
@@ -470,6 +471,66 @@
         (expect sent :to-match "let x = 1")
         ;; point should now sit at the start of the second phrase
         (expect (looking-at "let y") :to-be-truthy)))))
+
+(describe "neocaml-repl send-definition"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (defun neocaml-test--sent-definition (code place &optional command)
+    "Return what COMMAND sends from CODE with point at the start of PLACE.
+COMMAND defaults to `neocaml-repl-send-definition'."
+    (let ((sent nil))
+      (spy-on (if (eq command 'neocaml-utop-send-definition)
+                  'neocaml-utop-send-region
+                'neocaml-repl-send-region)
+              :and-call-fake
+              (lambda (start end)
+                (setq sent (buffer-substring-no-properties start end))))
+      (with-temp-buffer
+        (insert code)
+        (neocaml-mode)
+        (goto-char (point-min))
+        (search-forward place)
+        (goto-char (match-beginning 0))
+        (funcall (or command #'neocaml-repl-send-definition)))
+      sent))
+
+  (it "sends a definition with its keyword"
+    (expect (neocaml-test--sent-definition "let x = 1\n\nlet y = x + 1\n" "x + 1")
+            :to-equal "let y = x + 1"))
+
+  (it "sends the definition whose keyword point is on"
+    (expect (neocaml-test--sent-definition "let x = 1\n\nlet y = x + 1\n" "let y")
+            :to-equal "let y = x + 1"))
+
+  (it "sends all the bindings of a recursive definition"
+    (expect (neocaml-test--sent-definition
+             "let rec f x = g x\nand g x = f x\n\nlet z = 1\n" "g x = f")
+            :to-equal "let rec f x = g x\nand g x = f x"))
+
+  (it "sends the enclosing definition from a let ... in"
+    (expect (neocaml-test--sent-definition
+             "let f x =\n  let y = 1 in\n  x + y\n" "y = 1")
+            :to-equal "let f x =\n  let y = 1 in\n  x + y"))
+
+  (it "sends a type definition"
+    (expect (neocaml-test--sent-definition "type t = A | B\n\nlet x = A\n" "A | B")
+            :to-equal "type t = A | B"))
+
+  (it "sends the innermost definition of a module"
+    (expect (neocaml-test--sent-definition
+             "module M = struct\n  let x = 1\nend\n" "x = 1")
+            :to-equal "let x = 1"))
+
+  (it "signals an error away from any definition"
+    (expect (neocaml-test--sent-definition "let x = 1\n\n\n\nlet y = 2\n" "\n\nlet y")
+            :to-throw 'user-error))
+
+  (it "sends the same thing to utop"
+    (expect (neocaml-test--sent-definition "let x = 1\n\nlet y = x + 1\n" "let y"
+                                           'neocaml-utop-send-definition)
+            :to-equal "let y = x + 1")))
 
 (describe "neocaml-repl--project-id"
   :var (mono)
