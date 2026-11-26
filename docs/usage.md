@@ -168,6 +168,8 @@ regexp so that `next-error` (`M-g n`) and `previous-error` (`M-g p`) jump
 directly to the source locations reported by the OCaml compiler, including
 errors, warnings, alerts, and exception backtraces.
 
+![C-c C-c runs dune build, the type error shows up in the compilation buffer, and M-g n jumps to the offending constant in the source, with its range highlighted](images/neocaml-compile-next-error.gif)
+
 For a richer build workflow with dune (build, test, clean, fmt, watch mode),
 see [dune commands](opam_and_dune.md#dune-commands).
 

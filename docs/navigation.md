@@ -30,6 +30,10 @@ definitions, exceptions, and externals. "Statements" cover the same plus
 `open`, `include`, and expression items - essentially any top-level or
 block-level construct.
 
+Here are a few of them in action, before we go over them one by one:
+
+![C-M-f moves over the elements of a list one at a time, C-M-u jumps to its opening bracket and then to the enclosing struct, and C-M-SPC selects the list and then the whole struct ... end block](images/neocaml-structural-navigation.gif)
+
 ## Worked examples
 
 In every example below, `█` marks the position of point (the cursor). The first

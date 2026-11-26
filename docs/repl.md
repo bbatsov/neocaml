@@ -50,6 +50,11 @@ The following keybindings are available when `neocaml-repl-minor-mode` is active
 | `C-c C-q` | `neocaml-repl-interrupt` | Interrupt the current evaluation in the REPL |
 | `C-c C-k` | `neocaml-repl-clear-buffer` | Clear the REPL buffer |
 
+Here's a short session - `C-c C-b` sends the buffer, and `C-c C-z` jumps to
+the REPL to try the new definitions out:
+
+![An OCaml buffer is sent to the toplevel with C-c C-b and the definitions come back highlighted like OCaml code, then C-c C-z jumps to the REPL, where an expression is typed and evaluated](images/neocaml-repl-session.gif)
+
 !!! tip
     In the REPL buffer itself, `C-c C-z` switches back to the source
     buffer you came from, so you can quickly bounce between source and REPL.

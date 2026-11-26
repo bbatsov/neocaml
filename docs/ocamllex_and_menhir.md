@@ -5,6 +5,8 @@ files. `neocaml-ocamllex-mode` activates automatically for `.mll`
 files; `neocaml-menhir-mode` activates for `.mly` files. Both provide
 font-lock, indentation, and imenu.
 
+![A Menhir grammar in neocaml-menhir-mode, with the OCaml code in its header and semantic actions highlighted as OCaml](images/neocaml-menhir-mode.png)
+
 ## Grammar Installation
 
 Each mode requires its own tree-sitter grammar, separate from the main

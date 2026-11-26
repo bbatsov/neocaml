@@ -24,7 +24,7 @@ directly in Emacs via `ocamlobjinfo`.
 
 It's also as cool as Neo from "The Matrix". ;-)
 
-![An OCaml file in neocaml-mode with the OCaml toplevel below it, its responses highlighted like OCaml code](images/neocaml-repl-output.png)
+![An OCaml buffer is sent to the toplevel with C-c C-b and the definitions come back highlighted like OCaml code, then C-c C-z jumps to the REPL, where an expression is typed and evaluated](images/neocaml-repl-session.gif)
 
 ## Why?
 
@@ -44,6 +44,24 @@ further with a more complete feature set and active maintenance.
 They say that third time's the charm, right?
 
 One last thing - we really need more Emacs packages with fun names! :D
+
+## A Quick Look
+
+`C-c C-c` builds the project, and `M-g n` takes you to the exact spot the
+compiler is unhappy about:
+
+![C-c C-c runs dune build, the type error shows up in the compilation buffer, and M-g n jumps to the offending constant in the source, with its range highlighted](images/neocaml-compile-next-error.gif)
+
+The structural commands know about OCaml's syntax. `C-M-f` steps over the
+elements of a list, `C-M-u` climbs out to the enclosing bracket or `struct`,
+and `C-M-SPC` selects the whole thing:
+
+![C-M-f moves over the elements of a list one at a time, C-M-u jumps to its opening bracket and then to the enclosing struct, and C-M-SPC selects the list and then the whole struct ... end block](images/neocaml-structural-navigation.gif)
+
+The rest of the ecosystem gets the same treatment. Here are a `dune` file
+and an opam file side by side:
+
+![A dune file with library, ocamllex, menhir and rule stanzas next to an opam file, both highlighted by neocaml](images/neocaml-dune-opam.png)
 
 ## Features
 

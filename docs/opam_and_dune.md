@@ -8,6 +8,8 @@ and bare `opam` files;
 files (including variants like `dune-workspace.ci`). Both provide font-lock,
 indentation, and imenu.
 
+![A dune file with library, ocamllex, menhir and rule stanzas next to an opam file, both highlighted by neocaml](images/neocaml-dune-opam.png)
+
 ## opam lint
 
 `neocaml-opam-mode` registers an `opam lint` flymake backend so you get
@@ -159,6 +161,8 @@ keeps working either way and needs no OCaml tooling installed.
 used by dune's expect-test framework. It highlights shell commands, expected
 output, output modifiers (`(re)`, `(glob)`, `(no-eol)`, `(esc)`), exit codes,
 and prose comments.
+
+![A cram test in neocaml-cram-mode, with the prose dimmed and the commands, their expected output, an exit code and a (re) modifier each in their own face](images/neocaml-cram-mode.png)
 
 The mode activates automatically for `.t` files. `C-c C-c` runs the test in
 the current buffer (`neocaml-dune-test-file`), `C-c C-r` shows the
