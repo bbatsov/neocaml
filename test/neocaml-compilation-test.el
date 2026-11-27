@@ -62,10 +62,11 @@ Returns nil if the regexp does not match."
       (let ((inhibit-read-only t)
             (compilation-error-regexp-alist '(ocaml)))
         (insert "\e[41m     \e[m File \"foo.ml\", line 69, characters 45-52:\n"
-                "       File \"bar.ml\", line 10, characters 2-41:\n")
+                "       File \"bar.ml\", line 10, characters 2-41: Actual declaration\n"
+                "       File \"baz.ml\", line 7, characters 0-3:\n")
         (font-lock-ensure))
       (expect (neocaml-test-compilation-messages)
-              :to-equal '((2 "foo.ml" 69 46) (0 "bar.ml" 10 3))))))
+              :to-equal '((2 "foo.ml" 69 46) (0 "bar.ml" 10 3) (2 "baz.ml" 7 1))))))
 
 (describe "compilation regexp"
   (it "matches a simple error"
@@ -138,13 +139,30 @@ Returns nil if the regexp does not match."
       (expect (plist-get info :severity) :to-equal 2)
       (expect (plist-get info :line) :to-equal 9)))
 
-  (it "matches an ancillary location (7-space indent) as info"
+  (it "matches an ancillary location (7-space indent, text after it) as info"
     (let ((info (neocaml-test--match-compilation
-                 "       File \"foo.ml\", line 10, characters 2-41:\n")))
+                 "       File \"foo.ml\", line 10, characters 2-41: Expected declaration\n")))
       (expect info :not :to-be nil)
       (expect (plist-get info :file) :to-equal "foo.ml")
       (expect (plist-get info :severity) :to-equal 0)
       (expect (plist-get info :line) :to-equal 10)))
+
+  (it "matches an ancillary location described on the next line as info"
+    (let ((info (neocaml-test--match-compilation
+                 "       File \"foo.ml\", line 1, characters 0-10:\n         Definition of type t/2\n")))
+      (expect info :not :to-be nil)
+      (expect (plist-get info :file) :to-equal "foo.ml")
+      (expect (plist-get info :severity) :to-equal 0)
+      (expect (plist-get info :line) :to-equal 1)))
+
+  (it "matches a location indented by 7 spaces with nothing after it as error"
+    (let ((info (neocaml-test--match-compilation
+                 "       File \"foo.ml\", line 54, characters 63-70:\n--- expected\n")))
+      (expect info :not :to-be nil)
+      (expect (plist-get info :file) :to-equal "foo.ml")
+      (expect (plist-get info :severity) :to-equal 2)
+      (expect (plist-get info :line) :to-equal 54)
+      (expect (plist-get info :col) :to-equal 63)))
 
   (it "matches an indented location (arbitrary whitespace) as error"
     (let ((info (neocaml-test--match-compilation
@@ -182,7 +200,7 @@ Returns nil if the regexp does not match."
 
   (it "takes 7 spaces for an ancillary location only at the start of a line"
     (let ((info (neocaml-test--match-compilation
-                 "note:       File \"foo.ml\", line 10, characters 2-41:\n")))
+                 "note:       File \"foo.ml\", line 10, characters 2-41: Expected declaration\n")))
       (expect info :not :to-be nil)
       (expect (plist-get info :severity) :to-equal 2)))
 
