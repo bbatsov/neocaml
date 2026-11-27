@@ -1367,4 +1367,21 @@ end")))
       (neocaml-set-indent-style nil)
       (expect (neocaml--indent-style) :to-be 'janestreet))))
 
+(describe "electric indentation"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (it "reindents the line of a closing delimiter as it's typed"
+    (dolist (case '(("let x = [\n  1;\n  " "]" "let x = [\n  1;\n]")
+                    ("let x = {\n  a = 1;\n  " "}" "let x = {\n  a = 1;\n}")
+                    ("let x = (\n  1\n  " ")" "let x = (\n  1\n)")))
+      (with-temp-buffer
+        (switch-to-buffer (current-buffer))
+        (insert (nth 0 case))
+        (neocaml-mode)
+        (electric-indent-local-mode 1)
+        (execute-kbd-macro (nth 1 case))
+        (expect (buffer-string) :to-equal (nth 2 case))))))
+
 ;;; neocaml-indentation-test.el ends here
