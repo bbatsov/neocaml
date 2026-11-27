@@ -64,13 +64,25 @@
                 "(* word1 word2 word3 word4 word5 word6 word7 word8 *)")))
 
     (it "does not touch code outside comments"
-      (with-temp-buffer
-        (insert "let x = 1")
-        (neocaml-mode)
-        (goto-char (point-min))
-        ;; neocaml--fill-paragraph should return nil and leave buffer unchanged
-        (expect (neocaml--fill-paragraph) :to-be nil)
-        (expect (buffer-string) :to-equal "let x = 1")))
+      (let ((code (concat "let x = f aaaaaaaaaa bbbbbbbbbb cccccccccc dddddddddd"
+                          " eeeeeeeeee ffffffffff gggggggggg hhhhhhhhhh\n")))
+        (with-temp-buffer
+          (insert code)
+          (neocaml-mode)
+          (goto-char (point-min))
+          ;; the command, as the default handler is what would wrap the code
+          (fill-paragraph)
+          (expect (buffer-string) :to-equal code))))
+
+    (it "does not break a string literal across lines"
+      (let ((code (concat "let s = \"aaaaaaaaaa bbbbbbbbbb cccccccccc dddddddddd"
+                          " eeeeeeeeee ffffffffff gggggggggg hhhhhhhhhh\"\n")))
+        (with-temp-buffer
+          (insert code)
+          (neocaml-mode)
+          (search-backward "cccc")
+          (fill-paragraph)
+          (expect (buffer-string) :to-equal code))))
 
     (it "returns t when inside a comment"
       (with-temp-buffer
@@ -79,12 +91,12 @@
         (goto-char 5)
         (expect (neocaml--fill-paragraph) :to-be t)))
 
-    (it "returns nil when outside a comment"
+    (it "returns t outside a comment too, to keep the default handler away"
       (with-temp-buffer
         (insert "let x = 42")
         (neocaml-mode)
         (goto-char 5)
-        (expect (neocaml--fill-paragraph) :to-be nil)))
+        (expect (neocaml--fill-paragraph) :to-be t)))
 
     (it "handles doc comments"
       (with-temp-buffer
