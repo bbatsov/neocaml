@@ -13,6 +13,7 @@
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `neocaml-repl-send-phrase` and `neocaml-utop-send-phrase` (`C-c C-e`) sending the next phrase when point is right after the `;;` of one, and sending the `;;` of the phrase before along with a phrase.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `indent-region` in `neocaml-cram-mode` stripping the indentation that makes a line a command or its output.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `neocaml-odoc-mode` moving the items of a light list (`- item`) two columns to the right every time they are indented.
+- [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `neocaml-utop` underlining only the first error of a session in the source: utop reports the later ones without offsets, so their location is now taken from the error message.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Reindent the line of a `]` as it's typed, as with `)` and `}`.
 - [#125](https://github.com/bbatsov/neocaml/pull/125): Fix `neocaml-repl-send-definition` and `neocaml-utop-send-definition` (`C-c C-c`) sending a `let` or `type` definition without its keyword, and finding no definition with point on the keyword.
 

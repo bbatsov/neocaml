@@ -350,6 +350,44 @@
                   :to-equal "\"a\"")
           (expect (overlay-get ov 'face) :to-equal 'neocaml-utop-error-face))))
 
+    (it "takes the location from the message when accept has no offsets"
+      (with-current-buffer source (insert "let a = 1\n\nlet bad = 1 + \"two\"\n"))
+      (with-current-buffer transcript
+        (setq neocaml-utop--error-target (list source 1 999))
+        ;; what utop sends for every error after the first of a session
+        (neocaml-utop--handle-line "accept:0,0")
+        (expect neocaml-utop--overlays :to-be nil)
+        (neocaml-utop--handle-line "stderr:Line 3, characters 14-19:")
+        (neocaml-utop--handle-line "stderr:Error: This constant has type string")
+        (expect (length neocaml-utop--overlays) :to-equal 1)
+        (let ((ov (car neocaml-utop--overlays)))
+          (expect (with-current-buffer source
+                    (buffer-substring-no-properties
+                     (overlay-start ov) (overlay-end ov)))
+                  :to-equal "\"two\"")
+          (expect (overlay-get ov 'help-echo) :to-match "This constant has type string"))))
+
+    (it "counts the columns of such a location in bytes, from where the phrase starts"
+      (with-current-buffer source (insert "let a = 1;; let s = \"h\u00e9\" + 1\n"))
+      (with-current-buffer transcript
+        ;; the phrase sent starts in the middle of the line
+        (setq neocaml-utop--error-target (list source 13 999))
+        (neocaml-utop--handle-line "accept:0,0")
+        (neocaml-utop--handle-line "stderr:Line 1, characters 8-13:")
+        (let ((ov (car neocaml-utop--overlays)))
+          (expect (with-current-buffer source
+                    (buffer-substring-no-properties
+                     (overlay-start ov) (overlay-end ov)))
+                  :to-equal "\"h\u00e9\""))))
+
+    (it "doesn't underline the location of a warning"
+      (with-current-buffer source (insert "let w = let unused = 3 in 4\n"))
+      (with-current-buffer transcript
+        (setq neocaml-utop--error-target (list source 1 999))
+        (neocaml-utop--handle-line "accept:")
+        (neocaml-utop--handle-line "stderr:Line 1, characters 12-18:")
+        (expect neocaml-utop--overlays :to-be nil)))
+
     (it "maps character offsets correctly across multibyte source"
       ;; utop reports character offsets, not bytes; a multibyte char before
       ;; the error span must not shift the overlay.
