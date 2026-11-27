@@ -353,6 +353,13 @@ Returns nil if no injections are available."
 
 ;;; Indentation
 
+(defun neocaml-odoc--light-list-item-start-p (_node parent bol &rest _)
+  "Return non-nil if the light list item PARENT begins on the line at BOL.
+An item has no child for its marker, so there's no node at BOL there
+and the item is the parent, as it is on the lines it runs onto."
+  (and (equal (treesit-node-type parent) "light_list_item")
+       (= bol (treesit-node-start parent))))
+
 (defvar neocaml-odoc--indent-rules
   `((odoc
      ((parent-is "document") column-0 0)
@@ -363,10 +370,14 @@ Returns nil if no injections are available."
      ;; Lists
      ((parent-is "unordered_list") parent-bol neocaml-odoc-indent-offset)
      ((parent-is "ordered_list") parent-bol neocaml-odoc-indent-offset)
-     ((parent-is "light_list") parent-bol neocaml-odoc-indent-offset)
+     ((parent-is "\\`light_list\\'") parent-bol neocaml-odoc-indent-offset)
      ((parent-is "li_list_item") parent-bol neocaml-odoc-indent-offset)
      ((parent-is "dash_list_item") parent-bol neocaml-odoc-indent-offset)
-     ((parent-is "light_list_item") parent-bol neocaml-odoc-indent-offset)
+     ;; A light list item stays where it is: it has nothing to be
+     ;; indented from but its own line.  The lines it runs onto are
+     ;; indented from its marker.
+     (neocaml-odoc--light-list-item-start-p parent 0)
+     ((parent-is "light_list_item") parent neocaml-odoc-indent-offset)
      ;; Tables
      ((parent-is "table_heavy") parent-bol neocaml-odoc-indent-offset)
      ((parent-is "table_light") parent-bol neocaml-odoc-indent-offset)
