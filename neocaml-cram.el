@@ -89,8 +89,18 @@ Indexes shell command lines.")
 
 ;;; Mode definition
 
+(defun neocaml-cram-no-comments ()
+  "Signal that a cram file has no comments.
+The comment commands are remapped to this in `neocaml-cram-mode', as
+there's no comment syntax for them to work with."
+  (interactive)
+  (user-error "Cram tests have no comments: a line that isn't indented is prose"))
+
 (defvar neocaml-cram-mode-map
   (let ((map (make-sparse-keymap)))
+    (dolist (command '(comment-dwim comment-line comment-region
+                       uncomment-region comment-or-uncomment-region))
+      (define-key map (vector 'remap command) #'neocaml-cram-no-comments))
     ;; Autoloaded from neocaml-dune-interaction.el.
     (define-key map (kbd "C-c C-c") 'neocaml-dune-test-file)
     (define-key map (kbd "C-c C-r") 'neocaml-dune-promotion-diff)

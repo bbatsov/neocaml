@@ -92,6 +92,14 @@ CONTENT is inserted into a temp buffer with `neocaml-cram-mode'."
         (indent-region (point-min) (point-max))
         (expect (buffer-string) :to-equal test)))))
 
+(describe "neocaml-cram comments"
+  (it "says there are none instead of failing on M-;"
+    (with-temp-buffer
+      (insert "Some prose:\n\n  $ echo hello\n")
+      (neocaml-cram-mode)
+      (expect (key-binding (kbd "M-;")) :to-be 'neocaml-cram-no-comments)
+      (expect (call-interactively (key-binding (kbd "M-;"))) :to-throw 'user-error))))
+
 (describe "neocaml-cram imenu"
   (it "indexes command lines"
     (with-temp-buffer
