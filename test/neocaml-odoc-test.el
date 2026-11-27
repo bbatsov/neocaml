@@ -201,6 +201,14 @@ This is some text.")
     "+ first
 + second")
 
+  (it "leaves the rows of a light table where they are"
+    (let ((table "{t | Syntax | Meaning |\n   |--------|---------|\n   | {e a}  | emphasis |}\n"))
+      (with-temp-buffer
+        (insert table)
+        (neocaml-odoc-mode)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal table))))
+
   (it "indents the lines a light list item runs onto from its marker"
     (with-temp-buffer
       (insert "- A list item that runs\nonto the next line.\n")

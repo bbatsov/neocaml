@@ -15,6 +15,7 @@
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `neocaml-odoc-mode` moving the items of a light list (`- item`) two columns to the right every time they are indented.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `neocaml-utop` underlining only the first error of a session in the source: utop reports the later ones without offsets, so their location is now taken from the error message.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `M-;` signaling a type error in `neocaml-cram-mode`; it now says that cram tests have no comments.
+- [#126](https://github.com/bbatsov/neocaml/pull/126): Leave the rows of a light table (`{t ...}`) where they are when indenting in `neocaml-odoc-mode`.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Reindent the line of a `]` as it's typed, as with `)` and `}`.
 - [#125](https://github.com/bbatsov/neocaml/pull/125): Fix `neocaml-repl-send-definition` and `neocaml-utop-send-definition` (`C-c C-c`) sending a `let` or `type` definition without its keyword, and finding no definition with point on the keyword.
 
