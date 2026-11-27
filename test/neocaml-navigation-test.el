@@ -87,6 +87,38 @@
       (expect (>= (point) (save-excursion (goto-char (point-min)) (search-forward "Rect h -> h") (line-end-position)))
               :to-be-truthy))))
 
+;;;; neocaml-mark-sentence
+
+(describe "navigation: neocaml-mark-sentence"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available"))
+    (unless (boundp 'treesit-thing-settings)
+      (signal 'buttercup-pending "needs Emacs 30+")))
+
+  (cl-flet ((marked (place)
+              ;; What the command marks with point at the start of PLACE
+              (with-neocaml-buffer "
+                  let a = 1
+
+                  let f x =
+                    let y = x + 1 in
+                    y * 2
+
+                  let c = 3"
+                (search-forward place)
+                (goto-char (match-beginning 0))
+                (neocaml-mark-sentence)
+                (buffer-substring-no-properties (region-beginning) (region-end)))))
+
+    (it "marks the statement around point"
+      (expect (marked "x + 1") :to-equal "let y = x + 1")
+      (expect (marked "y * 2") :to-equal "let f x =\n  let y = x + 1 in\n  y * 2"))
+
+    (it "marks the statement point is at the start of"
+      (expect (marked "let f") :to-equal "let f x =\n  let y = x + 1 in\n  y * 2")
+      (expect (marked "let c") :to-equal "let c = 3"))))
+
 ;;;; forward-sexp
 
 (describe "navigation: forward-sexp"

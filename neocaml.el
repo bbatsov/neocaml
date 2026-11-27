@@ -2347,9 +2347,17 @@ simply delegates to it there."
 Uses tree-sitter sentence navigation to select the entire statement
 \(e.g. a `let' binding, type definition, or module definition)."
   (interactive)
-  (backward-sentence)
-  (push-mark (point) nil t)
-  (forward-sentence))
+  ;; `backward-sentence' from the start of a statement goes to the one
+  ;; before it, so find the statement point is on when that's possible
+  ;; (Emacs 30+).
+  (if-let* (((boundp 'treesit-thing-settings))
+            (node (treesit-thing-at-point 'sentence 'nested)))
+      (progn
+        (push-mark (treesit-node-start node) nil t)
+        (goto-char (treesit-node-end node)))
+    (backward-sentence)
+    (push-mark (point) nil t)
+    (forward-sentence)))
 
 ;;;; Compilation support
 
