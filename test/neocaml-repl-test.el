@@ -532,6 +532,43 @@ COMMAND defaults to `neocaml-repl-send-definition'."
                                            'neocaml-utop-send-definition)
             :to-equal "let y = x + 1")))
 
+(describe "neocaml-repl phrase bounds"
+  (before-all
+    (unless (treesit-language-available-p 'ocaml)
+      (signal 'buttercup-pending "tree-sitter OCaml grammar not available")))
+
+  (cl-flet ((phrase (code place)
+              ;; The phrase of CODE with point right after PLACE
+              (with-temp-buffer
+                (insert code)
+                (neocaml-mode)
+                (goto-char (point-min))
+                (search-forward place)
+                (let ((bounds (neocaml-repl--phrase-bounds)))
+                  (buffer-substring-no-properties (car bounds) (cdr bounds))))))
+
+    (it "leaves out the `;;' of the phrase before"
+      (expect (phrase "let x = 1;;\n\nlet y = 2;;\n\nlet z = 3;;\n" "let y")
+              :to-equal "let y = 2;;"))
+
+    (it "takes the phrase a `;;' right before point ends"
+      (expect (phrase "let x = 1;;\n\nlet y = 2;;\n\nlet z = 3;;\n" "y = 2;;")
+              :to-equal "let y = 2;;")
+      (expect (phrase "let x = 1;;\n\nlet y = 2;;  \n\nlet z = 3;;\n" "y = 2;;  ")
+              :to-equal "let y = 2;;"))
+
+    (it "takes the next phrase from the blank lines before it"
+      (expect (phrase "let x = 1;;\n\nlet y = 2;;\n" "x = 1;;\n")
+              :to-equal "let y = 2;;"))
+
+    (it "doesn't take a `;;' ending a comment for the end of a phrase"
+      (expect (phrase "let x = 1;;\n\nlet y = 2 (* a;; *)\nlet z = 3;;\n" "a;;")
+              :to-equal "let y = 2 (* a;; *)\nlet z = 3;;"))
+
+    (it "runs to the ends of a buffer with no `;;'"
+      (expect (phrase "let x = 1\n\nlet y = 2\n" "let y")
+              :to-equal "let x = 1\n\nlet y = 2\n"))))
+
 (describe "neocaml-repl--project-id"
   :var (mono)
   (before-each
