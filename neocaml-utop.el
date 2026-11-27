@@ -204,6 +204,10 @@ span past the source.  Nil when the last input was not source-derived
 (defvar-local neocaml-utop--overlays nil
   "Error overlays currently shown for the last evaluated phrase.")
 
+(defvar-local neocaml-utop--error-unlocated nil
+  "Non-nil when utop reported an error with no offsets to underline.
+Its location is then in the message that follows on stderr.")
+
 (defvar-local neocaml-utop--error-pending nil
   "Error overlays awaiting their message text from the following stderr.")
 
@@ -283,6 +287,7 @@ after the change, which is when we remove the overlay."
   (mapc #'delete-overlay neocaml-utop--overlays)
   (setq neocaml-utop--overlays nil
         neocaml-utop--error-pending nil
+        neocaml-utop--error-unlocated nil
         neocaml-utop--error-message ""))
 
 (defun neocaml-utop--handle-accept (arg)
@@ -312,17 +317,78 @@ once the following stderr arrives."
                      (beg (max start (min (+ start a) limit)))
                      (ovend (max start (min (+ start b) limit))))
                 (when (< beg ovend)
-                  (let ((ov (make-overlay beg ovend)))
-                    (overlay-put ov 'face 'neocaml-utop-error-face)
-                    (overlay-put ov 'help-echo "neocaml-utop: error here")
-                    (overlay-put ov 'modification-hooks
-                                 (list #'neocaml-utop--overlay-evaporate))
-                    (push ov overlays))))))))
+                  (push (neocaml-utop--error-overlay beg ovend) overlays)))))))
       ;; Store back in the transcript buffer (we're running in its filter);
       ;; the message text follows on stderr (see `neocaml-utop--handle-line').
       (setq neocaml-utop--overlays overlays
             neocaml-utop--error-pending overlays
-            neocaml-utop--error-message ""))))
+            neocaml-utop--error-message ""
+            ;; After the first error of a session utop sends 0,0 for the
+            ;; next ones and leaves their location to the message, where
+            ;; `neocaml-utop--locate-error' gets it from.
+            neocaml-utop--error-unlocated (null overlays)))))
+
+(defun neocaml-utop--error-overlay (beg end)
+  "Return a new error overlay from BEG to END in the current buffer."
+  (let ((ov (make-overlay beg end)))
+    (overlay-put ov 'face 'neocaml-utop-error-face)
+    (overlay-put ov 'help-echo "neocaml-utop: error here")
+    (overlay-put ov 'modification-hooks
+                 (list #'neocaml-utop--overlay-evaporate))
+    ov))
+
+(defun neocaml-utop--line-byte-position (start line bytes)
+  "Return the position BYTES bytes into LINE of the text sent from START.
+LINE is 1-based and its first line begins at START, as that's where the
+text utop got begins.  The compiler counts in bytes of UTF-8."
+  (save-excursion
+    (goto-char start)
+    ;; not for the first line: that would go back to the start of START's
+    (when (> line 1)
+      (forward-line (1- line)))
+    (let* ((bol (point))
+           (encoded (encode-coding-string
+                     (buffer-substring-no-properties bol (line-end-position))
+                     'utf-8)))
+      (+ bol (length (decode-coding-string
+                      (substring encoded 0 (min bytes (length encoded)))
+                      'utf-8))))))
+
+(defun neocaml-utop--locate-error (text)
+  "Underline the error whose location is the stderr line TEXT.
+That's \"Line 3, characters 14-19:\", which is all utop says about
+where an error is when its `accept' came with no offsets."
+  (when (and neocaml-utop--error-unlocated
+             neocaml-utop--error-target
+             (string-match (rx bos "Line" (? "s") " " (group (+ digit))
+                               (? "-" (group (+ digit)))
+                               ", characters " (group (+ digit))
+                               "-" (group (+ digit)))
+                           text))
+    (setq neocaml-utop--error-unlocated nil)
+    (let* ((buf (nth 0 neocaml-utop--error-target))
+           (start (nth 1 neocaml-utop--error-target))
+           (end (nth 2 neocaml-utop--error-target))
+           (line (string-to-number (match-string 1 text)))
+           (last-line (if (match-string 2 text)
+                          (string-to-number (match-string 2 text))
+                        line))
+           (from (string-to-number (match-string 3 text)))
+           (to (string-to-number (match-string 4 text)))
+           (overlay nil))
+      (when (buffer-live-p buf)
+        (with-current-buffer buf
+          (let* ((limit (min end (point-max)))
+                 (beg (min limit (neocaml-utop--line-byte-position
+                                  start line from)))
+                 (ovend (min limit (neocaml-utop--line-byte-position
+                                    start last-line to))))
+            (when (< beg ovend)
+              (setq overlay (neocaml-utop--error-overlay beg ovend))))))
+      (when overlay
+        (setq neocaml-utop--overlays (list overlay)
+              neocaml-utop--error-pending (list overlay)
+              neocaml-utop--error-message "")))))
 
 (defun neocaml-utop--note-error-text (text)
   "Append TEXT to the pending error message and refresh overlay tooltips."
@@ -435,10 +501,12 @@ itself when the underlying text is edited."
        (concat arg "\n"))
       ("stderr"
        (neocaml-utop--echo-accumulate 'err arg)
+       (neocaml-utop--locate-error arg)
        (neocaml-utop--note-error-text arg)
        (concat (propertize arg 'font-lock-face 'font-lock-warning-face) "\n"))
       ("prompt"
-       (setq neocaml-utop--error-pending nil)
+       (setq neocaml-utop--error-pending nil
+             neocaml-utop--error-unlocated nil)
        (neocaml-utop--prompt-string))
       ("accept" (neocaml-utop--handle-accept arg) "")
       ("completion-start"
