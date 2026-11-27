@@ -190,7 +190,24 @@ DESCRIPTION is the test name.  Uses `neocaml-odoc-mode'."
   (when-indenting-odoc-it "indents top-level content at column 0"
     "{0 My Library}
 
-This is some text."))
+This is some text.")
+
+  (when-indenting-odoc-it "leaves the items of a light list where they are"
+    "Some text.
+
+- A list item that runs
+  onto the next line.
+- A second item."
+    "+ first
++ second")
+
+  (it "indents the lines a light list item runs onto from its marker"
+    (with-temp-buffer
+      (insert "- A list item that runs\nonto the next line.\n")
+      (neocaml-odoc-mode)
+      (indent-region (point-min) (point-max))
+      (expect (buffer-string)
+              :to-equal "- A list item that runs\n  onto the next line.\n"))))
 
 (when (>= emacs-major-version 30)
   (describe "neocaml-odoc language injection"
