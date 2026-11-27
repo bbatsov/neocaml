@@ -2512,8 +2512,9 @@ a block, as in font-lock."
 Uses tree-sitter to find comment boundaries, then narrows to the
 comment body (excluding delimiters) and fills.  Code and verbatim
 blocks ({[ ... ]}, {@lang[ ... ]} and {v ... v}) are left as they are,
-and the text around them is filled up to them.  Returns t if point
-was in a comment, nil otherwise to let the default handler run."
+and the text around them is filled up to them.  Outside comments
+nothing is filled.  Returns t either way, so that the default handler
+doesn't run: it would wrap code like prose."
   (when-let* ((comment (neocaml--comment-at-point)))
     (let ((pos (point))
           (start (treesit-node-start comment))
@@ -2580,7 +2581,10 @@ was in a comment, nil otherwise to let the default handler run."
                       (make-string (max body-col par-col) ?\s))
                      (fill-paragraph-function nil))
                 (fill-region-as-paragraph par-start par-end)))))
-        t))))
+        t)))
+  ;; Outside comments there's nothing to fill, and the default handler
+  ;; would wrap the code or break a string literal across lines.
+  t)
 
 ;;;; Comment continuation (M-j)
 
