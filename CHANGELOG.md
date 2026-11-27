@@ -11,6 +11,7 @@
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `M-q` (`fill-paragraph`) outside comments wrapping the code like prose and breaking string literals across lines; it now does nothing there.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `neocaml-mark-sentence` marking the statement before when point is at the start of one.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `neocaml-repl-send-phrase` and `neocaml-utop-send-phrase` (`C-c C-e`) sending the next phrase when point is right after the `;;` of one, and sending the `;;` of the phrase before along with a phrase.
+- [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `indent-region` in `neocaml-cram-mode` stripping the indentation that makes a line a command or its output.
 - [#125](https://github.com/bbatsov/neocaml/pull/125): Fix `neocaml-repl-send-definition` and `neocaml-utop-send-definition` (`C-c C-c`) sending a `let` or `type` definition without its keyword, and finding no definition with point on the keyword.
 
 ## 0.11.0 (2026-11-04)
