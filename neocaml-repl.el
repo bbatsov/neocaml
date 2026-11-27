@@ -608,9 +608,24 @@ after the delimiter (forward) or before it (backward), or nil."
 
 (defun neocaml-repl--phrase-bounds ()
   "Return (START . END) of the phrase at point, bounded by `;;'.
-START falls back to `point-min' and END to `point-max'."
-  (cons (or (neocaml-repl--search-phrase-delimiter -1) (point-min))
-        (or (neocaml-repl--search-phrase-delimiter 1) (point-max))))
+START is after the `;;' of the phrase before and the whitespace that
+follows it, or `point-min', and END is after the phrase's own `;;', or
+`point-max'.  Right after a `;;' point is still on the phrase it ends."
+  (save-excursion
+    (skip-chars-backward " \t")
+    (when (and (>= (- (point) 2) (point-min))
+               (string= (buffer-substring-no-properties (- (point) 2) (point)) ";;")
+               (let ((state (save-excursion (syntax-ppss (- (point) 2)))))
+                 (not (or (nth 3 state) (nth 4 state)))))
+      (backward-char 2))
+    (let ((end (or (neocaml-repl--search-phrase-delimiter 1) (point-max)))
+          (prev (neocaml-repl--search-phrase-delimiter -1)))
+      (cons (if prev
+                (progn (goto-char (+ prev 2))
+                       (skip-chars-forward " \t\n")
+                       (point))
+              (point-min))
+            end))))
 
 ;;;###autoload
 (defun neocaml-repl-send-phrase ()
