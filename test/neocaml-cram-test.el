@@ -83,6 +83,15 @@ CONTENT is inserted into a temp buffer with `neocaml-cram-mode'."
       (expect (neocaml-cram-test--face-at "  $ echo\n  output (unknown)\n" "(unknown)")
               :to-equal 'font-lock-string-face))))
 
+(describe "neocaml-cram indentation"
+  (it "leaves a test alone when its region is reindented"
+    (let ((test "Some prose:\n\n  $ echo hello\n  hello\n  [1]\n\nMore prose.\n"))
+      (with-temp-buffer
+        (insert test)
+        (neocaml-cram-mode)
+        (indent-region (point-min) (point-max))
+        (expect (buffer-string) :to-equal test)))))
+
 (describe "neocaml-cram imenu"
   (it "indexes command lines"
     (with-temp-buffer

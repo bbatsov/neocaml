@@ -115,6 +115,9 @@ Cram tests use a simple line-oriented format:
   (setq-local comment-end "")
   (setq-local imenu-generic-expression neocaml-cram--imenu-generic-expression)
   (setq-local indent-tabs-mode nil)
+  ;; Indentation is what tells commands and their output from prose, so
+  ;; reindenting a region must not touch it.
+  (setq-local indent-region-function #'ignore)
   (setq-local tab-width 2)
   (setq-local require-final-newline mode-require-final-newline))
 
