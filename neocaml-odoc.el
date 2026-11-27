@@ -380,7 +380,8 @@ and the item is the parent, as it is on the lines it runs onto."
      ((parent-is "light_list_item") parent neocaml-odoc-indent-offset)
      ;; Tables
      ((parent-is "table_heavy") parent-bol neocaml-odoc-indent-offset)
-     ((parent-is "table_light") parent-bol neocaml-odoc-indent-offset)
+     ;; The rows of a light table are lined up by hand
+     ((parent-is "table_light") no-indent 0)
      ((parent-is "table_row") parent-bol neocaml-odoc-indent-offset)
      ;; Headings and tags
      ((parent-is "heading") parent-bol neocaml-odoc-indent-offset)
