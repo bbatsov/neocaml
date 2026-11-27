@@ -2946,7 +2946,7 @@ for .ml files and `neocaml-interface-mode' for .mli files."
 
   ;; Electric indentation on delimiters
   (setq-local electric-indent-chars
-              (append "{}()" electric-indent-chars))
+              (append "{}()[]" electric-indent-chars))
 
   ;; Fill paragraph
   (setq-local fill-paragraph-function #'neocaml--fill-paragraph)
