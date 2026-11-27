@@ -9,6 +9,7 @@
 ### Changes
 
 - [#124](https://github.com/bbatsov/neocaml/pull/124): Recognize the locations of OCaml errors, warnings and backtraces anywhere on a line of compilation output, not only at its start, so the ones a tool prefixes with text or ANSI escapes are clickable too.
+- [#124](https://github.com/bbatsov/neocaml/pull/124): Treat a location indented by 7 spaces as an ancillary one (which `next-error` skips) only when it's followed by what it's the location of, as the compiler's are (`File "a.mli", line 1, characters 0-14: Expected declaration`).
 
 ### Bug fixes
 

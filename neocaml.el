@@ -2363,43 +2363,52 @@ Uses tree-sitter sentence navigation to select the entire statement
 
 (defconst neocaml--compilation-error-regexp
   (eval-when-compile
-    (rx
-        ;; A location can start anywhere on the line: tools indent them,
-        ;; prefix them, or put ANSI escapes in front.  Only one that's
-        ;; indented by exactly 7 spaces is an ancillary location (info
-        ;; level), the rest get the severity group 8 gives them.
-        (? bol (group-n 9 "       "))
-        (group-n 1
-                 (or "File "
-                     ;; Exception backtraces (OCaml >= 4.11 includes function names)
-                     (seq (or "Raised at" "Re-raised at"
-                              "Raised by primitive operation at"
-                              "Called from")
-                          (* nonl)
-                          " file "))
-                 (group-n 2 (? "\""))
-                 (group-n 3 (+ (not (in "\t\n \",<>"))))
-                 (backref 2)
-                 (? " (inlined)")
-                 ", line" (? "s") " "
-                 (group-n 4 (+ (in "0-9")))
-                 (? "-" (group-n 5 (+ (in "0-9"))))
-                 (? ", character" (? "s") " "
-                    (group-n 6 (+ (in "0-9")))
-                    (? "-" (group-n 7 (+ (in "0-9")))))
-                 (? ":"))
-        ;; Skip source-code snippets and match Warning/Alert on next line
-        (? "\n"
-           (* (in "\t "))
-           (* (or (seq (+ (in "0-9"))
-                       " | "
-                       (* nonl))
-                  (+ "^"))
-              "\n"
-              (* (in "\t ")))
-           (group-n 8 (or "Warning" "Alert")
-                    (* (not (in ":\n")))
-                    ":"))))
+    (rx-let ((location
+              (group-n 1
+                       (or "File "
+                           ;; Exception backtraces (OCaml >= 4.11 includes function names)
+                           (seq (or "Raised at" "Re-raised at"
+                                    "Raised by primitive operation at"
+                                    "Called from")
+                                (* nonl)
+                                " file "))
+                       (group-n 2 (? "\""))
+                       (group-n 3 (+ (not (in "\t\n \",<>"))))
+                       (backref 2)
+                       (? " (inlined)")
+                       ", line" (? "s") " "
+                       (group-n 4 (+ (in "0-9")))
+                       (? "-" (group-n 5 (+ (in "0-9"))))
+                       (? ", character" (? "s") " "
+                          (group-n 6 (+ (in "0-9")))
+                          (? "-" (group-n 7 (+ (in "0-9")))))
+                       (? ":"))))
+      (rx (or
+           ;; An ancillary location (info level), as the compiler prints
+           ;; them under an error: indented by 7 spaces, with what it's
+           ;; the location of after it, on the same line ("File ...:
+           ;; Expected declaration") or on the next one, indented further
+           ;; ("Definition of type t").  The 7 spaces alone don't make
+           ;; one, as a tool can indent its own locations that much.
+           (seq bol "       " location
+                (group-n 9 (or " " (seq "\n        " (* " ")))
+                         (not (in " \t\n"))))
+           ;; Any other location, which can start anywhere on the line:
+           ;; tools indent them, prefix them, or put ANSI escapes in
+           ;; front.  Group 8 makes it a warning.
+           (seq location
+                ;; Skip source-code snippets and match Warning/Alert on next line
+                (? "\n"
+                   (* (in "\t "))
+                   (* (or (seq (+ (in "0-9"))
+                               " | "
+                               (* nonl))
+                          (+ "^"))
+                      "\n"
+                      (* (in "\t ")))
+                   (group-n 8 (or "Warning" "Alert")
+                            (* (not (in ":\n")))
+                            ":")))))))
   "Regexp matching OCaml compiler error, warning, and backtrace messages.")
 
 ;; OCaml error messages report 0-indexed byte positions with exclusive
