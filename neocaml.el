@@ -2393,10 +2393,12 @@ Uses tree-sitter sentence navigation to select the entire statement
            ;; the location of after it, on the same line ("File ...:
            ;; Expected declaration") or on the next one, indented further
            ;; ("Definition of type t").  The 7 spaces alone don't make
-           ;; one, as a tool can indent its own locations that much.
+           ;; one, as a tool can indent its own locations that much, and
+           ;; neither does a line of the source snippet under them
+           ;; ("10 | foo").
            (seq bol "       " location
-                (group-n 9 (or " " (seq "\n        " (* " ")))
-                         (not (in " \t\n"))))
+                (group-n 9 (or (seq " " (not (in " \t\n")))
+                               (seq "\n        " (* " ") (in "A-Za-z")))))
            ;; Any other location, which can start anywhere on the line:
            ;; tools indent them, prefix them, or put ANSI escapes in
            ;; front.  Group 8 makes it a warning.
