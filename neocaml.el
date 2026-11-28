@@ -2008,13 +2008,9 @@ Filters out nodes nested inside `let_expression',
               'symbols)
   "Regexp matching the node types of items an OCaml toplevel can evaluate.")
 
-(defun neocaml--toplevel-item-at-point ()
-  "Return the node of the innermost definition around point, or nil.
-That's the whole item, from its `let', `type' or `module' keyword to
-the end of its last `and' binding, which `treesit-defun-at-point'
-doesn't give: its defuns are the bindings, so they leave the keyword
-out and there's none at point when it's on the keyword."
-  (let ((node (treesit-node-at (point))))
+(defun neocaml--toplevel-item-around (node-pos pos)
+  "Return the innermost definition of the node at NODE-POS that spans POS."
+  (let ((node (treesit-node-at node-pos)))
     ;; the `let' of a `let ... in' is a definition node too
     (while (and node
                 (not (and (string-match-p neocaml--toplevel-item-regexp
@@ -2022,8 +2018,27 @@ out and there's none at point when it's on the keyword."
                           (neocaml--defun-valid-p node))))
       (setq node (treesit-node-parent node)))
     (and node
-         (<= (treesit-node-start node) (point) (treesit-node-end node))
+         (<= (treesit-node-start node) pos (treesit-node-end node))
          node)))
+
+(defun neocaml--toplevel-item-at-point ()
+  "Return the node of the innermost definition around point, or nil.
+That's the whole item, from its `let', `type' or `module' keyword to
+the end of its last `and' binding, which `treesit-defun-at-point'
+doesn't give: its defuns are the bindings, so they leave the keyword
+out and there's none at point when it's on the keyword."
+  (or (neocaml--toplevel-item-around (point) (point))
+      ;; Right after a definition the node at point is the `;;' that ends
+      ;; it or whatever comes next, so look from its last character
+      (let ((pos (save-excursion
+                   (skip-chars-backward " \t")
+                   (when (and (eq (char-before) ?\;)
+                              (eq (char-before (1- (point))) ?\;))
+                     (backward-char 2)
+                     (skip-chars-backward " \t\n"))
+                   (point))))
+        (and (> pos (point-min))
+             (neocaml--toplevel-item-around (1- pos) pos)))))
 
 (defun neocaml--subtree-text (node type &optional depth)
   "Return the text of the first TYPE child in NODE's subtree.
