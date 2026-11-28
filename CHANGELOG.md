@@ -6,6 +6,8 @@
 
 ## main (unreleased)
 
+## 0.11.1 (2026-11-28)
+
 ### Changes
 
 - [#124](https://github.com/bbatsov/neocaml/pull/124): Recognize the locations of OCaml errors, warnings and backtraces anywhere on a line of compilation output, not only at its start, so the ones a tool prefixes with text or ANSI escapes are clickable too.
