@@ -22,6 +22,7 @@
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Fix `M-;` signaling a type error in `neocaml-cram-mode`; it now says that cram tests have no comments.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Leave the rows of a light table (`{t ...}`) where they are when indenting in `neocaml-odoc-mode`.
 - [#126](https://github.com/bbatsov/neocaml/pull/126): Reindent the line of a `]` as it's typed, as with `)` and `}`.
+- [#127](https://github.com/bbatsov/neocaml/pull/127): Fix `neocaml-repl-send-definition` and `neocaml-utop-send-definition` (`C-c C-c`) finding no definition with point right after one, at the end of its line or by its `;;`.
 - [#125](https://github.com/bbatsov/neocaml/pull/125): Fix `neocaml-repl-send-definition` and `neocaml-utop-send-definition` (`C-c C-c`) sending a `let` or `type` definition without its keyword, and finding no definition with point on the keyword.
 
 ## 0.11.0 (2026-11-04)

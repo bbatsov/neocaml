@@ -523,6 +523,16 @@ COMMAND defaults to `neocaml-repl-send-definition'."
              "module M = struct\n  let x = 1\nend\n" "x = 1")
             :to-equal "let x = 1"))
 
+  (it "sends the definition point is right after"
+    (expect (neocaml-test--sent-definition "let x = 1\n\nlet y = 2\n" "\n\nlet y")
+            :to-equal "let x = 1")
+    (expect (neocaml-test--sent-definition "let x = 1;;\n\nlet y = 2;;\n" ";;\n\nlet y")
+            :to-equal "let x = 1")
+    (expect (neocaml-test--sent-definition "let x = 1;;\n\nlet y = 2;;\n" "\n\nlet y")
+            :to-equal "let x = 1")
+    (expect (neocaml-test--sent-definition "let x = 1;;\nlet y = 2;;" "\nlet y")
+            :to-equal "let x = 1"))
+
   (it "signals an error away from any definition"
     (expect (neocaml-test--sent-definition "let x = 1\n\n\n\nlet y = 2\n" "\n\nlet y")
             :to-throw 'user-error))
