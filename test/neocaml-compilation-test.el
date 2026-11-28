@@ -155,6 +155,13 @@ Returns nil if the regexp does not match."
       (expect (plist-get info :severity) :to-equal 0)
       (expect (plist-get info :line) :to-equal 1)))
 
+  (it "doesn't take a source snippet for an ancillary location's description"
+    (let ((info (neocaml-test--match-compilation
+                 "       File \"foo.ml\", lines 9-10, characters 4-5:\n        9 | let x = 1\n       10 | foo\n       Error: bad\n")))
+      (expect info :not :to-be nil)
+      (expect (plist-get info :severity) :to-equal 2)
+      (expect (plist-get info :line) :to-equal 9)))
+
   (it "matches a location indented by 7 spaces with nothing after it as error"
     (let ((info (neocaml-test--match-compilation
                  "       File \"foo.ml\", line 54, characters 63-70:\n--- expected\n")))
