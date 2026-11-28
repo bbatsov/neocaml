@@ -611,6 +611,9 @@ START is after the `;;' of the phrase before and the whitespace that
 follows it, or `point-min', and END is after the phrase's own `;;', or
 `point-max'.  Right after a `;;' point is still on the phrase it ends."
   (save-excursion
+    ;; between the two semicolons is as good as after them
+    (when (and (eq (char-before) ?\;) (eq (char-after) ?\;))
+      (forward-char 1))
     (skip-chars-backward " \t")
     (when (and (>= (- (point) 2) (point-min))
                (string= (buffer-substring-no-properties (- (point) 2) (point)) ";;")

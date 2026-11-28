@@ -557,6 +557,10 @@ COMMAND defaults to `neocaml-repl-send-definition'."
       (expect (phrase "let x = 1;;\n\nlet y = 2;;  \n\nlet z = 3;;\n" "y = 2;;  ")
               :to-equal "let y = 2;;"))
 
+    (it "takes the phrase whose `;;' point is in the middle of"
+      (expect (phrase "let x = 1;;\n\nlet y = 2;;\n\nlet z = 3;;\n" "y = 2;")
+              :to-equal "let y = 2;;"))
+
     (it "takes the next phrase from the blank lines before it"
       (expect (phrase "let x = 1;;\n\nlet y = 2;;\n" "x = 1;;\n")
               :to-equal "let y = 2;;"))
