@@ -2351,7 +2351,11 @@ Uses tree-sitter sentence navigation to select the entire statement
   ;; before it, so find the statement point is on when that's possible
   ;; (Emacs 30+).
   (if-let* (((boundp 'treesit-thing-settings))
-            (node (treesit-thing-at-point 'sentence 'nested)))
+            (node (treesit-thing-at-point 'sentence 'nested))
+            ;; on the `external' keyword that's the keyword's own token
+            (node (if (treesit-node-check node 'named)
+                      node
+                    (treesit-node-parent node))))
       (progn
         (push-mark (treesit-node-start node) nil t)
         (goto-char (treesit-node-end node)))
