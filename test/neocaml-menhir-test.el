@@ -68,7 +68,19 @@ DESCRIPTION is the test name.  Uses `neocaml-menhir-mode'."
 
     (when-fontifying-menhir-it "fontifies %%"
       ("%token EOF\n%%\n"
-       ("%%" font-lock-keyword-face))))
+       ("%%" font-lock-keyword-face)))
+
+    (when-fontifying-menhir-it "fontifies %prec"
+      ("%token MINUS EOF\n%nonassoc UMINUS\n%%\nexpr:\n  | MINUS expr %prec UMINUS { () }\n"
+       ("%prec" font-lock-keyword-face)))
+
+    (when-fontifying-menhir-it "fontifies %merge"
+      ("%token EOF\n%%\nexpr:\n  | EOF { () }\n  %merge { fun x _ -> x }\n"
+       ("%merge" font-lock-keyword-face)))
+
+    (when-fontifying-menhir-it "fontifies let in new-style rules"
+      ("%token EOF\n%%\nlet expr := EOF; { () }\n"
+       ("let" font-lock-keyword-face))))
 
   (describe "definition feature"
     (when-fontifying-menhir-it "fontifies rule names"
