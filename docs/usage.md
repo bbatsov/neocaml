@@ -170,6 +170,13 @@ errors, warnings, alerts, and exception backtraces.
 
 ![C-c C-c runs dune build, the type error shows up in the compilation buffer, and M-g n jumps to the offending constant in the source, with its range highlighted](images/neocaml-compile-next-error.gif)
 
+A location can be anywhere on a line, so the output of tools that indent
+or prefix the compiler's messages works as well. The locations the compiler
+adds under an error for context (`File "a.mli", line 1, characters 0-14:
+Expected declaration`) are informational: you can click them, but
+`next-error` skips them. Set `compilation-skip-threshold` to `0` to have it
+stop on those too.
+
 For a richer build workflow with dune (build, test, clean, fmt, watch mode),
 see [dune commands](opam_and_dune.md#dune-commands).
 
