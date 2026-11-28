@@ -115,6 +115,13 @@
       (expect (marked "x + 1") :to-equal "let y = x + 1")
       (expect (marked "y * 2") :to-equal "let f x =\n  let y = x + 1 in\n  y * 2"))
 
+    (it "marks an external from its keyword"
+      (with-neocaml-buffer "external foo : int -> int = \"foo\""
+        (goto-char (point-min))
+        (neocaml-mark-sentence)
+        (expect (buffer-substring-no-properties (region-beginning) (region-end))
+                :to-equal "external foo : int -> int = \"foo\"")))
+
     (it "marks the statement point is at the start of"
       (expect (marked "let f") :to-equal "let f x =\n  let y = x + 1 in\n  y * 2")
       (expect (marked "let c") :to-equal "let c = 3"))))
